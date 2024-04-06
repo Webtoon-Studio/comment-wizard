@@ -1,7 +1,7 @@
 {
   "name": "comment-wizard",
   "version": "1.0.0",
-  "description": "Source code for extension published in webstore including build sripts.",
+  "description": "Source code for extension published in webstore including build scripts.",
   "scripts": {
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
