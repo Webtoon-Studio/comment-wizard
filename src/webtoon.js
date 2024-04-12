@@ -523,6 +523,18 @@ class Post {
       hasDisliked: countInfo.hasDisliked,
     };
   }
+
+  async delete() {
+    throw new Error("todo");
+  }
+
+  async report() {
+    throw new Error("todo");
+  }
+
+  async block() {
+    throw new Error("todo");
+  }
 }
 
 // `cursor` is only provided beyond the first use of function.
