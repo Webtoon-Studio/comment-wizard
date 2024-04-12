@@ -415,7 +415,41 @@ class Post {
   }
 
   async reply(message) {
-    throw new Error("todo");
+    const pageId = `${this.type}_${this.webtoon_id}_${this.episode}`;
+
+    const url = `https://www.webtoons.com/p/api/community/v2/post`;
+
+    const apiToken = await getApiToken();
+    const session = getCurrentUserSession();
+
+    let headers = new Headers();
+    headers.append("Service-Ticket-Id", "epicom");
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", session);
+    headers.append("Api-Token", apiToken);
+
+    const request = {
+      pageId,
+      parentId: this.id,
+      settings: {
+        reply: "OFF",
+        reaction: "ON",
+        spoilerFilter: "OFF",
+      },
+      body: message,
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to reply to post");
+    }
+
+    return await this.getReplies();
   }
 
   // NOTE: If you have already liked a post, then you cannot dislike it until you have unliked the post.
