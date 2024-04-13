@@ -1,0 +1,28 @@
+import defaultTheme from 'tailwindcss/defaultTheme';
+
+export default {
+  content: [
+    "./src/popup/index.html",
+    "./src/popup/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        webtoon: {
+          DEFAULT: "#00dc64",
+          light: "#7affb6",
+          dark: "#007a37",
+          darker: "#00180b"
+        },
+        gray: {
+          DEFAULT: "#8c8c8c",
+          light: "#bdbdbd",
+          dark: "#3e3e3e",
+          lighter: "#eeeeee",
+          darker: "#202020"
+        }
+      }
+    },
+  },
+  plugins: [],
+}
