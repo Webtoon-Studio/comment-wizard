@@ -1,4 +1,5 @@
 const Webtoon = require("../src/webtoon");
+const crypto = require("crypto");
 
 /**
  * @jest-environment jsdom
@@ -128,6 +129,86 @@ test(
 
     expect(posts[3].body).toBe("aeryhtgsyeruyhrtfsyhu");
     expect(posts[3].username).toBe("RoloEdits");
+  },
+  // milliseconds
+  60 * 1000
+);
+
+test.skip(
+  "Should reply to 3 post on episode 2 of `Testing Service`",
+  async () => {
+    const webtoon = await Webtoon.fromUrl(
+      "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
+    );
+
+    const posts = await webtoon.getNewestPostsForEpisode(2);
+
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // Posts come out sorted from most recent to latest, this reverses that order.
+    posts.sort((a, b) => a.createdAt - b.createdAt);
+
+    const post = posts[2];
+
+    const uuid = crypto.randomUUID();
+
+    const message = `This is reply ${uuid}`;
+
+    const replies = await post.reply(message);
+
+    expect(replies[0].body).toBe(message);
+  },
+  // milliseconds
+  60 * 1000
+);
+
+test.skip(
+  "Should like and unlike post #2 on episode 2 of `Testing Service`",
+  async () => {
+    const webtoon = await Webtoon.fromUrl(
+      "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
+    );
+
+    const posts = await webtoon.getNewestPostsForEpisode(2);
+
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // Posts come out sorted from most recent to latest, this reverses that order.
+    posts.sort((a, b) => a.createdAt - b.createdAt);
+
+    const post = posts[1];
+
+    const likeInfo = await post.like();
+    expect(likeInfo.likes).toBe(1);
+
+    const unlikeInfo = await post.like();
+    expect(unlikeInfo.likes).toBe(0);
+  },
+  // milliseconds
+  60 * 1000
+);
+
+test.skip(
+  "Should dislike and undislike post #2 on episode 2 of `Testing Service`",
+  async () => {
+    const webtoon = await Webtoon.fromUrl(
+      "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
+    );
+
+    const posts = await webtoon.getNewestPostsForEpisode(2);
+
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // Posts come out sorted from most recent to latest, this reverses that order.
+    posts.sort((a, b) => a.createdAt - b.createdAt);
+
+    const post = posts[1];
+
+    const likeInfo = await post.dislike();
+    expect(likeInfo.dislikes).toBe(1);
+
+    const unlikeInfo = await post.dislike();
+    expect(unlikeInfo.dislikes).toBe(0);
   },
   // milliseconds
   60 * 1000

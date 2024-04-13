@@ -383,7 +383,7 @@ class Post {
     this.replies = raw.childPostCount;
     this.likes = likes;
     this.hasLiked = hasLiked;
-    this.hasDownvoted = hasDisliked;
+    this.hasDisliked = hasDisliked;
     this.dislikes = dislikes;
     this.body = raw.body;
   }
@@ -415,12 +415,19 @@ class Post {
   }
 
   async reply(message) {
-    const pageId = `${this.type}_${this.webtoon_id}_${this.episode}`;
+    const pageId = `${this.webtoonType}_${this.webtoonId}_${this.episode}`;
 
     const url = `https://www.webtoons.com/p/api/community/v2/post`;
 
     const apiToken = await getApiToken();
+    if (apiToken === undefined) {
+      throw new Error("Failed to get API Token");
+    }
+
     const session = getCurrentUserSession();
+    if (session === undefined) {
+      throw new Error("Failed to get current user session from cookie");
+    }
 
     let headers = new Headers();
     headers.append("Service-Ticket-Id", "epicom");
@@ -446,6 +453,8 @@ class Post {
     });
 
     if (!response.ok) {
+      console.log(this);
+      console.log(await response.json());
       throw new Error("Failed to reply to post");
     }
 
@@ -459,7 +468,14 @@ class Post {
     const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${this.id}/emotion/like`;
 
     const apiToken = await getApiToken();
+    if (apiToken === undefined) {
+      throw new Error("Failed to get API Token");
+    }
+
     const session = getCurrentUserSession();
+    if (session === undefined) {
+      throw new Error("Failed to get current user session from cookie");
+    }
 
     let headers = new Headers();
     headers.append("Service-Ticket-Id", "epicom");
@@ -472,15 +488,24 @@ class Post {
     if (this.hasLiked) {
       // If has already liked a post, then unlike it.
       response = await fetch(url, { method: "DELETE", headers: headers });
+      this.hasLiked = false;
     } else {
       response = await fetch(url, { method: "PUT", headers: headers });
+      this.hasLiked = true;
     }
 
     if (!response.ok) {
+      console.log(await response.json());
       throw new Error("Failed to like or unlike post");
     }
 
-    const countInfo = await getCountInfo(apiToken);
+    const countInfo = await getCountInfo(
+      this.id,
+      this.webtoonType,
+      this.webtoonId,
+      this.episode,
+      apiToken
+    );
 
     return {
       likes: countInfo.likes,
@@ -495,7 +520,14 @@ class Post {
     const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${this.id}/emotion/dislike`;
 
     const apiToken = await getApiToken();
+    if (apiToken === undefined) {
+      throw new Error("Failed to get API Token");
+    }
+
     const session = getCurrentUserSession();
+    if (session === undefined) {
+      throw new Error("Failed to get current user session from cookie");
+    }
 
     let headers = new Headers();
     headers.append("Service-Ticket-Id", "epicom");
@@ -505,18 +537,27 @@ class Post {
 
     let response;
 
-    if (this.hasLiked) {
+    if (this.hasDisliked) {
       // If has already disliked a post, then undislike it.
       response = await fetch(url, { method: "DELETE", headers: headers });
+      this.hasDisliked = false;
     } else {
       response = await fetch(url, { method: "PUT", headers: headers });
+      this.hasDisliked = true;
     }
 
     if (!response.ok) {
+      console.log(await response.json());
       throw new Error("Failed to dislike or undislike post");
     }
 
-    const countInfo = await getCountInfo(apiToken);
+    const countInfo = await getCountInfo(
+      this.id,
+      this.webtoonType,
+      this.webtoonId,
+      this.episode,
+      apiToken
+    );
 
     return {
       dislikes: countInfo.dislikes,
@@ -525,6 +566,8 @@ class Post {
   }
 
   async delete() {
+    // https://www.webtoons.com/p/api/community/v2/post/GW-epicom:0-c_843910_2-3-4
+    // DELETE http method
     throw new Error("todo");
   }
 
@@ -542,12 +585,16 @@ function replyUrl(id, cursor = "") {
   return `https://www.webtoons.com/p/api/community/v2/post/${id}/child-posts?sort=newest&prevSize=0&nextSize=100&withCursor=true&cursor=${cursor}`;
 }
 
-async function getCountInfo(apiToken) {
-  const pageId = `${this.type}_${this.webtoon_id}_${this.episode}`;
+async function getCountInfo(post, webtoonType, webtoonId, episode, apiToken) {
+  const pageId = `${webtoonType}_${webtoonId}_${episode}`;
 
-  const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${this.id}/emotion/count`;
+  const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${post}/emotion/count`;
 
   const session = getCurrentUserSession();
+
+  if (session === undefined) {
+    throw new Error("Failed to get current user session from cookie");
+  }
 
   let headers = new Headers();
   headers.append("Service-Ticket-Id", "epicom");
@@ -558,6 +605,7 @@ async function getCountInfo(apiToken) {
   const response = await fetch(url, { method: "GET", headers: headers });
 
   if (!response.ok) {
+    console.log(await response.json());
     throw new Error("Failed to get up to date likes and dislikes");
   }
 
@@ -634,7 +682,7 @@ async function getApiToken() {
   // }
   const json = await response.json();
 
-  if (json.result.status !== "success") {
+  if (json.status !== "success") {
     throw new Error(`Fetch to /api-token failed: ${json.error.typeMessage}`);
   }
 
