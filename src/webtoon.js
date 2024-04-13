@@ -113,7 +113,7 @@ const Webtoon = (() => {
 
       let episode = 1;
 
-      while (true) {
+      episodes: while (true) {
         const url = postUrl(this.type, this.id, episode);
 
         const response = await webtoonFetch(url);
@@ -139,6 +139,13 @@ const Webtoon = (() => {
           const url = postUrl(this.type, this.id, episode, next);
 
           const response = await webtoonFetch(url);
+
+          // NOTE: If an episode doesnt exist, then it will return a 404.
+          // This signifies that all available episodes have been gone through.
+          if (response.status === 404) {
+            break episodes;
+          }
+
           const json = await response.json();
 
           json.result.posts.forEach((post) => posts.add(new Post(post)));
