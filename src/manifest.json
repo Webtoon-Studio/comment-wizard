@@ -5,14 +5,14 @@
   "author": "Freiha",
   "manifest_version": 3,
   "icons": {
-    "16": "icons/icon16.png",
-    "32": "icons/icon32.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
   },
   "action": {
-    "default_icon": "icons/icon.png",
-    "default_popup": "popup.html",
+    "default_icon": "assets/icon.png",
+    "default_popup": "popup/index.html",
     "default_title": "Comment Wizard"
   },
   "permissions": ["storage"],
@@ -25,12 +25,7 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "banner/*.png",
-        "inject_*.js",
-        "incomingComments/ic_*.js",
-        "popup.js",
-        "popup.html",
-        "popup.css"
+        "assets/**/*.{js,css}"
       ],
       "matches": ["<all_urls>"],
       "extension_ids": []
