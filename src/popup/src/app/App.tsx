@@ -5,6 +5,10 @@ import Switch from "../common/components/switch";
 export default function App() {
     const [setting, updateSetting] = useSetting();
 
+    const handleSwitchChange = function(key: string, newValue: boolean) {
+        updateSetting(key, newValue);
+    }
+
     return (
         <div 
             className={[
@@ -24,7 +28,10 @@ export default function App() {
                         <ToolTip key={i} width={"280px"} text={el.toolTip}>
                             <div className="flex justify-between px-2 py-1">
                                 <span>{el.desc}</span>
-                                <Switch />
+                                <Switch 
+                                    checked={el.value}
+                                    onChange={(newValue: boolean) => handleSwitchChange(el.key, newValue)}
+                                />
                             </div>
                         </ToolTip>
                     </li>

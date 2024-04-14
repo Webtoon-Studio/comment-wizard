@@ -1,23 +1,31 @@
 import { MouseEvent, ComponentProps, useState, useCallback, ChangeEvent } from "react";
+import useControlled from "@popup/src/common/utils/useControlled";
 
 interface SwitchProps extends Omit<ComponentProps<"div">,"onChange"> {
-    value?: boolean;
+    checked?: boolean;
     onChange?: (newValue: boolean) => void;
 }
 
 export default function Switch(props: SwitchProps) {
-    const {className, value: _value} = props;
-    const [value, setValue] = useState(_value);
+    const {
+        className, 
+        checked: checkedProp, 
+        onChange
+    } = props;
+
+    const [checked, setCheckedState] = useControlled({controlled: checkedProp})
 
     const sizeClass = "w-[40px] h-[20px]"
     const dotSizeClass = "w-[16px] h-[16px]"
 
-    const handleChange = function(event: ChangeEvent) {
-        console.log(event);
-        if (value) {
-            setValue(false);
-        } else {
-            setValue(true);
+    const handleChange = function(event: ChangeEvent<HTMLInputElement>) {
+
+        const newChecked = event.target.checked;
+        
+        setCheckedState(newChecked);
+
+        if (onChange) {
+            onChange(newChecked);
         }
     }
 
@@ -27,7 +35,7 @@ export default function Switch(props: SwitchProps) {
                 <div 
                     className={[
                         sizeClass,
-                        "relative rounded-full border-2 border-gray-200 overflow-clip z-20",
+                        "relative rounded-full border-2 border-gray-200 overflow-clip z-20 cursor-pointer",
                         className,
                     ].join(" ")}
                 >
@@ -35,17 +43,17 @@ export default function Switch(props: SwitchProps) {
                         className={[
                             dotSizeClass,
                             "absolute bg-white rounded-full transition duration-300 z-10",
-                            value ? "translate-x-[20px]" : "",
+                            checked ? "translate-x-[20px]" : "",
                         ].join(" ")}
                     />
                     <div 
                         className={[
                             "absolute inset-0",
-                            value ? "bg-webtoon" : "bg-gray-300",
+                            checked ? "bg-webtoon" : "bg-gray-300",
                         ].join(" ")}
                     />
                 </div>
-                <input type="checkbox" className="hidden" checked={value} onChange={handleChange} />
+                <input type="checkbox" className="hidden" checked={checked} onChange={handleChange} />
             </label>
         </div>
     )
