@@ -15,7 +15,7 @@ root.render(
     <React.StrictMode>
         {import.meta.env.DEV ? (
             <DevConsole />
-        ) : null}
+        ) : <DevConsole embedded />}
         <App />
     </React.StrictMode>
 )
