@@ -58,6 +58,7 @@ const defaultSetting: ISetting[] = [
 ];
 
 async function loadSetting(): Promise<ISetting[]> {
+    console.log("Loading Setting");
     if (import.meta.env.DEV || !chrome.storage) {
         const storedItem = localStorage.getItem(STORAGE_SETTING_NAME);
         if (storedItem) {
@@ -86,6 +87,7 @@ async function loadSetting(): Promise<ISetting[]> {
 }
 
 function saveSetting(setting: ISetting[]) {
+    console.log("Saving Setting");
     if (import.meta.env.DEV || !chrome.storage) {
         localStorage.setItem(STORAGE_SETTING_NAME, JSON.stringify(setting));
     } else {
@@ -98,7 +100,9 @@ function saveSetting(setting: ISetting[]) {
 export function useSetting() {
     const [setting, setSetting] = useState<ISetting[]|null>(null);
 
-    loadSetting().then(loaded => setSetting(loaded));
+    useEffect(() => {
+        loadSetting().then(loaded => setSetting(loaded));
+    }, []);
 
     const updateSetting = (key: string, value: boolean) => {
         if (setting) {
@@ -112,8 +116,6 @@ export function useSetting() {
             saveSetting(newSetting);
         }
     }
-
-
 
     return [setting, updateSetting] as const;
 }
