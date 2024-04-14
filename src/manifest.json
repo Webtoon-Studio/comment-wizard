@@ -15,7 +15,7 @@
     "default_popup": "popup/index.html",
     "default_title": "Comment Wizard"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "activeTab", "scripting"],
   "content_scripts": [
     {
       "matches": ["https://www.webtoons.com/*"],
@@ -28,9 +28,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": [
-        "assets/**/*.{js,css}"
-      ],
+      "resources": ["assets/**/*.{js,css}"],
       "matches": ["https://www.webtoons.com/*"]
     }
   ],
