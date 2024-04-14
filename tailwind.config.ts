@@ -2,8 +2,8 @@ import defaultTheme from 'tailwindcss/defaultTheme';
 
 export default {
   content: [
-    "./src/popup/index.html",
-    "./src/popup/**/*.{js,ts,jsx,tsx}",
+    "./popup/index.html",
+    "./popup/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
