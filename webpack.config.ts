@@ -22,6 +22,7 @@ const config: webpack.Configuration = {
         path: resolve(__dirname, 'dist'),
         // clean: true
     },
+    devtool: false,
     cache: true,
     plugins: [
       new CopyPlugin({
