@@ -4,6 +4,8 @@ import ReactDOM from "react-dom/client";
 import "./index.css";
 
 import App from "@popup/src/app/App";
+import DevConsole from "@popup/src/_dev/DevConsole";
+
 
 const root = ReactDOM.createRoot(
     document.getElementById("root") as HTMLElement
@@ -11,6 +13,9 @@ const root = ReactDOM.createRoot(
 
 root.render(
     <React.StrictMode>
+        {import.meta.env.DEV ? (
+            <DevConsole />
+        ) : null}
         <App />
     </React.StrictMode>
 )
