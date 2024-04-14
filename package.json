@@ -6,6 +6,7 @@
   "description": "Source code for extension published in webstore including build scripts.",
   "scripts": {
     "dev": "vite",
+    "build": " vite build & webpack",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
     "prepare": "husky install",
