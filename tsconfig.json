@@ -7,9 +7,9 @@
       "skipLibCheck": true,
   
       /* Path Options */
-      "baseUrl": "./src",
+      "baseUrl": "",
       "paths": {
-        "@root/*": ["../*"],
+        "@root/*": ["*"],
         "@popup/*": ["popup/*"],
     //     "@dashboard/*": ["dashboard/*"],
     //     "@guide/*": ["guide/*"],
@@ -30,7 +30,7 @@
       "noUnusedParameters": true,
       "noFallthroughCasesInSwitch": true
     },
-    "include": ["src"],
+    "include": ["src", "popup"],
     "references": [{ "path": "./tsconfig.node.json" }],
   }
   
