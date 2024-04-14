@@ -113,7 +113,7 @@ const Webtoon = (() => {
 
       let episode = 1;
 
-      while (true) {
+      episodes: while (true) {
         const url = postUrl(this.type, this.id, episode);
 
         const response = await webtoonFetch(url);
@@ -139,9 +139,88 @@ const Webtoon = (() => {
           const url = postUrl(this.type, this.id, episode, next);
 
           const response = await webtoonFetch(url);
+
+          // NOTE: If an episode doesnt exist, then it will return a 404.
+          // This signifies that all available episodes have been gone through.
+          if (response.status === 404) {
+            break episodes;
+          }
+
           const json = await response.json();
 
           json.result.posts.forEach((post) => posts.add(new Post(post)));
+
+          next = json.result.pagination.next;
+        }
+
+        episode += 1;
+      }
+
+      return [...posts].sort((a, b) => b.createdAt - a.createdAt);
+    }
+
+    async getTodaysOrNewestPosts() {
+      let today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+
+      let posts = new Set();
+
+      let episode = 1;
+
+      episodes: while (true) {
+        const url = postUrl(this.type, this.id, episode);
+
+        const response = await webtoonFetch(url);
+
+        // NOTE: If an episode doesnt exist, then it will return a 404.
+        // This signifies that all available episodes have been gone through.
+        if (response.status === 404) {
+          break;
+        }
+
+        const json = await response.json();
+
+        if (json.status === "fail") {
+          console.log(json);
+          throw new Error("Failed to get posts from api: " + json.error);
+        }
+
+        let found = false;
+        let added_at_least_first_post = false;
+
+        for (let post of json.result.posts) {
+          if (post.createdAt >= today.getTime() || !added_at_least_first_post) {
+            posts.add(new Post(post));
+            added_at_least_first_post = true;
+          }
+
+          found = true;
+          break;
+        }
+
+        let next = json.result.pagination.next;
+
+        while (next !== undefined && !found) {
+          const url = postUrl(this.type, this.id, episode, next);
+
+          const response = await webtoonFetch(url);
+
+          // NOTE: If an episode doesnt exist, then it will return a 404.
+          // This signifies that all available episodes have been gone through.
+          if (response.status === 404) {
+            break episodes;
+          }
+
+          const json = await response.json();
+
+          for (let post of json.result.posts) {
+            if (post.createdAt >= today.getTime()) {
+              posts.add(new Post(post));
+            }
+
+            found = true;
+            break episodes;
+          }
 
           next = json.result.pagination.next;
         }

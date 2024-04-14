@@ -213,3 +213,33 @@ test.skip(
   // milliseconds
   60 * 1000
 );
+
+test(
+  "Should get only comments from midnight today UTC",
+  async () => {
+    const webtoon = await Webtoon.fromUrl(
+      "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
+    );
+
+    const posts = await webtoon.getTodaysOrNewestPosts();
+
+    await new Promise((r) => setTimeout(r, 2000));
+
+    // // Posts come out sorted from most recent to latest, this reverses that order.
+    // posts.sort((a, b) => a.createdAt - b.createdAt);
+
+    expect(posts[0].body).toBe("Test comment for Ryan😘😘😘😘😘");
+    expect(posts[0].username).toBe("Jenny-Toons");
+    expect(posts[0].createdAt).toBe(1712979386160);
+    expect(posts[0].id).toBe("GW-epicom:0-c_843910_4-3");
+    expect(posts[0].isCreator).toBe(true);
+    expect(posts[0].isOwner).toBe(false);
+    expect(posts[0].userProfile).toBe("JennyToons");
+    expect(posts[0].userId).toBe("df58b8b0-9887-11e7-8385-000000000360");
+    expect(posts[0].replies).toBe(0);
+    expect(posts[0].likes).toBe(0);
+    expect(posts[0].dislikes).toBe(0);
+  },
+  // milliseconds
+  60 * 1000
+);
