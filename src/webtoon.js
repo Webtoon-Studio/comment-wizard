@@ -294,7 +294,7 @@ const Webtoon = (() => {
       while (true && !did.reach_end) {
         let episode_posts = await this.getNewestPostsForEpisode(
           episode,
-          prev_newest_map.push(episode)
+          prev_newest_map.get(episode),
         );
 
         episode_posts.forEach((post) => posts.add(post));
