@@ -66,6 +66,7 @@ function hideDeleteButtons() {
 }
 
 function reorderHeader() {
+    // TODO: Fix
     const buttonsTopRight = document.getElementsByClassName("sta");
     if (buttonsTopRight && buttonsTopRight.length !== 0) {
         const lk_creators =
