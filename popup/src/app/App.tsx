@@ -1,6 +1,6 @@
 import { useSetting } from "@popup/src/services/setting"
 import ToolTip from "@popup/src/common/components/toolTip";
-import Switch from "../common/components/switch";
+import Switch from "@popup/src/common/components/switch";
 
 export default function App() {
     const [setting, updateSetting] = useSetting();
