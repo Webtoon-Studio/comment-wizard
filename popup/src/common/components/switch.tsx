@@ -5,6 +5,7 @@ import {
   useCallback,
   useMemo,
   useId,
+  useContext,
 } from "react";
 import useControlled from "@popup/src/common/utils/useControlled";
 import {
@@ -17,6 +18,7 @@ import {
   Rgb,
   twColor,
 } from "@popup/src/common/utils/colorHelper";
+import { ThemeContext } from "../context/ThemeProvider";
 
 export interface SwitchProps
   extends Omit<ComponentProps<"div">, "color" | "onChange"> {
@@ -41,6 +43,7 @@ export default function Switch(props: SwitchProps) {
   } = props;
 
   const id = useId();
+  const { mode } = useContext(ThemeContext);
   const [checked, setCheckedState] = useControlled({ controlled: checkedProp });
 
   const color: IComponentColor = getComponentColor(colorProp);
@@ -100,15 +103,24 @@ export default function Switch(props: SwitchProps) {
           id={`switch-container-${id}`}
           className={[
             containerSizeClassMap[size],
-            "relative flex items-center rounded-full border-[2px] border-gray-200 overflow-clip z-20 cursor-pointer",
+            "relative flex items-center rounded-full border-[2px] overflow-clip z-20 cursor-pointer",
             className,
           ].join(" ")}
+          style={{
+            borderColor: checked
+              ? mode === "dark"
+                ? color.dark
+                : color.default
+              : mode === "dark"
+              ? twColor.gray[400]
+              : twColor.gray[200],
+          }}
         >
           <div
             id={`switch-dot-${id}`}
             className={[
               dotSizeClassMap[size],
-              "absolute bg-white rounded-full transition duration-300 z-10 overflow-clip",
+              "absolute top-0 bottom-0 bg-white rounded-full transition duration-300 z-10 overflow-clip",
               "flex justify-center items-center",
               checked ? translateClassMap[size] : "",
             ].join(" ")}
@@ -117,9 +129,15 @@ export default function Switch(props: SwitchProps) {
           </div>
           <div
             id={`switch-track-${id}`}
-            className={["absolute inset-0"].join(" ")}
+            className={["absolute inset-[-1px]"].join(" ")}
             style={{
-              backgroundColor: checked ? color.default : twColor.gray.light,
+              backgroundColor: checked
+                ? mode === "dark"
+                  ? color.dark
+                  : color.default
+                : mode === "dark"
+                ? twColor.gray[500]
+                : twColor.gray[200],
             }}
           />
         </div>

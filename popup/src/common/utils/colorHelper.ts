@@ -2,7 +2,7 @@ import { ComponentColorType, IComponentColor } from "@popup/src/interface";
 import twConfig from "@root/tailwind.config";
 import resolveConfig from "tailwindcss/resolveConfig";
 
-export const twColor = resolveConfig(twConfig).theme.colors;
+const twColor = resolveConfig(twConfig).theme.colors;
 
 interface IRgb extends Object {
   r: number;
@@ -12,6 +12,7 @@ interface IRgb extends Object {
   light: () => Rgb;
   dark: () => Rgb;
   getContrastText: () => Rgb;
+  getInverse: () => Rgb;
 }
 
 export class Rgb implements IRgb {
@@ -55,6 +56,13 @@ export class Rgb implements IRgb {
   getContrastText(): Rgb {
     const brightness = (this.r + this.b + this.g) / 255;
     return brightness > 128 ? new Rgb(0, 0, 0) : new Rgb(255, 255, 255);
+  }
+
+  getInverse(): Rgb {
+    const iR = 255 - this.r;
+    const iG = 255 - this.g;
+    const iB = 255 - this.b;
+    return new Rgb(iR, iG, iB);
   }
 
   isPrototypeOf(v: Object): boolean {
@@ -109,3 +117,27 @@ export function getComponentColor(
       };
   }
 }
+
+export function convertHexToRgb(hex: string): Rgb | null {
+  // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+  var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+  hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+    return r + r + g + g + b + b;
+  });
+
+  var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? new Rgb(
+        parseInt(result[1], 16),
+        parseInt(result[2], 16),
+        parseInt(result[3], 16)
+      )
+    : null;
+}
+
+export function getInverseColorHex(hex: string): string {
+  const rgb = convertHexToRgb(hex);
+  return rgb ? rgb.getInverse().toHex() : "#000";
+}
+
+export { twColor };

@@ -5,17 +5,17 @@ import "./index.css";
 
 import App from "@popup/src/app/App";
 import DevConsole from "@popup/src/_dev/DevConsole";
-
+import ThemeProvider from "@popup/src/common/context/ThemeProvider";
 
 const root = ReactDOM.createRoot(
-    document.getElementById("root") as HTMLElement
+  document.getElementById("root") as HTMLElement
 );
 
 root.render(
-    <React.StrictMode>
-        {import.meta.env.DEV ? (
-            <DevConsole />
-        ) : <DevConsole embedded />}
-        <App />
-    </React.StrictMode>
-)
+  <React.StrictMode>
+    <ThemeProvider>
+      {import.meta.env.DEV ? <DevConsole /> : <DevConsole embedded />}
+      <App />
+    </ThemeProvider>
+  </React.StrictMode>
+);
