@@ -214,7 +214,7 @@ function modifySubCount(round) {
 }
 
 async function main() {
-  const url = document.location.url;
+  const url = document.location.href;
 
   const reWebtoons = new RegExp(/^https\:\/\/www\.webtoons\.com\/.*$/, "i");
   const reComments = new RegExp(
