@@ -6,5 +6,18 @@ export interface ISetting {
   toolTip?: string;
 }
 
+export interface IComponentColor {
+  iType: "componentColor";
+  default: string;
+  dark: string;
+  light: string;
+  contrastText: string;
+}
+
 export type ComponentSizeType = "small" | "medium" | "large";
-export type ComponentColorType = "default" | "disabled" | "gray" | "none";
+export type ComponentColorType =
+  | "default"
+  | "disabled"
+  | "gray"
+  | "none"
+  | IComponentColor;

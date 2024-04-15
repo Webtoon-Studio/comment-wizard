@@ -7,10 +7,19 @@ import {
   useId,
 } from "react";
 import useControlled from "@popup/src/common/utils/useControlled";
-import { ComponentColorType, ComponentSizeType } from "@popup/src/interface";
-import { getColorClass } from "../utils/colorHelper";
+import {
+  ComponentColorType,
+  ComponentSizeType,
+  IComponentColor,
+} from "@popup/src/interface";
+import {
+  getComponentColor,
+  Rgb,
+  twColor,
+} from "@popup/src/common/utils/colorHelper";
 
-export interface SwitchProps extends Omit<ComponentProps<"div">, "onChange"> {
+export interface SwitchProps
+  extends Omit<ComponentProps<"div">, "color" | "onChange"> {
   size?: ComponentSizeType;
   color?: ComponentColorType;
   checked?: boolean;
@@ -25,7 +34,7 @@ export default function Switch(props: SwitchProps) {
     checked: checkedProp,
     onChange,
     size = "medium",
-    color = "default",
+    color: colorProp = "default",
     startIcon,
     endIcon,
     ...others
@@ -33,6 +42,8 @@ export default function Switch(props: SwitchProps) {
 
   const id = useId();
   const [checked, setCheckedState] = useControlled({ controlled: checkedProp });
+
+  const color: IComponentColor = getComponentColor(colorProp);
 
   const containerSizeClassMap: { [key in ComponentSizeType]: string } = {
     small: "w-[36px] h-[18px]",
@@ -62,11 +73,6 @@ export default function Switch(props: SwitchProps) {
     }
   };
 
-  const trackColorClass = useMemo(
-    () => getColorClass(checked ? color : "disabled"),
-    [checked]
-  );
-
   const DotIcon = useCallback(() => {
     const dotIconSizeMap: { [key in ComponentSizeType]: string } = {
       small: "h-[14px]",
@@ -89,7 +95,7 @@ export default function Switch(props: SwitchProps) {
 
   return (
     <div {...others} id={`switch-root-${id}`} className="flex items-center">
-      <label id={`switch-label-${id}`}>
+      <label id={`switch-label-${id}`} htmlFor={`switch-input-${id}`}>
         <div
           id={`switch-container-${id}`}
           className={[
@@ -111,12 +117,17 @@ export default function Switch(props: SwitchProps) {
           </div>
           <div
             id={`switch-track-${id}`}
-            className={["absolute inset-0", trackColorClass].join(" ")}
+            className={["absolute inset-0"].join(" ")}
+            style={{
+              backgroundColor: checked ? color.default : twColor.gray.light,
+            }}
           />
         </div>
         <input
           id={`switch-input-${id}`}
           type="checkbox"
+          title={`switch-input`}
+          aria-label="switch-input"
           className="hidden"
           checked={checked}
           onChange={handleChange}
