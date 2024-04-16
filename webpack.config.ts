@@ -15,6 +15,19 @@ const config: webpack.Configuration = {
     worker: "./src/worker.js",
     webtoon: "./src/webtoon.js",
     content: "./src/content.js",
+    inject: "./src/inject.js",
+  },
+  module: {
+    rules: [
+      {
+        test: /inject\.(js|jsx)$/,
+        exclude: /node_modules/,
+        use: ["babel-loader"],
+      },
+    ],
+  },
+  resolve: {
+    extensions: ["*", ".js", ".jsx"],
   },
   output: {
     filename: "[name].js",

@@ -45,6 +45,23 @@ async function getSetting() {
   }
 }
 
+function createScript(props) {
+  const { path, type } = props;
+  if (!path) {
+    throw new Error(
+      "invalid args! Did you perhaps forget to add 'path' to args?"
+    );
+  }
+  if (chrome.runtime) {
+    const url = chrome.runtime.getURL(path);
+    const s = document.createElement("script");
+    s.src = url;
+    s.type = type === "module" ? type : "";
+    return s;
+  }
+  return null;
+}
+
 function modifyCommentsMenu(inject) {
   // Parameters
   //    - inject: boolean
@@ -90,10 +107,33 @@ function modifyCommentsMenu(inject) {
   }
 }
 
-function injectIncomingComments() {
-  // Inject menu item
-  modifyCommentsMenu();
-  // Inject tab item
+function modifyMyComments(inject) {
+  // Parameters
+  //    - inject: boolean
+
+  // Main container for default comments section
+  const commentArea = document.getElementById("commentArea");
+
+  // Empty comments section
+  //    Should have style.display = 'none'
+  const emptyList = document.getElementById("emptyList");
+
+  const isEmpty = emptyList.style.display !== "none";
+
+  const inCommentRoot = document.createElement("div");
+  inCommentRoot.id = "cs-in-comment-root";
+
+  emptyList.parentElement.insertBefore(inCommentRoot, emptyList);
+
+  const script = createScript({
+    path: "inject.js",
+    type: "module",
+  });
+
+  if (script) {
+    document.head.append(script);
+    console.log("Script is injected.");
+  }
 }
 
 function modifyDeleteButtons(hide) {
@@ -213,6 +253,9 @@ function modifySubCount(round) {
   }
 }
 
+function injectIncomingComments() {
+  // Inject tab item
+}
 async function main() {
   const url = document.location.href;
 
@@ -240,13 +283,9 @@ async function main() {
     modifyDeleteButtons(setting.hideDelete);
   }
 
-  // if (url.match(reComments)) {
-  //   chrome.scripting.executeScript({
-  //     target: { tabId },
-  //     func: incomingComments,
-  //     args: [setting.incomingComments]
-  //   });
-  // }
+  if (url.match(reComments)) {
+    modifyMyComments(setting.incomingComments);
+  }
 }
 
 window.onload = async () => {
