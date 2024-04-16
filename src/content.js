@@ -5,7 +5,6 @@
 const STORAGE_SETTING_NAME = "cs_settings";
 let setting = {
   incomingComments: true,
-  authToken: false,
   hideDelete: true,
   reorderHeader: false,
   hideRating: false,
