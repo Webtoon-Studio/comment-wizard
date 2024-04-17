@@ -10,7 +10,9 @@
     "baseUrl": "",
     "paths": {
       "@root/*": ["*"],
-      "@popup/*": ["popup/*"]
+      "@assets/*": ["src/assets/*"],
+      "@popup/*": ["popup/*"],
+      "@incom/*": ["src/incom/*"]
       //     "@dashboard/*": ["dashboard/*"],
       //     "@guide/*": ["guide/*"],
       //     "@/*": ["*"],
