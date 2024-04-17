@@ -1,7 +1,9 @@
-// =====================NOTE===================== //
-// Make sure to sync this with popup > setting.ts //
-// TODO: globalize these to share with popup      //
-// ---------------------------------------------- //
+"use strict";
+
+// ================================= NOTE ================================= //
+// Make sure to sync this with popup > setting.ts                           //
+// TODO: globalize these to share with popup                                //
+// ------------------------------------------------------------------------ //
 const STORAGE_SETTING_NAME = "cs_settings";
 let setting = {
   incomingComments: true,
@@ -10,7 +12,7 @@ let setting = {
   hideRating: false,
   roundSub: false,
 };
-// ============================================== //
+// ======================================================================== //
 
 async function getSetting() {
   const parseItem = (item) => {
@@ -61,9 +63,27 @@ function createScript(props) {
   return null;
 }
 
+function createCss(props) {
+  const { path } = props;
+  if (!path) {
+    throw new Error(
+      "invalid args! Did you perhaps forget to add 'path' to args?"
+    );
+  }
+  if (chrome.runtime) {
+    const href = chrome.runtime.getURL(path);
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = href;
+    return l;
+  }
+  return null;
+}
+
 function modifyCommentsMenu(inject) {
   // Parameters
   //    - inject: boolean
+
   const menuId = "layerMy";
 
   const menu = document.getElementById(menuId);
@@ -110,19 +130,139 @@ function modifyMyComments(inject) {
   // Parameters
   //    - inject: boolean
 
+  // Function for creating elements recursively
+  const createElement = function (tag, options = {}) {
+    const { id, className, innerText, style, onClick, children, ...others } =
+      options;
+
+    const elem = document.createElement(tag);
+
+    if (id) {
+      elem.id = id;
+    }
+    if (className) {
+      elem.id = className;
+    }
+    if (innerText) {
+      elem.innerText = innerText;
+    }
+    if (style) {
+      Object.keys(style).forEach((key) => {
+        elem.style.setProperty(key, style[key]);
+      });
+    }
+    if (onClick) {
+      if (typeof onClick === "function") {
+        elem.onclick = onClick;
+      } else {
+        throw new Error("invalid 'onClick' prop. Must be a function!");
+      }
+    }
+
+    Object.keys(others).forEach((otherKey) => {
+      elem.setAttribute(otherKey, others[otherKey]);
+    });
+
+    if (children && !innerText) {
+      if (Array.isArray(children)) {
+        for (let i = 0; i < children.length; i++) {
+          elem.appendChild(children[i]);
+        }
+      } else {
+        throw new Error("invalid 'children' prop. Must be an array!");
+      }
+    }
+    return elem;
+  };
+
+  // Function for changing tab
+  const handleTabChange = function (index) {
+    const tabs = document.getElementsByClassName("cs-comment-tab-span");
+    const contents = document.getElementsByClassName("cs-comment-tab-content");
+
+    // Change tab
+    for (let tabi = 0; tabi < tabs.length; tabi++) {
+      if (tabi === index) {
+        tabs.item(tabi)?.classList.add("current-tab");
+      } else {
+        tabs.item(tabi)?.classList.remove("current-tab");
+      }
+    }
+
+    // Change content
+    for (let conti = 0; conti < contents.length; conti++) {
+      const content = contents.item(conti);
+      if (content && content.hasAttribute("tab-id")) {
+        const tabi = parseInt(content.getAttribute("tab-id"));
+        if (tabi === index) {
+          content.classList.remove("hidden");
+        } else {
+          content.classList.add("hidden");
+        }
+      }
+    }
+  };
+
+  // Inject css file used for injected react content
+  const css = createCss({ path: "assets/inject.css" });
+  document.head.appendChild(css);
+
+  // Inject Tabs (non-react)
+  const content = document.getElementById("content");
+  const contentTabs = content.children.item(1);
+  const commentTabs = createElement("div", {
+    id: "cs-comment-tabs-root",
+    "tab-id": 0,
+    children: [
+      createElement("ul", {
+        id: "cs-comment-tabs-wrapper",
+        children: [
+          ...["outgoing", "incoming"].map((v, i) =>
+            createElement("li", {
+              id: `cs-comment-tab-${v}`,
+              class: "cs-comment-tab",
+              children: [
+                createElement("span", {
+                  id: `cs-comment-tab-${v}-span`,
+                  class: `cs-comment-tab-span ${
+                    i === 0 ? "current-tab" : ""
+                  }`.trimEnd(),
+                  onClick: () => handleTabChange(i),
+                  innerText: v.toUpperCase(),
+                }),
+              ],
+            })
+          ),
+        ],
+      }),
+    ],
+  });
+
+  if (contentTabs) {
+    contentTabs.after(commentTabs);
+  }
+
   // Main container for default comments section
   const commentArea = document.getElementById("commentArea");
 
   // Empty comments section
   //    Should have style.display = 'none'
   const emptyList = document.getElementById("emptyList");
-
   const isEmpty = emptyList.style.display !== "none";
+
+  if (!isEmpty) {
+    commentArea.classList.add("cs-comment-tab-content");
+    commentArea.setAttribute("tab-id", "0");
+  }
 
   const inCommentRoot = document.createElement("div");
   inCommentRoot.id = "cs-in-comment-root";
+  inCommentRoot.classList.add(...(commentArea?.classList || []));
+  inCommentRoot.classList.add("cs-comment-tab-content", "hidden");
+  inCommentRoot.setAttribute("tab-id", "1");
 
-  emptyList.parentElement.insertBefore(inCommentRoot, emptyList);
+  // Inject incoming commnet root after the default comments section
+  commentArea.after(inCommentRoot);
 
   const script = createScript({
     path: "inject.js",
