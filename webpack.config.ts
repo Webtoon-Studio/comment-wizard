@@ -1,38 +1,53 @@
 import { resolve } from "path";
 import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugion from "mini-css-extract-plugin";
-import webpack from "webpack";
+import { Configuration } from "webpack";
 import pjson from "./package.json";
+import { TbFlagSearch } from "react-icons/tb";
 
-const transform = (content: Buffer, absoluteFrom: string) => {
+// content, absoluteFrom
+const transform = (content: Buffer, _: string) => {
   var manifest = JSON.parse(content.toString());
   manifest.version = pjson.version; // version control from one source
   var transformed = JSON.stringify(manifest, null, 2);
   return transformed;
 };
 
-const config: webpack.Configuration = {
+const config: Configuration = {
+  context: resolve(__dirname, "src"),
   entry: {
-    worker: "./src/worker.js",
-    webtoon: "./src/webtoon.js",
-    content: "./src/content.js",
-    inject: "./src/inject.js",
+    worker: "./worker.js",
+    webtoon: "./webtoon.js",
+    content: "./content.js",
+    incom: "./incom/index.tsx",
   },
   module: {
     rules: [
       {
-        test: /(inject|content)\.(js|jsx)$/,
-        exclude: /node_modules/,
+        test: /incom\\.+\.tsx?$/,
+        exclude: [/node_modules/],
+        use: [
+          {
+            loader: "ts-loader",
+            options: {
+              transpileOnly: true,
+            },
+          },
+        ],
+      },
+      {
+        test: /\.jsx?$/,
+        exclude: [/node_modules/],
         use: ["babel-loader"],
       },
       {
-        test: /inject\.css$/,
+        test: /\.css$/,
         use: [MiniCssExtractPlugion.loader, "css-loader", "postcss-loader"],
       },
     ],
   },
   resolve: {
-    extensions: ["*", ".js", ".jsx"],
+    extensions: [".js", ".jsx", ".ts", ".tsx"],
   },
   output: {
     filename: "[name].js",
@@ -49,14 +64,13 @@ const config: webpack.Configuration = {
     new CopyPlugin({
       patterns: [
         {
-          from: "src/manifest.json",
+          from: "manifest.json",
           to: "manifest.json",
           transform,
         },
         {
           from: "assets/*",
           to: "[path][name][ext]",
-          context: "src",
           globOptions: {
             gitignore: true,
             ignore: ["**/*.(js|css)"],
