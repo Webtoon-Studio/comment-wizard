@@ -26,7 +26,7 @@ export default function ToolTip(props: ToolTipProps) {
     [popperRef, open]
   );
 
-  const handleMouseLeave = function (event: MouseEvent) {
+  const handleMouseLeave = function (_: MouseEvent) {
     if (open) {
       setOpen(false);
     }

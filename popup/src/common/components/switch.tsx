@@ -3,7 +3,6 @@ import {
   ChangeEvent,
   ReactElement,
   useCallback,
-  useMemo,
   useId,
   useContext,
 } from "react";
@@ -15,7 +14,6 @@ import {
 } from "@popup/src/interface";
 import {
   getComponentColor,
-  Rgb,
   twColor,
 } from "@popup/src/common/utils/colorHelper";
 import { ThemeContext } from "../context/ThemeProvider";

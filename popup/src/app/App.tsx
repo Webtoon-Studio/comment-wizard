@@ -5,11 +5,9 @@ import Button from "@popup/src/common/components/button";
 import ThemeSwitch from "@popup/src/features/components/themeSwitch";
 
 import { FaGear } from "react-icons/fa6";
-import { useContext } from "react";
-import { ThemeContext } from "../common/context/ThemeProvider";
 
 export default function App() {
-  const { mode } = useContext(ThemeContext);
+  // const { mode } = useContext(ThemeContext);
   const [setting, updateSetting] = useSetting();
 
   const handleSwitchChange = function (key: string, newValue: boolean) {

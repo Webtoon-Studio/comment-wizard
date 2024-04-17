@@ -1,10 +1,4 @@
-import {
-  Children,
-  Component,
-  ComponentProps,
-  useContext,
-  useState,
-} from "react";
+import { ComponentProps, useContext, useState } from "react";
 import { ComponentColorType } from "@popup/src/interface";
 import {
   getComponentColor,
