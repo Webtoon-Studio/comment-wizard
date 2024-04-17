@@ -33,7 +33,7 @@
         "assets/popup/*.js",
         "assets/*.js",
         "assets/*.css",
-        "inject.js"
+        "incom.js"
       ],
       "matches": ["https://www.webtoons.com/*"]
     }

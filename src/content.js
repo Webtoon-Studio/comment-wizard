@@ -1,5 +1,7 @@
 "use strict";
 
+import "./assets/content.css";
+
 // ================================= NOTE ================================= //
 // Make sure to sync this with popup > setting.ts                           //
 // TODO: globalize these to share with popup                                //
@@ -132,8 +134,16 @@ function modifyMyComments(inject) {
 
   // Function for creating elements recursively
   const createElement = function (tag, options = {}) {
-    const { id, className, innerText, style, onClick, children, ...others } =
-      options;
+    const {
+      id,
+      class: classProp,
+      className,
+      innerText,
+      style,
+      onClick,
+      children,
+      ...others
+    } = options;
 
     const elem = document.createElement(tag);
 
@@ -141,7 +151,10 @@ function modifyMyComments(inject) {
       elem.id = id;
     }
     if (className) {
-      elem.id = className;
+      elem.className = className;
+    }
+    if (classProp) {
+      elem.className = classProp;
     }
     if (innerText) {
       elem.innerText = innerText;
@@ -182,10 +195,15 @@ function modifyMyComments(inject) {
 
     // Change tab
     for (let tabi = 0; tabi < tabs.length; tabi++) {
-      if (tabi === index) {
-        tabs.item(tabi)?.classList.add("current-tab");
-      } else {
-        tabs.item(tabi)?.classList.remove("current-tab");
+      const t = tabs.item(tabi);
+      if (t) {
+        if (tabi === index) {
+          // tabs.item(tabi)?.classList.add("current-tab");
+          t.setAttribute("data-selected", "true");
+        } else {
+          // tabs.item(tabi)?.classList.remove("current-tab");
+          t.setAttribute("data-selected", "false");
+        }
       }
     }
 
@@ -204,7 +222,7 @@ function modifyMyComments(inject) {
   };
 
   // Inject css file used for injected react content
-  const css = createCss({ path: "assets/inject.css" });
+  const css = createCss({ path: "assets/content.css" });
   document.head.appendChild(css);
 
   // Inject Tabs (non-react)
@@ -212,21 +230,26 @@ function modifyMyComments(inject) {
   const contentTabs = content.children.item(1);
   const commentTabs = createElement("div", {
     id: "cs-comment-tabs-root",
-    "tab-id": 0,
+    className: "border-b-2px border-[#eaeaea] bg-white/50",
     children: [
       createElement("ul", {
         id: "cs-comment-tabs-wrapper",
+        className: "flex justify-center items-stretch mx-auto gap-[60px]",
         children: [
           ...["outgoing", "incoming"].map((v, i) =>
             createElement("li", {
               id: `cs-comment-tab-${v}`,
-              class: "cs-comment-tab",
+              class: "cs-comment-tab text-center",
               children: [
                 createElement("span", {
                   id: `cs-comment-tab-${v}-span`,
-                  class: `cs-comment-tab-span ${
-                    i === 0 ? "current-tab" : ""
-                  }`.trimEnd(),
+                  className: [
+                    "cs-comment-tab-span",
+                    "block px-[5px] text-[#bbb] font-medium leading-[70px] text-[15px] cursor-pointer",
+                    "hover:text-[#000]",
+                    "data-[selected=true]:border-b-2 data-[selected=true]:border-black data-[selected=true]:text-[#000]",
+                  ].join(" "),
+                  "data-selected": i === 0,
                   onClick: () => handleTabChange(i),
                   innerText: v.toUpperCase(),
                 }),
@@ -265,7 +288,7 @@ function modifyMyComments(inject) {
   commentArea.after(inCommentRoot);
 
   const script = createScript({
-    path: "inject.js",
+    path: "incom.js",
     type: "module",
   });
 
