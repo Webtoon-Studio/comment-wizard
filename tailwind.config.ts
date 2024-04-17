@@ -6,7 +6,11 @@ const darkMode: DarkModeConfig = "selector";
 export default {
   ...defaultTheme,
   darkMode,
-  content: ["./popup/index.html", "./popup/**/*.{js,ts,jsx,tsx}"],
+  content: [
+    "./popup/index.html",
+    "./popup/**/*.{js,ts,jsx,tsx}",
+    "./src/*.{js,ts}",
+  ],
   theme: {
     extend: {
       colors: {

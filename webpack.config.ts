@@ -1,5 +1,6 @@
 import { resolve } from "path";
 import CopyPlugin from "copy-webpack-plugin";
+import MiniCssExtractPlugion from "mini-css-extract-plugin";
 import webpack from "webpack";
 import pjson from "./package.json";
 
@@ -20,9 +21,13 @@ const config: webpack.Configuration = {
   module: {
     rules: [
       {
-        test: /inject\.(js|jsx)$/,
+        test: /(inject|content)\.(js|jsx)$/,
         exclude: /node_modules/,
         use: ["babel-loader"],
+      },
+      {
+        test: /inject\.css$/,
+        use: [MiniCssExtractPlugion.loader, "css-loader", "postcss-loader"],
       },
     ],
   },
@@ -37,6 +42,10 @@ const config: webpack.Configuration = {
   devtool: false,
   cache: true,
   plugins: [
+    new MiniCssExtractPlugion({
+      filename: "./assets/[name].css",
+      // chunkFilename: "./assets/inject.css"
+    }),
     new CopyPlugin({
       patterns: [
         {
@@ -50,7 +59,7 @@ const config: webpack.Configuration = {
           context: "src",
           globOptions: {
             gitignore: true,
-            ignore: ["**/*.js"],
+            ignore: ["**/*.(js|css)"],
           },
         },
       ],
