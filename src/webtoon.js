@@ -420,6 +420,10 @@ function postUrl(type, webtoon, episode, cursor = "") {
 // }
 class Post {
   constructor(raw) {
+    if (raw === undefined) {
+      return;
+    }
+
     const splits = raw.pageId.split("_");
 
     const webtoonType = splits[0];
@@ -659,6 +663,31 @@ class Post {
   async block() {
     throw new Error("todo");
   }
+
+  static fromCached(obj) {
+    let post = new Post();
+
+    post.webtoonType = obj.webtoonId;
+    post.webtoonId = obj.webtoonId;
+    post.userProfile = obj.userProfile;
+    post.username = obj.username;
+    post.userId = obj.userId;
+    post.id = obj.id;
+    post.rootId = obj.rootId;
+    post.isCreator = obj.isCreator;
+    post.isOwner = obj.isOwner;
+    post.isTop = obj.isTop;
+    post.replies = obj.replies;
+    post.likes = obj.likes;
+    post.dislikes = obj.dislikes;
+    post.hasLiked = obj.hasLiked;
+    post.hasDisliked = obj.hasDisliked;
+    post.body = obj.body;
+    post.episode = obj.episode;
+    post.createdAt = obj.createdAt;
+
+    return post;
+  }
 }
 
 // `cursor` is only provided beyond the first use of function.
@@ -782,4 +811,4 @@ function getCurrentUserSession() {
   }
 }
 
-module.exports = Webtoon;
+module.exports = { Webtoon: Webtoon, Post: Post };
