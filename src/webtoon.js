@@ -231,59 +231,6 @@ const Webtoon = (() => {
       return [...posts].sort((a, b) => b.createdAt - a.createdAt);
     }
 
-    async getNewestPostsForEpisode(episode, prev_newest_post = "") {
-      let posts = [];
-
-      const url = postUrl(this.type, this.id, episode);
-
-      const response = await webtoonFetch(url);
-
-      // NOTE: If an episode doesnt exist, then it will return a 404.
-      // This signifies that all available episodes have been gone through.
-      if (response.status === 404) {
-        return posts;
-      }
-
-      const json = await response.json();
-
-      if (json.status === "fail") {
-        console.log(json);
-        throw new Error("Failed to get posts from api: " + json.error);
-      }
-
-      let found = false;
-
-      for (let post of json.result.posts) {
-        if (post.id === prev_newest_post) {
-          found = true;
-          break;
-        }
-
-        posts.push(new Post(post));
-      }
-
-      let next = json.result.pagination.next;
-
-      while (!found && next !== undefined) {
-        const url = postUrl(this.type, this.id, episode, next);
-
-        const response = await webtoonFetch(url);
-        const json = await response.json();
-
-        for (let post of json.result.posts) {
-          if (post.id === prev_newest_post) {
-            break;
-          }
-
-          posts.add(new Post(post));
-        }
-
-        next = json.result.pagination.next;
-      }
-
-      return posts.sort((a, b) => b.createdAt - a.createdAt);
-    }
-
     async getNewestsPosts(prev_newest_map) {
       let posts = [];
 
@@ -292,9 +239,10 @@ const Webtoon = (() => {
       let did = { reach_end: false };
 
       while (true && !did.reach_end) {
-        let episode_posts = await this.getNewestPostsForEpisode(
+        let episode_posts = await getNewestPostsForEpisode(
           episode,
           prev_newest_map.get(episode),
+          did
         );
 
         episode_posts.forEach((post) => posts.add(post));
@@ -316,6 +264,60 @@ const Webtoon = (() => {
     },
   };
 })();
+
+async function getNewestPostsForEpisode(episode, prev_newest_post = "", did) {
+  let posts = [];
+
+  const url = postUrl(this.type, this.id, episode);
+
+  const response = await webtoonFetch(url);
+
+  // NOTE: If an episode doesnt exist, then it will return a 404.
+  // This signifies that all available episodes have been gone through.
+  if (response.status === 404) {
+    did.reach_end = true;
+    return posts;
+  }
+
+  const json = await response.json();
+
+  if (json.status === "fail") {
+    console.log(json);
+    throw new Error("Failed to get posts from api: " + json.error);
+  }
+
+  let found = false;
+
+  for (let post of json.result.posts) {
+    if (post.id === prev_newest_post) {
+      found = true;
+      break;
+    }
+
+    posts.push(new Post(post));
+  }
+
+  let next = json.result.pagination.next;
+
+  while (!found && next !== undefined) {
+    const url = postUrl(this.type, this.id, episode, next);
+
+    const response = await webtoonFetch(url);
+    const json = await response.json();
+
+    for (let post of json.result.posts) {
+      if (post.id === prev_newest_post) {
+        break;
+      }
+
+      posts.add(new Post(post));
+    }
+
+    next = json.result.pagination.next;
+  }
+
+  return posts.sort((a, b) => b.createdAt - a.createdAt);
+}
 
 async function getEpisodeCount(url) {
   const response = await fetch(url);
