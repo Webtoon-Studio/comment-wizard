@@ -6,29 +6,37 @@ const crypto = require("crypto");
  */
 
 test("`Webtoon` should be instantiated with `Lore Olympus`", async () => {
-  const webtoon = await Webtoon.fromUrl(
+  const webtoon = new Webtoon(
     "https://www.webtoons.com/en/romance/lore-olympus/list?title_no=1320"
   );
 
   expect(webtoon.id).toBe("1320");
   expect(webtoon.type).toBe("w");
-  expect(webtoon.episodes).not.toBe(0);
+  expect(webtoon.episodes).toBe(null);
+
+  await webtoon.getEpisodeCount();
+
+  expect(webtoon.episodes).not.toBe(null);
 });
 
 test("`Webtoon` should be instantiated with `The Little Trashmaid`", async () => {
-  const webtoon = await Webtoon.fromUrl(
+  const webtoon = new Webtoon(
     "https://www.webtoons.com/en/canvas/the-little-trashmaid/list?title_no=300138"
   );
 
   expect(webtoon.id).toBe("300138");
   expect(webtoon.type).toBe("c");
-  expect(webtoon.episodes).not.toBe(0);
+  expect(webtoon.episodes).toBe(null);
+
+  await webtoon.getEpisodeCount();
+
+  expect(webtoon.episodes).not.toBe(null);
 });
 
 test(
   "Episode 1 of `Testing Service` should have a first comment of `First` ",
   async () => {
-    const webtoon = await Webtoon.fromUrl(
+    const webtoon = new Webtoon(
       "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
     );
 
@@ -217,7 +225,7 @@ test(
 test(
   "Should get only comments from midnight today UTC",
   async () => {
-    const webtoon = await Webtoon.fromUrl(
+    const webtoon = new Webtoon(
       "https://www.webtoons.com/en/canvas/testing-service/list?title_no=843910"
     );
 
