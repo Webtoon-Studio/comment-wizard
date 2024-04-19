@@ -52,6 +52,7 @@ const config = function (env: any, argv: any): Configuration {
       alias: {
         "@assets": resolve(__dirname, "src/assets"),
         "@incom": resolve(__dirname, "src/incom"),
+        "@root": resolve(__dirname),
       },
       extensions: [".js", ".jsx", ".ts", ".tsx"],
     },
