@@ -1,5 +1,4 @@
 const { JSDOM } = require("jsdom");
-const { TbUfo } = require("react-icons/tb");
 
 class LocalStorageMock {
   constructor() {
