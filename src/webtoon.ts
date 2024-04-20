@@ -83,10 +83,8 @@ As of 2024-4-5 this is the shape of the posts api:
 }
 */
 
-document = global.document;
-
-type PageIdType = `${"w" | "c"}_${number}_${number}`;
-type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;
+export type PageIdType = `${"w" | "c"}_${number}_${number}`;
+export type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;
 
 export interface IPost {
   serviceTicketId: "epicom";
@@ -564,7 +562,7 @@ function postUrl(
 
 export class Post {
   webtoonType?: "w" | "c";
-  webtoonId?: number;
+  webtoonId?: `${number}`;
   episode?: number;
   id?: PostIdType;
   rootId?: PostIdType;
@@ -629,7 +627,7 @@ export class Post {
     }
 
     this.webtoonType = webtoonType;
-    this.webtoonId = parseInt(webtoonId);
+    this.webtoonId = webtoonId as `${number}`;
     this.episode = parseInt(episode);
     this.id = raw.id;
     this.rootId = raw.rootId;
@@ -886,7 +884,7 @@ export class Post {
     throw new Error("todo");
   }
 
-  static fromCached(obj: Post) {
+  static fromCached(obj: Post): Post {
     let post = new Post();
 
     post.webtoonType = obj.webtoonType;
@@ -910,6 +908,17 @@ export class Post {
 
     return post;
   }
+
+  // toJSON(): object {
+  //   // This function is used by JSON.stringify
+  //   // TODO: Implement this
+  //   return Object.assign({}, this);
+  // }
+
+  // static revive(key: string, value: any): Post {
+  //   // This function is used by JSON.parse
+  //   return Post.fromCached(value);
+  // }
 }
 
 // `cursor` is only provided beyond the first use of function.
@@ -922,7 +931,7 @@ function replyUrl(id: PostIdType, cursor?: PostIdType) {
 async function getCountInfo(
   postId: PostIdType,
   webtoonType: "w" | "c",
-  webtoonId: number,
+  webtoonId: `${number}`,
   episode: number,
   apiToken: string
 ) {
