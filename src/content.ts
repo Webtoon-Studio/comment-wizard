@@ -17,14 +17,14 @@ let setting = {
 // ======================================================================== //
 
 async function getSetting() {
-  const parseItem = (item) => {
+  const parseItem = (item: any) => {
     console.log(`Parseing item: ${item.key} (value=${item.value})`);
     if (
       "key" in item &&
       "value" in item &&
       Object.keys(setting).includes(item.key)
     ) {
-      setting[item.key] = item.value;
+      Object.assign(setting, { [item.key]: item.value });
     }
   };
 
@@ -48,13 +48,14 @@ async function getSetting() {
   }
 }
 
-function createScript(props) {
-  const { path, type } = props;
-  if (!path) {
-    throw new Error(
-      "invalid args! Did you perhaps forget to add 'path' to args?"
-    );
-  }
+interface ScriptProps {
+  path: string;
+  type?: "module";
+}
+
+function createScript(props: ScriptProps): HTMLScriptElement | null {
+  const { path, type = "text/javascript" } = props;
+
   if (chrome.runtime) {
     const url = chrome.runtime.getURL(path);
     const s = document.createElement("script");
@@ -65,13 +66,13 @@ function createScript(props) {
   return null;
 }
 
-function createCss(props) {
+interface CssProps {
+  path: string;
+}
+
+function createCss(props: CssProps): HTMLLinkElement | null {
   const { path } = props;
-  if (!path) {
-    throw new Error(
-      "invalid args! Did you perhaps forget to add 'path' to args?"
-    );
-  }
+
   if (chrome.runtime) {
     const href = chrome.runtime.getURL(path);
     const l = document.createElement("link");
@@ -82,13 +83,16 @@ function createCss(props) {
   return null;
 }
 
-function modifyCommentsMenu(inject) {
-  // Parameters
-  //    - inject: boolean
-
+function modifyCommentsMenu(inject: boolean) {
   const menuId = "layerMy";
 
   const menu = document.getElementById(menuId);
+  if (!menu) {
+    throw new Error(
+      `Webtoons menu not found. Did they change the id from "${menuId}"?`
+    );
+  }
+
   const menuAItems = menu.getElementsByTagName("a");
 
   const commentItem = Array.prototype.find.call(menuAItems, (elem) => {
@@ -123,17 +127,35 @@ function modifyCommentsMenu(inject) {
       commentItem.removeAttribute("cs-in-comment-id");
 
       const inCommentItemParent = document.getElementById(inId);
+      if (!inCommentItemParent) {
+        throw new Error(
+          `Incoming comment item's parent is not found! (id=${inId})`
+        );
+      }
+
       inCommentItemParent.remove();
     }
   }
 }
 
-function modifyMyComments(inject) {
-  // Parameters
-  //    - inject: boolean
+interface ElementProp {
+  id: string;
+  class: string;
+  className: string;
+  innerText: string;
+  style: { [index: string]: string }; // TODO: Specify more? or Refactor this type?
+  onClick: VoidFunction;
+  children: HTMLElement[];
 
+  [index: string]: any;
+}
+
+function modifyMyComments(inject: boolean) {
   // Function for creating elements recursively
-  const createElement = function (tag, options = {}) {
+  const createElement = function (
+    tag: string,
+    props: Partial<ElementProp> = {}
+  ) {
     const {
       id,
       class: classProp,
@@ -143,7 +165,7 @@ function modifyMyComments(inject) {
       onClick,
       children,
       ...others
-    } = options;
+    } = props;
 
     const elem = document.createElement(tag);
 
@@ -161,7 +183,9 @@ function modifyMyComments(inject) {
     }
     if (style) {
       Object.keys(style).forEach((key) => {
-        elem.style.setProperty(key, style[key]);
+        if (typeof style[key] === "string") {
+          elem.style.setProperty(key, style[key]);
+        }
       });
     }
     if (onClick) {
@@ -189,7 +213,7 @@ function modifyMyComments(inject) {
   };
 
   // Function for changing tab
-  const handleTabChange = function (index) {
+  const handleTabChange = function (index: number) {
     const tabs = document.getElementsByClassName("cs-comment-tab-span");
     const contents = document.getElementsByClassName("cs-comment-tab-content");
 
@@ -210,8 +234,9 @@ function modifyMyComments(inject) {
     // Change content
     for (let conti = 0; conti < contents.length; conti++) {
       const content = contents.item(conti);
-      if (content && content.hasAttribute("tab-id")) {
-        const tabi = parseInt(content.getAttribute("tab-id"));
+      const contentTabId = content?.getAttribute("tab-id");
+      if (content && contentTabId) {
+        const tabi = parseInt(contentTabId);
         if (tabi === index) {
           content.classList.remove("hidden");
         } else {
@@ -223,10 +248,19 @@ function modifyMyComments(inject) {
 
   // Inject css file used for injected react content
   const css = createCss({ path: "assets/content.css" });
-  document.head.appendChild(css);
+  if (css) {
+    document.head.appendChild(css);
+  }
 
   // Inject Tabs (non-react)
   const content = document.getElementById("content");
+
+  if (!content) {
+    throw new Error(
+      'Content element not found. Did its id changed from "content"?'
+    );
+  }
+
   const contentTabs = content.children.item(1);
   const commentTabs = createElement("div", {
     id: "cs-comment-tabs-root",
@@ -268,10 +302,16 @@ function modifyMyComments(inject) {
   // Main container for default comments section
   const commentArea = document.getElementById("commentArea");
 
+  if (!commentArea) {
+    throw new Error(
+      'Comment Area element not found. Did its id change from "commentArea"?'
+    );
+  }
+
   // Empty comments section
   //    Should have style.display = 'none'
   const emptyList = document.getElementById("emptyList");
-  const isEmpty = emptyList.style.display !== "none";
+  const isEmpty = emptyList?.style.display !== "none";
 
   if (!isEmpty) {
     commentArea.classList.add("cs-comment-tab-content");
@@ -298,11 +338,9 @@ function modifyMyComments(inject) {
   }
 }
 
-function modifyDeleteButtons(hide) {
-  // Parameters
-  //    - hide: boolean
-  const classNameQuery = "ico_delete _btnDeleteSeries";
-  const deleteButtons = document.getElementsByClassName(classNameQuery);
+function modifyDeleteButtons(hide: boolean) {
+  const selector = ".ico_delete._btnDeleteSeries";
+  const deleteButtons = document.querySelectorAll<HTMLAnchorElement>(selector);
 
   for (let i = 0; i < deleteButtons.length; i++) {
     const deleteButton = deleteButtons[i];
@@ -322,13 +360,20 @@ function reorderHeader() {
     const lk_creators = document.getElementsByClassName("lk_creators on")[0];
     const btnLoginInfo = document.getElementById("btnLoginInfo");
     const btnLogin = document.getElementById("btnLogin");
-    btnLoginInfo.style.marginLeft = "4px";
     const btnPublish = document.getElementById("btnPublish");
-    btnPublish.style.marginLeft = "4px";
     const btnSearch = document.getElementsByClassName(
       "btn_search _btnSearch"
     )[0];
     const span = document.getElementsByClassName("bar");
+
+    if (!btnLogin || !btnLoginInfo || !btnPublish) {
+      throw new Error(
+        "Unable to get the following element(s): id = btnLogin || btnLoginInfo || btnPublish"
+      );
+    }
+
+    btnLoginInfo.style.marginLeft = "4px";
+    btnPublish.style.marginLeft = "4px";
 
     const elements = document.createDocumentFragment();
     elements.appendChild(btnSearch);
@@ -344,72 +389,83 @@ function reorderHeader() {
     const searchArea = document.getElementsByClassName(
       "search_area _searchArea"
     )[0];
-    searchArea.style.left = "-290px";
+    if (searchArea && searchArea instanceof HTMLDivElement)
+      searchArea.style.left = "-290px";
 
     const loginbox = document.getElementById("layerMy");
     //loginbox.style.left = "-250px";
-    loginbox.style.right = "250px";
+    if (loginbox && loginbox instanceof HTMLDivElement)
+      loginbox.style.right = "250px";
   }
 }
 
-function modifyRating(hide) {
-  // Parameter
-  //      - hide: boolean
+function modifyRating(hide: boolean) {
   const sideDetail = document.getElementById("_asideDetail");
   if (sideDetail) {
     const grade_area = sideDetail.getElementsByClassName("grade_area");
     if (grade_area) {
       const rating = grade_area[0].children[2];
-      if (hide && rating.style.visibility !== "hidden") {
-        rating.style.visibility = "hidden";
-      }
-      if (!hide && rating.style.visibility === "hidden") {
-        rating.style.visibility = "unset";
+      if (rating instanceof HTMLLIElement) {
+        if (hide && rating.style.visibility !== "hidden") {
+          rating.style.visibility = "hidden";
+        }
+        if (!hide && rating.style.visibility === "hidden") {
+          rating.style.visibility = "unset";
+        }
       }
     }
   }
 }
 
-function modifySubCount(round) {
-  // Parameter
-  //      - round: boolean
-  const roundThousand = (value) => Math.round(value / 1000);
+function modifySubCount(round: boolean) {
+  const roundThousand = (value: number) => Math.round(value / 1000);
 
   const sideDetail = document.getElementById("_asideDetail");
   if (sideDetail) {
     const grade_area = sideDetail.getElementsByClassName("grade_area");
     if (grade_area) {
       let subCounterElement = grade_area[0].children[1].children[1];
-      if (round && !subCounterElement.hasAttribute("cs-origId")) {
-        var regExpLetters = /[a-zA-Z]/g;
-        if (!regExpLetters.test(subCounterElement.innerText)) {
-          const subCounter = parseInt(
-            subCounterElement.innerText.replaceAll(",", "")
-          );
-          if (subCounter >= 1000) {
-            const origId = crypto.randomUUID();
-            const origElement = subCounterElement.cloneNode(true);
-            origElement.id = origId;
-            origElement.style.display = "none";
+      if (subCounterElement instanceof HTMLEmbedElement) {
+        if (round && !subCounterElement.hasAttribute("cs-origId")) {
+          var regExpLetters = /[a-zA-Z]/g;
+          if (!regExpLetters.test(subCounterElement.innerText)) {
+            const subCounter = parseInt(
+              subCounterElement.innerText.replace(/,/g, "")
+            );
+            if (subCounter >= 1000) {
+              const origId = crypto.randomUUID();
+              const origElement = subCounterElement.cloneNode(true);
+              if (origElement instanceof HTMLEmbedElement) {
+                origElement.id = origId;
+                origElement.style.display = "none";
+              }
 
-            subCounterElement.setAttribute("cs-origId", origId);
-            subCounterElement.innerText =
-              roundThousand(subCounter).toLocaleString("hi-IN") + "k";
-            subCounterElement.after(origElement);
+              subCounterElement.setAttribute("cs-origId", origId);
+              subCounterElement.innerText =
+                roundThousand(subCounter).toLocaleString("hi-IN") + "k";
+              subCounterElement.after(origElement);
+            }
           }
         }
-      }
-      if (!round && subCounterElement.hasAttribute("cs-origId")) {
         const origId = subCounterElement.getAttribute("cs-origId");
-        const origElement = document.getElementById(origId);
-        origElement.id = subCounterElement.id;
-        origElement.style.display = subCounterElement.style.display;
+        if (!round && origId) {
+          const origElement = document.getElementById(origId);
+          if (origElement instanceof HTMLEmbedElement) {
+            origElement.id = subCounterElement.id;
+            origElement.style.display = subCounterElement.style.display;
+          }
 
-        subCounterElement.parentElement.insertBefore(
-          subCounterElement,
-          origElement
-        );
-        subCounterElement.remove();
+          if (!subCounterElement.parentElement) {
+            throw new Error(
+              "Null parent of subscribers count element. Is this even possible?"
+            );
+          }
+          subCounterElement.parentElement.insertBefore(
+            subCounterElement,
+            origElement
+          );
+          subCounterElement.remove();
+        }
       }
     }
   }
