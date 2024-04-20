@@ -388,14 +388,12 @@ function reorderHeader() {
 
     const searchArea = document.getElementsByClassName(
       "search_area _searchArea"
-    )[0];
-    if (searchArea && searchArea instanceof HTMLDivElement)
-      searchArea.style.left = "-290px";
+    )[0] as HTMLDivElement;
+    searchArea.style.left = "-290px";
 
-    const loginbox = document.getElementById("layerMy");
+    const loginbox = document.getElementById("layerMy") as HTMLDivElement;
     //loginbox.style.left = "-250px";
-    if (loginbox && loginbox instanceof HTMLDivElement)
-      loginbox.style.right = "250px";
+    loginbox.style.right = "250px";
   }
 }
 
@@ -424,48 +422,31 @@ function modifySubCount(round: boolean) {
   if (sideDetail) {
     const grade_area = sideDetail.getElementsByClassName("grade_area");
     if (grade_area) {
-      let subCounterElement = grade_area[0].children[1].children[1];
-      if (subCounterElement instanceof HTMLEmbedElement) {
-        if (round && !subCounterElement.hasAttribute("cs-origId")) {
-          var regExpLetters = /[a-zA-Z]/g;
-          if (!regExpLetters.test(subCounterElement.innerText)) {
-            const subCounter = parseInt(
-              subCounterElement.innerText.replace(/,/g, "")
-            );
-            if (subCounter >= 1000) {
-              const origId = crypto.randomUUID();
-              const origElement = subCounterElement.cloneNode(true);
-              if (origElement instanceof HTMLEmbedElement) {
-                origElement.id = origId;
-                origElement.style.display = "none";
-              }
+      let subCounterElement = grade_area[0].children[1]
+        .children[1] as HTMLEmbedElement;
 
-              subCounterElement.setAttribute("cs-origId", origId);
-              subCounterElement.innerText =
-                roundThousand(subCounter).toLocaleString("hi-IN") + "k";
-              subCounterElement.after(origElement);
-            }
-          }
-        }
-        const origId = subCounterElement.getAttribute("cs-origId");
-        if (!round && origId) {
-          const origElement = document.getElementById(origId);
-          if (origElement instanceof HTMLEmbedElement) {
-            origElement.id = subCounterElement.id;
-            origElement.style.display = subCounterElement.style.display;
-          }
+      // original innerText is embedded as `cs-orig-text`, if was changed
+      let origText = subCounterElement.getAttribute("cs-orig-text");
 
-          if (!subCounterElement.parentElement) {
-            throw new Error(
-              "Null parent of subscribers count element. Is this even possible?"
-            );
-          }
-          subCounterElement.parentElement.insertBefore(
-            subCounterElement,
-            origElement
+      // flag is true && original text attribute not found
+      if (round && !origText) {
+        origText = subCounterElement.innerText;
+        var regExpLetters = /[a-zA-Z]/g;
+        if (!regExpLetters.test(subCounterElement.innerText)) {
+          const subCounter = parseInt(
+            subCounterElement.innerText.replace(/,/g, "")
           );
-          subCounterElement.remove();
+          if (subCounter >= 1000) {
+            subCounterElement.setAttribute("cs-orig-text", origText);
+            subCounterElement.innerText =
+              roundThousand(subCounter).toLocaleString("hi-IN") + "k";
+          }
         }
+      }
+      // flag is false && original text attribute found
+      if (!round && origText) {
+        subCounterElement.innerText = origText;
+        subCounterElement.removeAttribute("cs-orig-text");
       }
     }
   }
