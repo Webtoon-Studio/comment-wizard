@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Source code for extension published in webstore including build scripts.",
   "scripts": {
-    "dev": "vite && webpack --mode=development",
+    "dev": "vite build --mode=development && webpack --mode=development && vite",
     "build": "vite build & webpack --mode=production",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
