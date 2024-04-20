@@ -20,24 +20,18 @@ async function getCounter() {
   });
 }
 
-async function setCounter(value) {
-  if (typeof value !== "number") {
-    throw new Error(`TypeError: new counter value must be a number.`);
-  }
-  return chrome.storage.sync.set({ [STORAGE_COUNTER_NAME]: payload });
+async function setCounter(newValue: number) {
+  return chrome.storage.sync.set({ [STORAGE_COUNTER_NAME]: newValue });
 }
 
-async function addCounter(value) {
-  if (typeof value !== "number") {
-    throw new Error(`TypeError: value must be a number.`);
-  }
+async function addCounter(value: number) {
   return chrome.storage.sync
     .get(STORAGE_COUNTER_NAME)
     .then((items) => {
       if (STORAGE_COUNTER_NAME in items) {
-        const value = items[STORAGE_COUNTER_NAME];
-        if (typeof value === "number") {
-          return value + payload;
+        const oldValue = items[STORAGE_COUNTER_NAME];
+        if (typeof oldValue === "number") {
+          return oldValue + value;
         }
       }
       return null;
