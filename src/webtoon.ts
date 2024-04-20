@@ -1,4 +1,3 @@
-import { JSDOM } from "jsdom";
 /*
 As of 2024-4-5 this is the shape of the posts api:
 {
@@ -217,14 +216,10 @@ export class Webtoon {
 
     const html = await response.text();
 
-    // Using JSDOM to parse
-    const dom = new JSDOM(html);
-    const doc = dom.window.document;
+    let container = document.createElement("div");
+    container.innerHTML = html;
 
-    // let container = document.createElement("div");
-    // container.innerHTML = html;
-
-    const item = doc.querySelector("li._episodeItem");
+    const item = container.querySelector("li._episodeItem");
 
     if (item) {
       const episode = item.getAttribute("data-episode-no");
