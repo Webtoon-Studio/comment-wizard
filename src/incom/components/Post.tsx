@@ -1,3 +1,3 @@
-export default function Post(props) {
+export default function Post() {
   return <div></div>;
 }
