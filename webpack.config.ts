@@ -3,7 +3,6 @@ import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugion from "mini-css-extract-plugin";
 import { Configuration } from "webpack";
 import pjson from "./package.json";
-import { TbFlagSearch } from "react-icons/tb";
 
 // content, absoluteFrom
 const transform = (content: Buffer, _: string) => {
@@ -18,16 +17,15 @@ const config = function (env: any, argv: any): Configuration {
     mode: argv.mode ?? "development",
     context: resolve(__dirname, "src"),
     entry: {
-      worker: "./worker.js",
-      webtoon: "./webtoon.js",
-      content: "./content.js",
+      worker: "./worker.ts",
+      content: "./content.ts",
       incom: "./incom/index.tsx",
     },
     module: {
       rules: [
         {
-          test: /incom\\.+\.tsx?$/,
-          exclude: [/node_modules/],
+          test: /\.tsx?$/,
+          exclude: /node_modules/,
           use: [
             {
               loader: "ts-loader",
@@ -39,11 +37,12 @@ const config = function (env: any, argv: any): Configuration {
         },
         {
           test: /\.jsx?$/,
-          exclude: [/node_modules/],
+          exclude: /node_modules/,
           use: ["babel-loader"],
         },
         {
           test: /\.css$/,
+          exclude: /node_modules/,
           use: [MiniCssExtractPlugion.loader, "css-loader", "postcss-loader"],
         },
       ],
