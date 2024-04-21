@@ -461,7 +461,7 @@ export class Webtoon {
 }
 
 async function webtoonFetch(url: string) {
-  let session = getCurrentUserSession();
+  let session = await getCurrentUserSession();
 
   if (session === null) {
     throw new Error("Failed to get current user session from cookie");
@@ -708,7 +708,7 @@ export class Post {
       throw new Error("Failed to get API Token");
     }
 
-    const session = getCurrentUserSession();
+    const session = await getCurrentUserSession();
     if (session === null) {
       throw new Error("Failed to get current user session from cookie");
     }
@@ -763,7 +763,7 @@ export class Post {
       throw new Error("Failed to get API Token");
     }
 
-    const session = getCurrentUserSession();
+    const session = await getCurrentUserSession();
     if (session === null) {
       throw new Error("Failed to get current user session from cookie");
     }
@@ -824,7 +824,7 @@ export class Post {
       throw new Error("Failed to get API Token");
     }
 
-    const session = getCurrentUserSession();
+    const session = await getCurrentUserSession();
     if (session === null) {
       throw new Error("Failed to get current user session from cookie");
     }
@@ -934,7 +934,7 @@ async function getCountInfo(
 
   const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${postId}/emotion/count`;
 
-  const session = getCurrentUserSession();
+  const session = await getCurrentUserSession();
 
   if (session === null) {
     throw new Error("Failed to get current user session from cookie");
@@ -1005,7 +1005,7 @@ async function getCountInfo(
 async function getApiToken(): Promise<string | undefined> {
   const url = "https://www.webtoons.com/p/api/community/v1/api-token";
 
-  let session = getCurrentUserSession();
+  let session = await getCurrentUserSession();
 
   if (session === null) {
     throw new Error("Failed to get current user session from cookie");
@@ -1045,14 +1045,28 @@ async function getApiToken(): Promise<string | undefined> {
   return json.result.token;
 }
 
-function getCurrentUserSession(): string | null {
-  var cookie = document.cookie;
-  var cookies = cookie.split(";");
+async function getCurrentUserSession(): Promise<string | null> {
+  if (chrome.cookies) {
+    return chrome.cookies
+      .get({
+        name: "NEO_SES",
+        url: "https://www.webtoons.com/",
+      })
+      .then((cookie) => cookie?.value || null);
+  } else {
+    try {
+      var cookie = document.cookie;
+      var cookies = cookie.split(";");
 
-  for (var i = 0; i < cookies.length; i++) {
-    var cookieItem = cookies[i].trim();
-    if (cookieItem.startsWith("NEO_SES=")) {
-      return cookieItem.substring("NEO_SES=".length, cookieItem.length);
+      for (var i = 0; i < cookies.length; i++) {
+        var cookieItem = cookies[i].trim();
+        if (cookieItem.startsWith("NEO_SES=")) {
+          return cookieItem.substring("NEO_SES=".length, cookieItem.length);
+        }
+      }
+    } catch {
+      console.error("Unable to get current user session");
+      return null;
     }
   }
   return null;
