@@ -1,12 +1,8 @@
 "use strict";
 
 import "./assets/content.css";
+import { STORAGE_SETTING_NAME } from "./global";
 
-// ================================= NOTE ================================= //
-// Make sure to sync this with popup > setting.ts                           //
-// TODO: globalize these to share with popup                                //
-// ------------------------------------------------------------------------ //
-const STORAGE_SETTING_NAME = "cs_settings";
 let setting = {
   incomingComments: true,
   hideDelete: true,
@@ -14,7 +10,6 @@ let setting = {
   hideRating: false,
   roundSub: false,
 };
-// ======================================================================== //
 
 async function getSetting() {
   const parseItem = (item: any) => {
@@ -452,9 +447,6 @@ function modifySubCount(round: boolean) {
   }
 }
 
-function injectIncomingComments() {
-  // Inject tab item
-}
 async function main() {
   const url = document.location.href;
 
@@ -494,6 +486,9 @@ window.onload = async () => {
 };
 
 if (chrome.storage) {
+  chrome.storage.local.onChanged.addListener((changes) => {
+    console.log(changes);
+  });
   chrome.storage.sync.onChanged.addListener(async () => {
     // TODO: Revert "injected" changes without doing reload()
     await getSetting();

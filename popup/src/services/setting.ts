@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { ISetting } from "@popup/src/interface";
-
-const STORAGE_SETTING_NAME = "cs_settings";
+import { STORAGE_SETTING_NAME } from "@root/src/global";
 
 const defaultSetting: ISetting[] = [
   {

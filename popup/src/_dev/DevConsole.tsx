@@ -1,4 +1,4 @@
-import useCounter from "@popup/src/services/counter";
+import { useCounter } from "@popup/src/services/counter";
 import Button from "@popup/src/common/components/button";
 import { useContext } from "react";
 import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
