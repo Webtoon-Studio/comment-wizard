@@ -1,7 +1,13 @@
 "use strict";
 
 import "./assets/content.css";
-import { STORAGE_SETTING_NAME } from "./global";
+import {
+  INCOM_ONMOUNTED_EVENT_NAME,
+  POSTS_FETCHED_EVENT_NAME,
+  STORAGE_POSTS_NAME,
+  STORAGE_SETTING_NAME,
+} from "./global";
+import { Post } from "./webtoon";
 
 let setting = {
   incomingComments: true,
@@ -83,15 +89,15 @@ function modifyCommentsMenu(inject: boolean) {
 
   const menu = document.getElementById(menuId);
   if (!menu) {
-    throw new Error(
-      `Webtoons menu not found. Did they change the id from "${menuId}"?`
-    );
+    console.log("Webttons menu is not found. Perhaps in viewer mode?");
+    return;
   }
 
   const menuAItems = menu.getElementsByTagName("a");
 
   const commentItem = Array.prototype.find.call(menuAItems, (elem) => {
-    return RegExp(/^Comments$/).exec(elem.innerText);
+    console.log(elem);
+    return RegExp(/Comments/i).exec(elem.innerText);
   });
   if (commentItem) {
     if (inject && !commentItem.hasAttribute("cs-modified")) {
@@ -106,7 +112,7 @@ function modifyCommentsMenu(inject: boolean) {
         }
       );
       inCommentItem.innerText = "Comments (IN)";
-      inCommentItem.href += "#incomming";
+      inCommentItem.href += "#incoming";
 
       commentItem.setAttribute("cs-modified", commentItem.innerText);
       commentItem.setAttribute("cs-in-comment-id", inId);
@@ -130,6 +136,10 @@ function modifyCommentsMenu(inject: boolean) {
 
       inCommentItemParent.remove();
     }
+  } else {
+    setTimeout(() => {
+      modifyCommentsMenu(inject);
+    }, 500);
   }
 }
 
@@ -228,14 +238,16 @@ function modifyMyComments(inject: boolean) {
 
     // Change content
     for (let conti = 0; conti < contents.length; conti++) {
-      const content = contents.item(conti);
+      const content = contents.item(conti) as HTMLDivElement;
       const contentTabId = content?.getAttribute("tab-id");
       if (content && contentTabId) {
         const tabi = parseInt(contentTabId);
         if (tabi === index) {
-          content.classList.remove("hidden");
+          content.setAttribute("data-selected", "true");
+          // content.style.display = "block";
         } else {
-          content.classList.add("hidden");
+          content.setAttribute("data-selected", "false");
+          // content.style.display = "none"
         }
       }
     }
@@ -247,6 +259,8 @@ function modifyMyComments(inject: boolean) {
     document.head.appendChild(css);
   }
 
+  const isIncoming = window.location.href.includes("#incoming");
+
   // Inject Tabs (non-react)
   const content = document.getElementById("content");
 
@@ -256,42 +270,45 @@ function modifyMyComments(inject: boolean) {
     );
   }
 
-  const contentTabs = content.children.item(1);
-  const commentTabs = createElement("div", {
-    id: "cs-comment-tabs-root",
-    className: "border-b-2px border-[#eaeaea] bg-white/50",
-    children: [
-      createElement("ul", {
-        id: "cs-comment-tabs-wrapper",
-        className: "flex justify-center items-stretch mx-auto gap-[60px]",
-        children: [
-          ...["outgoing", "incoming"].map((v, i) =>
-            createElement("li", {
-              id: `cs-comment-tab-${v}`,
-              class: "cs-comment-tab text-center",
-              children: [
-                createElement("span", {
-                  id: `cs-comment-tab-${v}-span`,
-                  className: [
-                    "cs-comment-tab-span",
-                    "block px-[5px] text-[#bbb] font-medium leading-[70px] text-[15px] cursor-pointer",
-                    "hover:text-[#000]",
-                    "data-[selected=true]:border-b-2 data-[selected=true]:border-black data-[selected=true]:text-[#000]",
-                  ].join(" "),
-                  "data-selected": i === 0,
-                  onClick: () => handleTabChange(i),
-                  innerText: v.toUpperCase(),
-                }),
-              ],
-            })
-          ),
-        ],
-      }),
-    ],
-  });
+  const isExist = document.getElementById("cs-comment-tabs-root") !== null;
+  if (!isExist) {
+    const contentTabs = content.children.item(1);
+    const commentTabs = createElement("div", {
+      id: "cs-comment-tabs-root",
+      className: "border-b-2px border-[#eaeaea] bg-white/50",
+      children: [
+        createElement("ul", {
+          id: "cs-comment-tabs-wrapper",
+          className: "flex justify-center items-stretch mx-auto gap-[60px]",
+          children: [
+            ...["outgoing", "incoming"].map((v, i) =>
+              createElement("li", {
+                id: `cs-comment-tab-${v}`,
+                class: "cs-comment-tab text-center",
+                children: [
+                  createElement("span", {
+                    id: `cs-comment-tab-${v}-span`,
+                    className: [
+                      "cs-comment-tab-span",
+                      "block px-[5px] text-[#bbb] font-medium leading-[70px] text-[15px] cursor-pointer",
+                      "hover:text-[#000]",
+                      "data-[selected=true]:border-b-2 data-[selected=true]:border-black data-[selected=true]:text-[#000]",
+                    ].join(" "),
+                    "data-selected": isIncoming ? i === 1 : i === 0,
+                    onClick: () => handleTabChange(i),
+                    innerText: v.toUpperCase(),
+                  }),
+                ],
+              })
+            ),
+          ],
+        }),
+      ],
+    });
 
-  if (contentTabs) {
-    contentTabs.after(commentTabs);
+    if (contentTabs) {
+      contentTabs.after(commentTabs);
+    }
   }
 
   // Main container for default comments section
@@ -310,14 +327,32 @@ function modifyMyComments(inject: boolean) {
 
   if (!isEmpty) {
     commentArea.classList.add("cs-comment-tab-content");
+    commentArea.classList.add("data-[selected=false]:!hidden");
+    commentArea.setAttribute("data-selected", isIncoming ? "false" : "true");
     commentArea.setAttribute("tab-id", "0");
   }
 
   const inCommentRoot = document.createElement("div");
   inCommentRoot.id = "cs-in-comment-root";
   inCommentRoot.classList.add(...(commentArea?.classList || []));
-  inCommentRoot.classList.add("cs-comment-tab-content", "hidden");
+  inCommentRoot.classList.add("cs-comment-tab-content");
+  inCommentRoot.classList.add("data-[selected=false]:!hidden");
+  inCommentRoot.setAttribute("data-selected", isIncoming ? "true" : "false");
   inCommentRoot.setAttribute("tab-id", "1");
+
+  // Setup event listener
+  window.addEventListener(INCOM_ONMOUNTED_EVENT_NAME, () => {
+    console.log("inCommentRoot onload?");
+    chrome.storage.local.get(STORAGE_POSTS_NAME).then((items) => {
+      if (STORAGE_POSTS_NAME in items) {
+        window.dispatchEvent(
+          new CustomEvent<Post[]>(POSTS_FETCHED_EVENT_NAME, {
+            detail: items[STORAGE_POSTS_NAME],
+          })
+        );
+      }
+    });
+  });
 
   // Inject incoming commnet root after the default comments section
   commentArea.after(inCommentRoot);
@@ -450,7 +485,7 @@ function modifySubCount(round: boolean) {
 async function main() {
   const url = document.location.href;
 
-  const reWebtoons = new RegExp(/^https\:\/\/www\.webtoons\.com\/.*$/, "i");
+  const reWebtoons = new RegExp(/^https\:\/\/www\.webtoons\.com/, "i");
   const reComments = new RegExp(
     /^https\:\/\/www\.webtoons\.com\/.*\/mycomment/,
     "i"
@@ -488,6 +523,14 @@ window.onload = async () => {
 if (chrome.storage) {
   chrome.storage.local.onChanged.addListener((changes) => {
     console.log(changes);
+    if (STORAGE_POSTS_NAME in changes) {
+      console.log("Dispatch event with posts");
+      window.dispatchEvent(
+        new CustomEvent<Post[]>(POSTS_FETCHED_EVENT_NAME, {
+          detail: changes[STORAGE_POSTS_NAME].newValue,
+        })
+      );
+    }
   });
   chrome.storage.sync.onChanged.addListener(async () => {
     // TODO: Revert "injected" changes without doing reload()

@@ -10,7 +10,8 @@ export default {
     "./popup/index.html",
     "./popup/**/*.{js,ts,jsx,tsx}",
     "./src/*.{js,ts}",
-    "./src/content.js",
+    "./src/content.{js,ts}",
+    "./src/**/*.{ts,tsx}",
   ],
   theme: {
     extend: {
