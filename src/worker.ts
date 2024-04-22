@@ -399,6 +399,12 @@ async function getPosts(
     };
   }
 
+  if (response.status === 408) {
+    return {
+      status: "fail",
+    };
+  }
+
   try {
     const json = await response.json();
     if (json.status === "fail") {
@@ -480,6 +486,9 @@ async function getNewPosts(): Promise<boolean> {
       result = await getPosts(pageId, newestMap.get(episodeNum));
       if (result.newestPost) {
         newestMap.set(episodeNum, result.newestPost);
+      }
+      if (result.status === "fail") {
+        break;
       }
       episodeNum += 1;
     }
