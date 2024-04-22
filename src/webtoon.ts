@@ -575,6 +575,8 @@ export class Post {
   dislikes?: number;
   body?: string;
 
+  isNew?: boolean;
+
   constructor(raw?: IPost) {
     // For when manually constructing the object
     if (raw === undefined) {

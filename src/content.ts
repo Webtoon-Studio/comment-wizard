@@ -2,8 +2,10 @@
 
 import "./assets/content.css";
 import {
+  EpisodeNewestPost,
   INCOM_ONMOUNTED_EVENT_NAME,
   POSTS_FETCHED_EVENT_NAME,
+  STORAGE_NEWEST_NAME,
   STORAGE_POSTS_NAME,
   STORAGE_SETTING_NAME,
 } from "./global";
@@ -343,15 +345,23 @@ function modifyMyComments(inject: boolean) {
   // Setup event listener
   window.addEventListener(INCOM_ONMOUNTED_EVENT_NAME, () => {
     console.log("inCommentRoot onload?");
-    chrome.storage.local.get(STORAGE_POSTS_NAME).then((items) => {
-      if (STORAGE_POSTS_NAME in items) {
-        window.dispatchEvent(
-          new CustomEvent<Post[]>(POSTS_FETCHED_EVENT_NAME, {
-            detail: items[STORAGE_POSTS_NAME],
-          })
-        );
-      }
-    });
+    chrome.storage.local
+      .get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
+      .then((items) => {
+        if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
+          window.dispatchEvent(
+            new CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>(
+              POSTS_FETCHED_EVENT_NAME,
+              {
+                detail: {
+                  posts: items[STORAGE_POSTS_NAME],
+                  newest: items[STORAGE_NEWEST_NAME],
+                },
+              }
+            )
+          );
+        }
+      });
   });
 
   // Inject incoming commnet root after the default comments section
@@ -521,16 +531,25 @@ window.onload = async () => {
 };
 
 if (chrome.storage) {
-  chrome.storage.local.onChanged.addListener((changes) => {
-    console.log(changes);
-    if (STORAGE_POSTS_NAME in changes) {
-      console.log("Dispatch event with posts");
-      window.dispatchEvent(
-        new CustomEvent<Post[]>(POSTS_FETCHED_EVENT_NAME, {
-          detail: changes[STORAGE_POSTS_NAME].newValue,
-        })
-      );
-    }
+  chrome.storage.local.onChanged.addListener(() => {
+    chrome.storage.local
+      .get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
+      .then((items) => {
+        if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
+          console.log("Dispatch event");
+          window.dispatchEvent(
+            new CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>(
+              POSTS_FETCHED_EVENT_NAME,
+              {
+                detail: {
+                  posts: items[STORAGE_POSTS_NAME],
+                  newest: items[STORAGE_NEWEST_NAME],
+                },
+              }
+            )
+          );
+        }
+      });
   });
   chrome.storage.sync.onChanged.addListener(async () => {
     // TODO: Revert "injected" changes without doing reload()

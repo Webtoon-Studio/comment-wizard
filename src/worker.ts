@@ -2,6 +2,9 @@ import {
   STORAGE_SERIES_NAME,
   STORAGE_NEWEST_NAME,
   STORAGE_POSTS_NAME,
+  EpisodeNewestPost,
+  SeriesItem,
+  isPostIdNewer,
 } from "./global";
 import { IPost, PageIdType, Post, PostIdType, Webtoon } from "./webtoon";
 
@@ -19,27 +22,12 @@ let IS_STORING_POSTS = false;
 // ================================================================================ //
 
 // ================================= INTERFACES =================================== //
-interface SeriesItem {
-  _type: "seriesItem"; // internal interface identity
-  title: string;
-  link: string;
-  titleId: `${number}`;
-  isCanvas?: boolean;
-  newCount?: number;
-}
 
 interface PostsQueryProp {
   pageId: PageIdType;
   prevSize?: number;
   nextSize?: number;
   cursor?: PostIdType;
-}
-
-interface EpisodeNewestPost {
-  _type: "episodeNewestPost";
-  titleId: string;
-  episode: number;
-  newestPostId: PostIdType;
 }
 
 type GetPostsRepsonse = {
@@ -59,15 +47,6 @@ async function getSessionFromCookie(): Promise<string | null> {
     return cookie?.value || null;
   }
   return null;
-}
-
-function isPostIdNewer(value: PostIdType, compared: PostIdType): boolean {
-  // Return:
-  //     - 'true': `postId` is newer
-  //     - 'false': `postId` is not newer
-  const valueId = parseInt(value.split("-")[3], 36);
-  const comparedId = parseInt(value.split("-")[3], 36);
-  return valueId > comparedId;
 }
 
 // ============================== SERIES LOAD / SAVE ============================== //

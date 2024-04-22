@@ -13,6 +13,7 @@ export default function PostItem(props: PostItemProps) {
           <div className="text-xl text-gray-800">
             {post.username} on Episode {post.episode}
           </div>
+          <span className="float-right">{post.isNew ? "NEW" : ""}</span>
         </div>
       </div>
       <div>
