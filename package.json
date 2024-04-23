@@ -9,6 +9,7 @@
     "preview:incom": "vite --mode=development --config=vite.incom.config.ts",
     "dev": "webpack --mode=development",
     "build": "webpack --mode=production",
+    "build:firefox": "webpack --mode=production --config=webpack.firefox.config.ts",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
     "prepare": "husky install",
@@ -25,6 +26,7 @@
   },
   "homepage": "https://github.com/freiha/comment-wizard#readme",
   "dependencies": {
+    "@types/firefox-webext-browser": "^120.0.3",
     "prettier": "^2.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

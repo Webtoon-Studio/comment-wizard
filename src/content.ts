@@ -524,11 +524,19 @@ async function main() {
   }
 }
 
-window.onload = async () => {
-  console.log("Window onload");
-  await getSetting();
-  main();
-};
+try {
+  browser.tabs.onUpdated.addListener(async () => {
+    console.log("Tab updated");
+    await getSetting();
+    main();
+  });
+} catch (err) {
+  window.onload = async () => {
+    console.log("Tab updated");
+    await getSetting();
+    main();
+  };
+}
 
 if (chrome.storage) {
   chrome.storage.local.onChanged.addListener(() => {

@@ -22,6 +22,17 @@ const popupHtml = `<!DOCTYPE html>
 const transform = (content: Buffer, _: string) => {
   var manifest = JSON.parse(content.toString());
   manifest.version = pjson.version; // version control from one source
+
+  // Change manifest for firefox
+  manifest.background = {
+    scripts: [manifest.background.service_worker],
+  };
+  manifest.browser_specific_settings = {
+    gecko: {
+      id: "cstudio.extension@gmail.com",
+    },
+  };
+
   var transformed = JSON.stringify(manifest, null, 2);
   return transformed;
 };
@@ -79,6 +90,11 @@ const config = function (env: any, argv: any): Configuration {
     },
     devtool: false,
     cache: true,
+    // optimization: {
+    //   splitChunks: {
+    //     chunks: "all"
+    //   }
+    // },
     plugins: [
       new HtmlWebpackPlugin({
         templateContent: popupHtml,
