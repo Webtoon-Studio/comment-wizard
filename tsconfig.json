@@ -9,10 +9,10 @@
     /* Path Options */
     "baseUrl": "",
     "paths": {
-      "@root/*": ["*"],
       "@assets/*": ["src/assets/*"],
       "@incom/*": ["src/incom/*"],
-      "@popup/*": ["src/popup/*"]
+      "@popup/*": ["src/popup/*"],
+      "@root/*": ["*"]
       //     "@dashboard/*": ["dashboard/*"],
       //     "@guide/*": ["guide/*"],
       //     "@/*": ["*"],

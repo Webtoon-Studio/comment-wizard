@@ -1,43 +1,55 @@
 import Switch, { SwitchProps } from "@popup/src/common/components/switch";
 import { FaSun } from "react-icons/fa6";
 import { FaMoon } from "react-icons/fa6";
-import { Rgb } from "../../common/utils/colorHelper";
+import { Rgb, twColor } from "../../common/utils/colorHelper";
 import { IComponentColor } from "@popup/src/interface";
-import { useContext } from "react";
+import { useContext, useMemo } from "react";
 import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
+import Button, { ButtonProps } from "@popup/src/common/components/button";
 
-interface ThemeSwitchProps extends SwitchProps {}
+interface ThemeSwitchProps extends ButtonProps {}
 
 export default function ThemeSwitch(props: ThemeSwitchProps) {
   const { ...others } = props;
   const { mode, toggle } = useContext(ThemeContext);
 
-  const sunColor = new Rgb(250, 230, 0);
-  const moonColor = new Rgb(20, 40, 50);
-  const mainColor = new Rgb(250, 230, 100);
+  const mainDarkColor = Rgb.fromHex(twColor.gray[800]) || new Rgb(40, 40, 40);
+  const mainLightColor =
+    Rgb.fromHex(twColor.gray[100]) || new Rgb(255, 255, 255);
 
-  const color: IComponentColor = {
+  const lightColor: IComponentColor = {
     iType: "componentColor",
-    default: mainColor.toHex(),
-    dark: mainColor.dark().toHex(),
-    light: mainColor.light().toHex(),
-    contrastText: new Rgb(250, 230, 100).getContrastText().toHex(),
+    default: mainLightColor.toHex(),
+    hover: mainLightColor.dark().toHex(),
+    text: new Rgb(250, 230, 100).getContrastText().toHex(),
   };
 
-  const handleChange = (newValue: boolean) => {
-    if ((newValue && mode === "dark") || (!newValue && mode === "light")) {
-      toggle();
-    }
+  const darkColor: IComponentColor = {
+    iType: "componentColor",
+    default: mainDarkColor.toHex(),
+    hover: mainDarkColor.light().toHex(),
+    text: new Rgb(250, 230, 100).getContrastText().toHex(),
   };
+
+  const handleClick = () => {
+    toggle();
+  };
+
+  const iconComponent = useMemo(() => {
+    return mode === "dark" ? (
+      <FaMoon color={mainLightColor.toHex()} />
+    ) : (
+      <FaSun color={mainDarkColor.toHex()} />
+    );
+  }, [mode]);
 
   return (
-    <Switch
+    <Button
       {...others}
-      color={color}
-      checked={mode === "light"}
-      onChange={handleChange}
-      startIcon={<FaSun color={sunColor.toHex()} />}
-      endIcon={<FaMoon color={moonColor.toHex()} />}
-    />
+      color={mode === "dark" ? darkColor : lightColor}
+      onClick={() => handleClick()}
+    >
+      {iconComponent}
+    </Button>
   );
 }

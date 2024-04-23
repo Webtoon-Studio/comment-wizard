@@ -6,6 +6,7 @@ import ThemeSwitch from "@popup/src/features/components/themeSwitch";
 
 import { FaGear } from "react-icons/fa6";
 import { IS_DEV } from "@root/src/popup";
+import SettingButton from "@popup/src/features/components/settingButton";
 
 export default function App() {
   // const { mode } = useContext(ThemeContext);
@@ -26,15 +27,9 @@ export default function App() {
       <div className="text-center my-2">
         <h3>Comment Wizard</h3>
       </div>
-      <div className="flex justify-between items-center gap-2">
-        <div id="left-menu" className="flex justify-start gap-2">
-          <ThemeSwitch />
-        </div>
-        <div id="right-menu" className="flex justify-end gap-2">
-          <Button color="gray" round="full" className="">
-            <FaGear color="inherit" />
-          </Button>
-        </div>
+      <div className="flex justify-end items-strech gap-2">
+        <ThemeSwitch />
+        <SettingButton />
       </div>
       <div className="text-sm">
         <p>Hover over each option for additional information.</p>

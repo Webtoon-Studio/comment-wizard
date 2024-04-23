@@ -26,6 +26,23 @@ export class Rgb implements IRgb {
     this.b = b;
   }
 
+  static fromHex(hex: string): Rgb {
+    // Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+    var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, function (_, r, g, b) {
+      return r + r + g + g + b + b;
+    });
+
+    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result
+      ? new Rgb(
+          parseInt(result[1], 16),
+          parseInt(result[2], 16),
+          parseInt(result[3], 16)
+        )
+      : new Rgb(0, 0, 0);
+  }
+
   toString(): string {
     return `rgb(${this.r},${this.g},${this.b})`;
   }
@@ -86,34 +103,30 @@ export function getComponentColor(
       return {
         iType: "componentColor",
         default: twColor.transparent,
-        dark: twColor.transparent,
-        light: twColor.transparent,
-        contrastText: twColor.black,
+        hover: twColor.transparent,
+        text: twColor.black,
       };
     case "gray":
       return {
         iType: "componentColor",
         default: twColor.gray.DEFAULT,
-        dark: twColor.gray.dark,
-        light: twColor.gray.light,
-        contrastText: twColor.black,
+        hover: twColor.gray.dark,
+        text: twColor.black,
       };
     case "disabled":
       return {
         iType: "componentColor",
         default: twColor.gray.DEFAULT,
-        dark: twColor.gray.dark,
-        light: twColor.gray.light,
-        contrastText: twColor.gray.darker,
+        hover: twColor.gray.dark,
+        text: twColor.gray.darker,
       };
     case "default":
     default:
       return {
         iType: "componentColor",
         default: twColor.webtoon.DEFAULT,
-        dark: twColor.webtoon.dark,
-        light: twColor.webtoon.light,
-        contrastText: twColor.gray[100],
+        hover: twColor.webtoon.dark,
+        text: twColor.gray[100],
       };
   }
 }

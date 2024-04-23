@@ -106,9 +106,7 @@ export default function Switch(props: SwitchProps) {
           ].join(" ")}
           style={{
             borderColor: checked
-              ? mode === "dark"
-                ? color.dark
-                : color.default
+              ? color.default
               : mode === "dark"
               ? twColor.gray[400]
               : twColor.gray[200],
@@ -130,9 +128,7 @@ export default function Switch(props: SwitchProps) {
             className={["absolute inset-[-1px]"].join(" ")}
             style={{
               backgroundColor: checked
-                ? mode === "dark"
-                  ? color.dark
-                  : color.default
+                ? color.default
                 : mode === "dark"
                 ? twColor.gray[500]
                 : twColor.gray[200],

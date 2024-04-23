@@ -9,9 +9,8 @@ export interface ISetting {
 export interface IComponentColor {
   iType: "componentColor";
   default: string;
-  dark: string;
-  light: string;
-  contrastText: string;
+  hover: string;
+  text: string;
 }
 
 export type ComponentSizeType = "small" | "medium" | "large";
