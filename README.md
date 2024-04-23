@@ -1,4 +1,4 @@
-# Comment Wizard (Devcomics Hub takeover)
+# Comment Wizard (Devcomics Hub fork)
 
 ## Package Scripts
 
