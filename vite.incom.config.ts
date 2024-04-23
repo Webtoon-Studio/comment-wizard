@@ -19,7 +19,7 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: "@root", replacement: resolve(__dirname) },
-      { find: "@popup", replacement: resolve(__dirname, "popup") },
+      { find: "@popup", replacement: resolve(__dirname, "src/popup") },
       { find: "@assets", replacement: resolve(__dirname, "src/assets") },
       { find: "@incom", replacement: resolve(__dirname, "src/incom") },
     ],

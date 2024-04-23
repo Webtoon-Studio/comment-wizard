@@ -1,8 +1,22 @@
 import { resolve } from "path";
 import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugion from "mini-css-extract-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
 import { Configuration } from "webpack";
 import pjson from "./package.json";
+
+const popupHtml = `<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Comment Wizard</title>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>`;
 
 // content, absoluteFrom
 const transform = (content: Buffer, _: string) => {
@@ -20,6 +34,7 @@ const config = function (env: any, argv: any): Configuration {
       worker: "./worker.ts",
       content: "./content.ts",
       incom: "./incom/index.tsx",
+      popup: "./popup/index.tsx",
     },
     module: {
       rules: [
@@ -49,6 +64,7 @@ const config = function (env: any, argv: any): Configuration {
     },
     resolve: {
       alias: {
+        "@popup": resolve(__dirname, "src/popup"),
         "@assets": resolve(__dirname, "src/assets"),
         "@incom": resolve(__dirname, "src/incom"),
         "@root": resolve(__dirname),
@@ -58,11 +74,17 @@ const config = function (env: any, argv: any): Configuration {
     output: {
       filename: "[name].js",
       path: resolve(__dirname, "dist"),
-      // clean: true
+      clean: true,
     },
     devtool: false,
     cache: true,
     plugins: [
+      new HtmlWebpackPlugin({
+        templateContent: popupHtml,
+        scriptLoading: "module",
+        filename: "popup.html",
+        chunks: ["popup"],
+      }),
       new MiniCssExtractPlugion({
         filename: "./assets/[name].css",
         // chunkFilename: "./assets/inject.css"

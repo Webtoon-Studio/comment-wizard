@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ISetting } from "@popup/src/interface";
 import { STORAGE_SETTING_NAME } from "@root/src/global";
+import { IS_DEV } from "@root/src/popup";
 
 const defaultSetting: ISetting[] = [
   {
@@ -52,7 +53,7 @@ const defaultSetting: ISetting[] = [
 
 async function loadSetting(): Promise<ISetting[]> {
   console.log("Loading Setting");
-  if (import.meta.env.DEV || !chrome.storage) {
+  if (IS_DEV || !chrome.storage) {
     const storedItem = localStorage.getItem(STORAGE_SETTING_NAME);
     if (storedItem) {
       const importedSetting = JSON.parse(storedItem);
@@ -92,7 +93,7 @@ async function loadSetting(): Promise<ISetting[]> {
 
 function saveSetting(setting: ISetting[]) {
   console.log("Saving Setting");
-  if (import.meta.env.DEV || !chrome.storage) {
+  if (IS_DEV || !chrome.storage) {
     localStorage.setItem(STORAGE_SETTING_NAME, JSON.stringify(setting));
   } else {
     chrome.storage.sync.set({

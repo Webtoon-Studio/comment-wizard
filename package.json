@@ -7,8 +7,8 @@
   "scripts": {
     "preview:popup": "vite --mode=development --config=vite.popup.config.ts",
     "preview:incom": "vite --mode=development --config=vite.incom.config.ts",
-    "dev": "vite build --config=vite.popup.config.ts --mode=development && webpack --mode=development",
-    "build": "vite build --config=vite.popup.config.ts & webpack --mode=production",
+    "dev": "webpack --mode=development",
+    "build": "webpack --mode=production",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
     "prepare": "husky install",
@@ -51,6 +51,7 @@
     "eslint": "^8.57.0",
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
+    "html-webpack-plugin": "^5.6.0",
     "husky": "^8.0.0",
     "jest": "^29.7.0",
     "jsdom": "^24.0.0",

@@ -1,3 +1,4 @@
+import { IS_DEV } from "@root/src/popup";
 import { useEffect, useState } from "react";
 
 export function useCounter() {
@@ -16,7 +17,7 @@ export function useCounter() {
   // TODO: Move badget text update to service worker for update outside of popup
   // Sync up Badge Text on counter change
   useEffect(() => {
-    if (import.meta.env.PROD && chrome.action) {
+    if (!IS_DEV && chrome.action) {
       if (counter > 0) {
         // TODO: set badge background as well
         chrome.action.setBadgeText({ text: `${counter}` });

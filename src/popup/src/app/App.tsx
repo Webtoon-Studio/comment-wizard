@@ -5,6 +5,7 @@ import Button from "@popup/src/common/components/button";
 import ThemeSwitch from "@popup/src/features/components/themeSwitch";
 
 import { FaGear } from "react-icons/fa6";
+import { IS_DEV } from "@root/src/popup";
 
 export default function App() {
   // const { mode } = useContext(ThemeContext);
@@ -19,7 +20,7 @@ export default function App() {
       className={[
         "dark:border-gray-600",
         "p-2 space-y-2 text-base",
-        import.meta.env.DEV ? "border-2" : "",
+        IS_DEV ? "border-2" : "",
       ].join(" ")}
     >
       <div className="text-center my-2">
@@ -45,6 +46,7 @@ export default function App() {
         {setting
           ? setting.map((el, i) => (
               <li
+                key={i}
                 className={[
                   "border-b-2 last:border-b-0 border-inherit",
                   "bg-white dark:bg-black",
@@ -52,7 +54,7 @@ export default function App() {
                   "",
                 ].join(" ")}
               >
-                <ToolTip key={i} width={"280px"} text={el.toolTip}>
+                <ToolTip width={"280px"} text={el.toolTip}>
                   <div className="flex justify-between px-2 py-1">
                     <span className="text-sm">{el.desc}</span>
                     <Switch

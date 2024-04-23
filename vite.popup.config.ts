@@ -9,16 +9,16 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        "popup/index": resolve(__dirname, "popup/index.html"),
+        "src/popup/index": resolve(__dirname, "src/popup/index.html"),
       },
     },
   },
   server: {
-    open: "./popup/index.html",
+    open: "./src/popup/index.html",
   },
   resolve: {
     alias: [
-      { find: "@popup", replacement: resolve(__dirname, "popup") },
+      { find: "@popup", replacement: resolve(__dirname, "src/popup") },
       { find: "@root", replacement: resolve(__dirname) },
     ],
   },

@@ -9,7 +9,7 @@ import {
   STORAGE_POSTS_NAME,
   STORAGE_SETTING_NAME,
 } from "./global";
-import { Post } from "./webtoon";
+import { Post } from "./post";
 
 let setting = {
   incomingComments: true,

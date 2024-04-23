@@ -1,3 +1,4 @@
+import { IS_DEV } from "@root/src/popup";
 import {
   Context,
   createContext,
@@ -15,7 +16,7 @@ const defaultThemeMode: ThemeMode = window.matchMedia(
   : "light";
 
 async function loadTheme(): Promise<ThemeMode> {
-  if (import.meta.env.PROD && chrome.storage) {
+  if (!IS_DEV && chrome.storage) {
     return chrome.storage.sync.get(STORAGE_THEME_NAME).then((items) => {
       if (STORAGE_THEME_NAME in items) {
         return items[STORAGE_THEME_NAME] as ThemeMode;

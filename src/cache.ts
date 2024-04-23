@@ -1,4 +1,4 @@
-import { Post, PostIdType } from "./webtoon";
+import { Post, PostIdType } from "./post";
 
 export class Cache {
   posts: Post[];

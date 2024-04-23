@@ -11,8 +11,8 @@
     "paths": {
       "@root/*": ["*"],
       "@assets/*": ["src/assets/*"],
-      "@popup/*": ["popup/*"],
-      "@incom/*": ["src/incom/*"]
+      "@incom/*": ["src/incom/*"],
+      "@popup/*": ["src/popup/*"]
       //     "@dashboard/*": ["dashboard/*"],
       //     "@guide/*": ["guide/*"],
       //     "@/*": ["*"],
