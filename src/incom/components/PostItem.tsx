@@ -2,7 +2,7 @@ import Button from "@root/src/incom/components/Button";
 import DeleteIcon from "@root/src/incom/components/DeleteIcon";
 import DislikeIcon from "@root/src/incom/components/DislikeIcon";
 import LikeIcon from "@root/src/incom/components/LikeIcon";
-import { Post } from "@root/src/webtoon";
+import { Post } from "@root/src/post";
 import { useId } from "react";
 
 interface PostItemProps {

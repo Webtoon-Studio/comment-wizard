@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { PageIdType, Post, PostIdType } from "@root/src/webtoon";
+import { Post, PostIdType, PageIdType } from "@root/src/post";
 
 export function mockPostData(): Post {
   const pageId = `c_109098_${faker.number.int({ min: 1, max: 200 })}`;

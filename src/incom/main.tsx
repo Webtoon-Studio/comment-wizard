@@ -5,7 +5,7 @@ import {
   isPostIdNewer,
   POSTS_FETCHED_EVENT_NAME,
 } from "../global";
-import { Post } from "../webtoon";
+import { Post } from "@root/src/post";
 import PostItem from "./components/PostItem";
 import { mockPostData } from "@root/src/incom/service/data";
 

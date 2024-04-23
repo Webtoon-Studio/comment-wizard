@@ -1,3 +1,4 @@
+import { Post, PageIdType, PostIdType, IPost } from "@root/src/post";
 import {
   STORAGE_SERIES_NAME,
   STORAGE_NEWEST_NAME,
@@ -5,8 +6,8 @@ import {
   EpisodeNewestPost,
   SeriesItem,
   isPostIdNewer,
+  getSessionFromCookie,
 } from "./global";
-import { IPost, PageIdType, Post, PostIdType, Webtoon } from "./webtoon";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -36,18 +37,6 @@ type GetPostsRepsonse = {
 };
 
 // ================================================================================ //
-
-async function getSessionFromCookie(): Promise<string | null> {
-  if (chrome.cookies) {
-    const details: chrome.cookies.Details = {
-      name: "NEO_SES",
-      url: "https://www.webtoons.com",
-    };
-    const cookie = await chrome.cookies.get(details);
-    return cookie?.value || null;
-  }
-  return null;
-}
 
 // ============================== SERIES LOAD / SAVE ============================== //
 async function loadSeries(): Promise<SeriesItem[] | null> {
