@@ -5,6 +5,7 @@ import {
   EpisodeNewestPost,
   INCOM_ONMOUNTED_EVENT_NAME,
   POSTS_FETCHED_EVENT_NAME,
+  POSTS_REQUEST_EVENT_NAME,
   STORAGE_NEWEST_NAME,
   STORAGE_POSTS_NAME,
   STORAGE_SETTING_NAME,
@@ -273,6 +274,7 @@ function modifyMyComments(inject: boolean) {
   }
 
   const isExist = document.getElementById("cs-comment-tabs-root") !== null;
+
   if (!isExist) {
     const contentTabs = content.children.item(1);
     const commentTabs = createElement("div", {
@@ -345,17 +347,17 @@ function modifyMyComments(inject: boolean) {
   // Setup event listener
   window.addEventListener(INCOM_ONMOUNTED_EVENT_NAME, () => {
     console.log("inCommentRoot onload?");
-    chrome.storage.local
-      .get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
-      .then((items) => {
-        if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
+    chrome.runtime
+      .sendMessage({ greeting: POSTS_REQUEST_EVENT_NAME })
+      .then((resp) => {
+        if ("posts" in resp && "newest" in resp) {
           window.dispatchEvent(
             new CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>(
               POSTS_FETCHED_EVENT_NAME,
               {
                 detail: {
-                  posts: items[STORAGE_POSTS_NAME],
-                  newest: items[STORAGE_NEWEST_NAME],
+                  posts: resp.posts,
+                  newest: resp.newest,
                 },
               }
             )
@@ -525,14 +527,16 @@ async function main() {
 }
 
 try {
+  // Firefox browser
   browser.tabs.onUpdated.addListener(async () => {
     console.log("Tab updated");
     await getSetting();
     main();
   });
 } catch (err) {
+  // Chromium browsers
   window.onload = async () => {
-    console.log("Tab updated");
+    console.log("Window onload");
     await getSetting();
     main();
   };

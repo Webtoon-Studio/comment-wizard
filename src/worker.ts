@@ -7,6 +7,7 @@ import {
   SeriesItem,
   isPostIdNewer,
   getSessionFromCookie,
+  POSTS_REQUEST_EVENT_NAME,
 } from "./global";
 
 // =============================== GLOBAL VARIABLES =============================== //
@@ -539,6 +540,41 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     }
   }
 });
+
+chrome.runtime.onMessage.addListener(
+  (
+    message: any,
+    sender: chrome.runtime.MessageSender,
+    sendReponse: (resopnse?: any) => void
+  ) => {
+    if (message.greeting === POSTS_REQUEST_EVENT_NAME) {
+      // Incoming Comments Component is mounted and is requesting data
+      // Start fetching, but for now send the stored data (if exist)
+      // Once fetch is done, the data should be synced via storage.local.onChange event
+
+      // Fetching new posts is handled via alarm event
+      chrome.alarms.create(GETTING_NEW_POSTS_ALARM_NAME, {
+        delayInMinutes: 0,
+        periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
+      });
+
+      // Sending what's in the storage
+      chrome.storage.local
+        .get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
+        .then((items) => {
+          if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
+            sendReponse({
+              posts: items[STORAGE_POSTS_NAME],
+              newest: items[STORAGE_NEWEST_NAME],
+            });
+          }
+        });
+
+      return true;
+    }
+    return false;
+  }
+);
 
 chrome.runtime.onInstalled.addListener((installDetails) => {
   switch (installDetails.reason) {

@@ -8,6 +8,15 @@ import {
 import { Post } from "@root/src/post";
 import PostItem from "./components/PostItem";
 import { mockPostData } from "@root/src/mock";
+import Loading from "@incom/components/Loading";
+
+export const IS_PROD = (() => {
+  try {
+    return import.meta.env.PROD;
+  } catch {
+    return true;
+  }
+})();
 
 interface PaginationProps {
   count: number;
@@ -59,6 +68,7 @@ function Pagination(props: PaginationProps) {
 
 export default function Main() {
   const ref = useRef<HTMLDivElement>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [newest, setNewest] = useState<EpisodeNewestPost[] | null>(null);
   const [page, setPage] = useState(0);
@@ -67,33 +77,28 @@ export default function Main() {
   // OnMount
   //     - Set up event listner to communicate with service worker
   useEffect(() => {
-    const isProd = (() => {
-      try {
-        return import.meta.env.PROD;
-      } catch {
-        return true;
-      }
-    })(); //process.env.NODE_ENV !== "development"
-    console.log("Is Prod?", isProd);
-    if (isProd) {
+    console.log("Is Prod?", IS_PROD);
+    if (IS_PROD) {
       console.log("setting event listener in main");
       window.addEventListener(POSTS_FETCHED_EVENT_NAME, ((
-        event: CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>
+        event: CustomEvent<{ posts?: Post[]; newest?: EpisodeNewestPost[] }>
       ) => {
         console.log("event received: ", event);
         const fetchedPosts = event.detail.posts;
         const newPosts: Post[] = [...(posts || [])];
-        fetchedPosts.forEach((post) => {
+        fetchedPosts?.forEach((post) => {
           if (!newPosts.find((p) => p.id === post.id)) {
             newPosts.push(post);
           }
         });
         setPosts(newPosts);
-        setNewest(event.detail.newest as EpisodeNewestPost[]);
+        setNewest((event.detail.newest as EpisodeNewestPost[]) ?? null);
+        setIsLoading(false);
       }) as EventListener);
       window.dispatchEvent(new CustomEvent(INCOM_ONMOUNTED_EVENT_NAME));
     } else {
       setPosts(Array.from(new Array(5000)).map(() => mockPostData()));
+      setTimeout(() => setIsLoading(false), 2000);
     }
   }, []);
 
@@ -120,31 +125,44 @@ export default function Main() {
   }, [posts, newest, page, perPage]);
 
   return (
-    <div ref={ref}>
+    <div ref={ref} className="">
       {/* <div className="absolute left-0 top-[-4rem] w-[300px] h-[3rem] px-4 py-2 border-2 rounded-full bg-[#8c8c8c] text-white font-medium">
         <div className="h-full flex items-center">
           <span>Filter</span>
 
         </div>
       </div> */}
-      <ul className="">
-        {visiblePosts.map((p, i) => (
-          <li key={i} className="py-[30px] border-b-2 last-child:border-b-0">
-            <PostItem post={p} />
-          </li>
-        ))}
-      </ul>
-      <div>
-        <div className="flex justify-center">
-          {posts ? (
-            <Pagination
-              count={posts.length}
-              page={page}
-              perPage={perPage}
-              onPageChange={handlePageChange}
-            />
-          ) : null}
-        </div>
+      <div className="relative">
+        {!isLoading ? (
+          <>
+            <ul className="">
+              {visiblePosts.map((p, i) => (
+                <li
+                  key={i}
+                  className="py-[30px] border-b-2 last-child:border-b-0"
+                >
+                  <PostItem post={p} />
+                </li>
+              ))}
+            </ul>
+            <div>
+              <div className="flex justify-center">
+                {posts ? (
+                  <Pagination
+                    count={posts.length}
+                    page={page}
+                    perPage={perPage}
+                    onPageChange={handlePageChange}
+                  />
+                ) : null}
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="w-full min-h-[50vh] flex justify-center items-center pb-[10px]">
+            <Loading />
+          </div>
+        )}
       </div>
     </div>
   );
