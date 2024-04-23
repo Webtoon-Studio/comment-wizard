@@ -66,8 +66,14 @@ export default function Main() {
   // OnMount
   //     - Set up event listner to communicate with service worker
   useEffect(() => {
-    const isProd = process.env.NODE_ENV !== "development";
-    console.log(isProd);
+    const isProd = (() => {
+      try {
+        return import.meta.env.PROD;
+      } catch {
+        return true;
+      }
+    })(); //process.env.NODE_ENV !== "development"
+    console.log("Is Prod?", isProd);
     if (isProd) {
       console.log("setting event listener in main");
       window.addEventListener(POSTS_FETCHED_EVENT_NAME, ((

@@ -6,5 +6,9 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true
   },
-  "include": ["vite.config.ts", "webpack.config.ts"]
+  "include": [
+    "vite.popup.config.ts",
+    "vite.incom.config.ts",
+    "webpack.config.ts"
+  ]
 }
