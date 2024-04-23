@@ -7,7 +7,7 @@ import {
 } from "../global";
 import { Post } from "@root/src/post";
 import PostItem from "./components/PostItem";
-import { mockPostData } from "@root/src/incom/service/data";
+import { mockPostData } from "@root/src/mock";
 
 interface PaginationProps {
   count: number;
@@ -34,6 +34,7 @@ function Pagination(props: PaginationProps) {
       </div>
       {Array.from(Array(max)).map((_, i) => (
         <div
+          key={i}
           className={[
             "cursor-pointer h-8 aspect-square rounded-full bg-gray-100 text-sm flex justify-center items-center",
             "hover:text-webtoon",
