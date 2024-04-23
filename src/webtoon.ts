@@ -113,13 +113,11 @@ export interface IPost {
     {
       reactionId: string; // e.g. "post_like" // TODO: Specify more?
       contentId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
-      emotions: [
-        {
-          emotionId: string; //e.g. "like" // TODO: Specify more?
-          count: number;
-          reacted: boolean;
-        }
-      ];
+      emotions: {
+        emotionId: string; //e.g. "like" // TODO: Specify more?
+        count: number;
+        reacted: boolean;
+      }[];
     }
   ];
   extraList: any[]; // TODO: Specify type of the array?
