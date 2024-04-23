@@ -1,0 +1,44 @@
+@import url("https://fonts.googleapis.com/css2?family=Hind:wght@300;400;500;600;700&display=swap");
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-3xl font-bold;
+  }
+  h2 {
+    @apply text-2xl font-medium;
+  }
+  h3 {
+    @apply text-xl font-medium;
+  }
+  h4 {
+    @apply text-lg font-medium;
+  }
+  h5 {
+    @apply text-base font-medium;
+  }
+  body.dark {
+    @apply border-gray-600 text-gray-50 bg-black;
+  }
+  body.dark > * {
+    @apply border-gray-600 text-gray-50 bg-black;
+  }
+}
+
+:root {
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: hind_m, simhei, roboto, verdana, Helvetica, sans-serif;
+  width: 380px;
+  font-size: 100%;
+
+  background-color: white;
+  color: theme("colors.gray.dark");
+}
