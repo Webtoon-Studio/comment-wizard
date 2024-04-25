@@ -12,7 +12,6 @@
     "build:firefox": "webpack --mode=production --config=webpack.firefox.config.ts",
     "prettier:check": "prettier --check .",
     "prettier:format": "prettier --write .",
-    "prepare": "husky install",
     "test": "jest"
   },
   "repository": {
@@ -54,7 +53,6 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.6",
     "html-webpack-plugin": "^5.6.0",
-    "husky": "^8.0.0",
     "jest": "^29.7.0",
     "jsdom": "^24.0.0",
     "mini-css-extract-plugin": "^2.9.0",
@@ -66,10 +64,5 @@
     "typescript": "^5.4.5",
     "vite": "^5.2.8",
     "webpack-cli": "^5.1.4"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged"
-    }
   }
 }
