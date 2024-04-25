@@ -405,9 +405,32 @@ export class Post {
   }
 
   async delete() {
-    // https://www.webtoons.com/p/api/community/v2/post/GW-epicom:0-c_843910_2-3-4
-    // DELETE http method
-    throw new Error("todo");
+    // ..post/GW-epicom:0-c_843910_2-3
+    const url = `https://www.webtoons.com/p/api/community/v2/post/${this.id}`;
+
+    const session = await getSessionFromCookie();
+
+    if (session === null) {
+      throw new Error("Failed to get current user session from cookie");
+    }
+
+    const apiToken = await getApiToken();
+
+    if (apiToken === undefined) {
+      throw new Error("Failed to get api token");
+    }
+
+    const headers = new Headers();
+    headers.append("Service-Ticket-Id", "epicom");
+    headers.append("Accept-Encoding", "gzip, deflate, br, zstd");
+    headers.append("Cookie", session);
+    headers.append("Api-Token", apiToken);
+
+    const response = await fetch(url, { method: "DELETE", headers: headers });
+
+    if (!response.ok) {
+      throw new Error(`Failed to delete post ${this.id}`);
+    }
   }
 
   async report() {
