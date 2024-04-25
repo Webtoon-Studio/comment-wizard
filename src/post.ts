@@ -442,7 +442,35 @@ export class Post {
 	}
 
 	async block() {
-		throw new Error("todo");
+		const url = `https://www.webtoons.com/p/api/community/v1/restriction/type/write-post/page/${this.webtoonType}_${this.webtoonId}_${this.episode}/target/${this.userId}`;
+
+		const session = await getSessionFromCookie();
+
+		if (session === null) {
+			throw new Error("Failed to get current user session from cookie");
+		}
+
+		const apiToken = await getApiToken();
+
+		if (apiToken === undefined) {
+			throw new Error("Failed to get api token");
+		}
+
+		const headers = new Headers();
+		headers.append("Service-Ticket-Id", "epicom");
+		headers.append("Accept-Encoding", "gzip, deflate, br, zstd");
+		headers.append("Cookie", session);
+		headers.append("Api-Token", apiToken);
+
+		const response = await fetch(url, {
+			method: "POST",
+			headers: headers,
+			body: `{ "sourcePostId": ${this.id} }`,
+		});
+
+		if (!response.ok) {
+			throw new Error(`Failed to block user ${this.username}`);
+		}
 	}
 
 	static fromCached(obj: Post): Post {
