@@ -1,39 +1,39 @@
 {
-  "name": "Comment Wizard",
-  "description": "This extension lists comments that were left on episodes of your webcomic you uploaded on WEBTOON to make comment management easier.",
-  "version": "2",
-  "author": "Freiha",
-  "manifest_version": 3,
-  "icons": {
-    "16": "assets/icon16.png",
-    "32": "assets/icon32.png",
-    "48": "assets/icon48.png",
-    "128": "assets/icon128.png"
-  },
-  "action": {
-    "default_icon": "assets/icon.png",
-    "default_popup": "popup.html",
-    "default_title": "Comment Wizard"
-  },
-  "permissions": ["storage", "cookies", "alarms", "unlimitedStorage"],
-  "host_permissions": ["https://www.webtoons.com/"],
-  "content_scripts": [
-    {
-      "matches": ["https://www.webtoons.com/*"],
-      "js": ["content.js"]
-    }
-  ],
-  "background": {
-    "service_worker": "worker.js",
-    "type": "module"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["assets/*.js", "assets/*.css", "incom.js"],
-      "matches": ["https://www.webtoons.com/*"]
-    }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  }
+	"name": "Comment Wizard",
+	"description": "This extension lists comments that were left on episodes of your webcomic you uploaded on WEBTOON to make comment management easier.",
+	"version": "2",
+	"author": "Freiha",
+	"manifest_version": 3,
+	"icons": {
+		"16": "assets/icon16.png",
+		"32": "assets/icon32.png",
+		"48": "assets/icon48.png",
+		"128": "assets/icon128.png"
+	},
+	"action": {
+		"default_icon": "assets/icon.png",
+		"default_popup": "popup.html",
+		"default_title": "Comment Wizard"
+	},
+	"permissions": ["storage", "cookies", "alarms", "unlimitedStorage"],
+	"host_permissions": ["https://www.webtoons.com/"],
+	"content_scripts": [
+		{
+			"matches": ["https://www.webtoons.com/*"],
+			"js": ["content.js"]
+		}
+	],
+	"background": {
+		"service_worker": "worker.js",
+		"type": "module"
+	},
+	"web_accessible_resources": [
+		{
+			"resources": ["assets/*.js", "assets/*.css", "incom.js"],
+			"matches": ["https://www.webtoons.com/*"]
+		}
+	],
+	"content_security_policy": {
+		"extension_pages": "script-src 'self'; object-src 'self'"
+	}
 }

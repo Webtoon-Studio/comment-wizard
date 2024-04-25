@@ -83,320 +83,331 @@ As of 2024-4-5 this is the shape of the posts api:
 */
 
 import { getCurrentUserSession } from "@root/src/global";
-import { Post, PostIdType, PageIdType, PostResponse } from "@root/src/post";
+import {
+	type PageIdType,
+	Post,
+	type PostIdType,
+	type PostResponse,
+} from "@root/src/post";
 
 export class Webtoon {
-  readonly url: string;
+	readonly url: string;
 
-  type: "c" | "w";
-  id: `${number}`; // webtoon title id
+	type: "c" | "w";
+	id: `${number}`; // webtoon title id
 
-  // initialized as null first. Must call getEpisodesCount first!
-  episodes: number | null;
+	// initialized as null first. Must call getEpisodesCount first!
+	episodes: number | null;
 
-  constructor(url: string) {
-    this.url = url;
+	constructor(url: string) {
+		this.url = url;
 
-    let regex = RegExp(
-      "https:\\/\\/www.webtoons.com\\/\\w\\w\\/(\\w+)\\/.+\\/list\\?title_no=(\\d+)"
-    );
+		const regex =
+			"/https:\\/\\/www.webtoons.com\\/ww\\/(w+)\\/.+\\/list?title_no=(d+)/";
 
-    const matches = url.match(regex);
+		const matches = url.match(regex);
 
-    if (matches && matches.length !== 2) {
-      if (matches[1] === "canvas") {
-        this.type = "c";
-      } else {
-        this.type = "w";
-      }
+		if (matches && matches.length !== 2) {
+			if (matches[1] === "canvas") {
+				this.type = "c";
+			} else {
+				this.type = "w";
+			}
 
-      this.id = matches[2] as `${number}`;
-    } else {
-      let msg = `Provided URL ${url} did not follow specification of https://webtoons.com/../(canvas|genre)/.../list?title_no=(NUMBER)`;
-      throw new Error(msg);
-    }
+			this.id = matches[2] as `${number}`;
+		} else {
+			const msg = `Provided URL ${url} did not follow specification of https://webtoons.com/../(canvas|genre)/.../list?title_no=(NUMBER)`;
+			throw new Error(msg);
+		}
 
-    this.episodes = null;
-  }
+		this.episodes = null;
+	}
 
-  async getEpisodeCount() {
-    const response = await fetch(this.url, {
-      credentials: "include",
-    });
+	async getEpisodeCount() {
+		const response = await fetch(this.url, {
+			credentials: "include",
+		});
 
-    const html = await response.text();
+		const html = await response.text();
 
-    let container = document.createElement("div");
-    container.innerHTML = html;
+		const container = document.createElement("div");
+		container.innerHTML = html;
 
-    const item = container.querySelector("li._episodeItem");
+		const item = container.querySelector("li._episodeItem");
 
-    if (item) {
-      const episode = item.getAttribute("data-episode-no");
-      if (episode) {
-        this.episodes = parseInt(episode, 10);
-      } else {
-        throw new Error(
-          `Failed to find "data-episode-no" from the item: ${item}`
-        );
-      }
-    } else {
-      throw new Error(`Failed to find episodes from page of ${this.url}`);
-    }
-  }
+		if (item) {
+			const episode = item.getAttribute("data-episode-no");
+			if (episode) {
+				this.episodes = Number.parseInt(episode, 10);
+			} else {
+				throw new Error(
+					`Failed to find "data-episode-no" from the item: ${item}`,
+				);
+			}
+		} else {
+			throw new Error(`Failed to find episodes from page of ${this.url}`);
+		}
+	}
 
-  async getPosts() {
-    let posts = new Set<Post>();
+	async getPosts() {
+		const posts = new Set<Post>();
 
-    let episode = 1;
+		let episode = 1;
 
-    episodes: while (true) {
-      const url = postUrl(this.type, this.id, episode);
+		episodes: while (true) {
+			const url = postUrl(this.type, this.id, episode);
 
-      const response = await webtoonFetch(url);
+			const response = await webtoonFetch(url);
 
-      // NOTE: If an episode doesnt exist, then it will return a 404.
-      // This signifies that all available episodes have been gone through.
-      if (response.status === 404) {
-        break;
-      }
+			// NOTE: If an episode doesnt exist, then it will return a 404.
+			// This signifies that all available episodes have been gone through.
+			if (response.status === 404) {
+				break;
+			}
 
-      const json = (await response.json()) as PostResponse;
+			const json = (await response.json()) as PostResponse;
 
-      if (json.status === "fail") {
-        console.log(json);
-        throw new Error("Failed to get posts from api: " + json.error);
-      }
+			if (json.status === "fail") {
+				console.log(json);
+				throw new Error(`Failed to get posts from api: ${json.error}`);
+			}
 
-      json.result.posts.forEach((post) => posts.add(new Post(post)));
+			for (const post of json.result.posts) {
+				posts.add(new Post(post));
+			}
 
-      let next = json.result.pagination.next;
+			let next = json.result.pagination.next;
 
-      while (next !== undefined) {
-        const url = postUrl(this.type, this.id, episode, next);
+			while (next !== undefined) {
+				const url = postUrl(this.type, this.id, episode, next);
 
-        const response = await webtoonFetch(url);
+				const response = await webtoonFetch(url);
 
-        // NOTE: If an episode doesnt exist, then it will return a 404.
-        // This signifies that all available episodes have been gone through.
-        if (response.status === 404) {
-          break episodes;
-        }
+				// NOTE: If an episode doesnt exist, then it will return a 404.
+				// This signifies that all available episodes have been gone through.
+				if (response.status === 404) {
+					break episodes;
+				}
 
-        const json = (await response.json()) as PostResponse;
+				const json = (await response.json()) as PostResponse;
 
-        if (json.status === "success") {
-          json.result.posts.forEach((post) => posts.add(new Post(post)));
+				if (json.status === "success") {
+					for (const post of json.result.posts) {
+						posts.add(new Post(post));
+					}
 
-          next = json.result.pagination.next;
-        } else {
-          console.error(`Unable to fetch the next pagination with: ${next}`);
-          next = undefined;
-        }
-      }
+					next = json.result.pagination.next;
+				} else {
+					console.error(`Unable to fetch the next pagination with: ${next}`);
+					next = undefined;
+				}
+			}
 
-      episode += 1;
-    }
+			episode += 1;
+		}
 
-    return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }
+		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+	}
 
-  async getTodaysOrNewestPosts() {
-    let today = new Date();
-    today.setUTCHours(0, 0, 0, 0);
+	async getTodaysOrNewestPosts() {
+		const today = new Date();
+		today.setUTCHours(0, 0, 0, 0);
 
-    let posts = new Set<Post>();
+		const posts = new Set<Post>();
 
-    let episode = 1;
+		let episode = 1;
 
-    episodes: while (true) {
-      const url = postUrl(this.type, this.id, episode);
-
-      const response = await webtoonFetch(url);
-
-      // NOTE: If an episode doesnt exist, then it will return a 404.
-      // This signifies that all available episodes have been gone through.
-      if (response.status === 404) {
-        break;
-      }
-
-      const json = await response.json();
+		episodes: while (true) {
+			const url = postUrl(this.type, this.id, episode);
 
-      if (json.status === "fail") {
-        console.log(json);
-        throw new Error("Failed to get posts from api: " + json.error);
-      }
+			const response = await webtoonFetch(url);
+
+			// NOTE: If an episode doesnt exist, then it will return a 404.
+			// This signifies that all available episodes have been gone through.
+			if (response.status === 404) {
+				break;
+			}
+
+			const json = await response.json();
+
+			if (json.status === "fail") {
+				console.log(json);
+				throw new Error(`Failed to get posts from api: ${json.error}`);
+			}
 
-      let found = false;
-      let added_at_least_first_post = false;
+			let found = false;
+			let added_at_least_first_post = false;
+
+			for (const post of json.result.posts) {
+				if (post.createdAt >= today.getTime() || !added_at_least_first_post) {
+					posts.add(new Post(post));
+					added_at_least_first_post = true;
+				}
 
-      for (let post of json.result.posts) {
-        if (post.createdAt >= today.getTime() || !added_at_least_first_post) {
-          posts.add(new Post(post));
-          added_at_least_first_post = true;
-        }
-
-        found = true;
-        break;
-      }
+				found = true;
+				break;
+			}
 
-      let next = json.result.pagination.next;
+			let next = json.result.pagination.next;
 
-      while (next !== undefined && !found) {
-        const url = postUrl(this.type, this.id, episode, next);
+			while (next !== undefined && !found) {
+				const url = postUrl(this.type, this.id, episode, next);
+
+				const response = await webtoonFetch(url);
+
+				// NOTE: If an episode doesnt exist, then it will return a 404.
+				// This signifies that all available episodes have been gone through.
+				if (response.status === 404) {
+					break episodes;
+				}
 
-        const response = await webtoonFetch(url);
+				const json = await response.json();
 
-        // NOTE: If an episode doesnt exist, then it will return a 404.
-        // This signifies that all available episodes have been gone through.
-        if (response.status === 404) {
-          break episodes;
-        }
+				for (const post of json.result.posts) {
+					if (post.createdAt >= today.getTime()) {
+						posts.add(new Post(post));
+					}
 
-        const json = await response.json();
+					found = true;
+					break episodes;
+				}
 
-        for (let post of json.result.posts) {
-          if (post.createdAt >= today.getTime()) {
-            posts.add(new Post(post));
-          }
+				next = json.result.pagination.next;
+			}
 
-          found = true;
-          break episodes;
-        }
+			episode += 1;
+		}
 
-        next = json.result.pagination.next;
-      }
+		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+	}
 
-      episode += 1;
-    }
+	async getNewestsPosts(
+		prev_newest_map: Map<number, PostIdType>,
+	): Promise<Post[]> {
+		const posts: Post[] = [];
 
-    return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }
+		let episode = 1;
 
-  async getNewestsPosts(
-    prev_newest_map: Map<number, PostIdType>
-  ): Promise<Post[]> {
-    let posts: Post[] = [];
+		const did = { reach_end: false };
 
-    let episode = 1;
+		while (true && !did.reach_end) {
+			const prevNewestPost = prev_newest_map.get(episode);
+			if (prevNewestPost) {
+				const episode_posts = await this.getNewestPostsForEpisode(
+					episode,
+					prevNewestPost,
+					did,
+				);
 
-    let did = { reach_end: false };
+				for (const post of episode_posts) {
+					posts.push(post);
+				}
 
-    while (true && !did.reach_end) {
-      const prevNewestPost = prev_newest_map.get(episode);
-      if (prevNewestPost) {
-        let episode_posts = await this.getNewestPostsForEpisode(
-          episode,
-          prevNewestPost,
-          did
-        );
-        episode_posts.forEach((post) => posts.push(post));
+				episode += 1;
+			} else {
+				console.error(
+					`Unable to get newst posts for episode ${episode}.\nThere is no such key in the prev newst map!`,
+				);
+				break;
+			}
+		}
 
-        episode += 1;
-      } else {
-        console.error(
-          `Unable to get newst posts for episode ${episode}.\nThere is no such key in the prev newst map!`
-        );
-        break;
-      }
-    }
+		return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+	}
 
-    return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }
+	async getNewestPostsForEpisode(
+		episode: number,
+		prev_newest_post: PostIdType,
+		did: { reach_end: boolean },
+	): Promise<Post[]> {
+		if (!this.id || !this.type) {
+			console.error(
+				"Unable to get newst posts for episode: undefined id and/or type field(s)",
+			);
+			return [];
+		}
 
-  async getNewestPostsForEpisode(
-    episode: number,
-    prev_newest_post: PostIdType,
-    did: { reach_end: boolean }
-  ): Promise<Post[]> {
-    if (!this.id || !this.type) {
-      console.error(
-        "Unable to get newst posts for episode: undefined id and/or type field(s)"
-      );
-      return [];
-    }
+		const posts: Post[] = [];
 
-    let posts: Post[] = [];
+		const url = postUrl(this.type, this.id, episode);
 
-    const url = postUrl(this.type, this.id, episode);
+		const response = await webtoonFetch(url);
 
-    const response = await webtoonFetch(url);
+		// NOTE: If an episode doesnt exist, then it will return a 404.
+		// This signifies that all available episodes have been gone through.
+		if (response.status === 404) {
+			did.reach_end = true;
+			return posts;
+		}
 
-    // NOTE: If an episode doesnt exist, then it will return a 404.
-    // This signifies that all available episodes have been gone through.
-    if (response.status === 404) {
-      did.reach_end = true;
-      return posts;
-    }
+		const json = await response.json();
 
-    const json = await response.json();
+		if (json.status === "fail") {
+			console.log(json);
+			throw new Error(`Failed to get posts from api: ${json.error}`);
+		}
 
-    if (json.status === "fail") {
-      console.log(json);
-      throw new Error("Failed to get posts from api: " + json.error);
-    }
+		let found = false;
 
-    let found = false;
+		for (const post of json.result.posts) {
+			if (post.id === prev_newest_post) {
+				found = true;
+				break;
+			}
 
-    for (let post of json.result.posts) {
-      if (post.id === prev_newest_post) {
-        found = true;
-        break;
-      }
+			posts.push(new Post(post));
+		}
 
-      posts.push(new Post(post));
-    }
+		let next = json.result.pagination.next;
 
-    let next = json.result.pagination.next;
+		while (!found && next !== undefined) {
+			const url = postUrl(this.type, this.id, episode, next);
 
-    while (!found && next !== undefined) {
-      const url = postUrl(this.type, this.id, episode, next);
+			const response = await webtoonFetch(url);
+			const json = await response.json();
 
-      const response = await webtoonFetch(url);
-      const json = await response.json();
+			for (const post of json.result.posts) {
+				if (post.id === prev_newest_post) {
+					break;
+				}
 
-      for (let post of json.result.posts) {
-        if (post.id === prev_newest_post) {
-          break;
-        }
+				posts.push(new Post(post));
+			}
 
-        posts.push(new Post(post));
-      }
+			next = json.result.pagination.next;
+		}
 
-      next = json.result.pagination.next;
-    }
-
-    return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-  }
+		return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+	}
 }
 
 export async function webtoonFetch(url: string) {
-  let session = await getCurrentUserSession();
+	const session = await getCurrentUserSession();
 
-  if (session === null) {
-    throw new Error("Failed to get current user session from cookie");
-  }
+	if (session === null) {
+		throw new Error("Failed to get current user session from cookie");
+	}
 
-  let headers = new Headers();
-  headers.append("Service-Ticket-Id", "epicom");
-  headers.append("Accept-Encoding", "gzip, deflate, br, zstd");
-  headers.append("Cookie", session);
+	const headers = new Headers();
+	headers.append("Service-Ticket-Id", "epicom");
+	headers.append("Accept-Encoding", "gzip, deflate, br, zstd");
+	headers.append("Cookie", session);
 
-  return fetch(url, { headers: headers });
+	return fetch(url, { headers: headers });
 }
 
 export function postUrl(
-  type: "c" | "w",
-  webtoonId: `${number}`,
-  episode: number,
-  cursor?: PostIdType
+	type: "c" | "w",
+	webtoonId: `${number}`,
+	episode: number,
+	cursor?: PostIdType,
 ) {
-  const pageId: PageIdType = `${type}_${webtoonId}_${episode}`;
-  const baseUrl = "https://www.webtoons.com/p/api/community/v2";
-  const defaultQuery = "pinRepresentation=none&prevSize=0&nextSize=100";
-  return `${baseUrl}/posts?pageId=${pageId}&${defaultQuery}&cursor=${
-    cursor || ""
-  }&withCusor=true`;
+	const pageId: PageIdType = `${type}_${webtoonId}_${episode}`;
+	const baseUrl = "https://www.webtoons.com/p/api/community/v2";
+	const defaultQuery = "pinRepresentation=none&prevSize=0&nextSize=100";
+	return `${baseUrl}/posts?pageId=${pageId}&${defaultQuery}&cursor=${
+		cursor || ""
+	}&withCusor=true`;
 }
 
 // {
