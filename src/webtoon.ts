@@ -89,6 +89,7 @@ import {
 	type PostIdType,
 	type PostResponse,
 } from "@root/src/post";
+import { Semaphore } from "./semaphore";
 
 export class Webtoon {
 	readonly url: string;
@@ -154,7 +155,12 @@ export class Webtoon {
 
 		let episode = 1;
 
+		// One episode at a time.
+		const episode_semaphore = new Semaphore(1);
+
 		episodes: while (true) {
+			await episode_semaphore.acquire();
+
 			const url = postUrl(this.type, this.id, episode);
 
 			const response = await webtoonFetch(url);
@@ -178,7 +184,12 @@ export class Webtoon {
 
 			let next = json.result.pagination.next;
 
+			// 10 "pages" at a time
+			const semaphore = new Semaphore(10);
+
 			while (next !== undefined) {
+				await semaphore.acquire();
+
 				const url = postUrl(this.type, this.id, episode, next);
 
 				const response = await webtoonFetch(url);
@@ -201,9 +212,13 @@ export class Webtoon {
 					console.error(`Unable to fetch the next pagination with: ${next}`);
 					next = undefined;
 				}
+
+				semaphore.release();
 			}
 
 			episode += 1;
+
+			episode_semaphore.release();
 		}
 
 		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -217,7 +232,12 @@ export class Webtoon {
 
 		let episode = 1;
 
+		// 1 episode at a time.
+		const episode_semaphore = new Semaphore(1);
+
 		episodes: while (true) {
+			await episode_semaphore.acquire();
+
 			const url = postUrl(this.type, this.id, episode);
 
 			const response = await webtoonFetch(url);
@@ -250,7 +270,12 @@ export class Webtoon {
 
 			let next = json.result.pagination.next;
 
+			// 10 "pages" at a time.
+			const semaphore = new Semaphore(10);
+
 			while (next !== undefined && !found) {
+				await semaphore.acquire();
+
 				const url = postUrl(this.type, this.id, episode, next);
 
 				const response = await webtoonFetch(url);
@@ -273,9 +298,13 @@ export class Webtoon {
 				}
 
 				next = json.result.pagination.next;
+
+				semaphore.release();
 			}
 
 			episode += 1;
+
+			episode_semaphore.release();
 		}
 
 		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -290,14 +319,20 @@ export class Webtoon {
 
 		const did = { reach_end: false };
 
+		const semaphore = new Semaphore(10);
+
 		while (true && !did.reach_end) {
 			const prevNewestPost = prev_newest_map.get(episode);
 			if (prevNewestPost) {
+				await semaphore.acquire();
+
 				const episode_posts = await this.getNewestPostsForEpisode(
 					episode,
 					prevNewestPost,
 					did,
 				);
+
+				semaphore.release();
 
 				for (const post of episode_posts) {
 					posts.push(post);
