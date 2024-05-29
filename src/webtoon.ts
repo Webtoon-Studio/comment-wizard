@@ -112,7 +112,7 @@ export class Webtoon {
 
 	status: "idle" | "fetching" | "error";
 
-	errorQueue: { timestamp: number; url: string }[];
+	errorQueue: { timestamp: number; episode: number }[];
 	postsArray: { episode: number; posts: Post[] }[];
 
 	constructor(url: string) {
@@ -162,7 +162,7 @@ export class Webtoon {
 	}
 
 	async getPosts(
-		pageId: PageIdType,
+		episodeNum: number,
 		prevNewestPost?: PostIdType,
 		cursor?: PostIdType,
 	): Promise<GetPostsRepsonse> {
@@ -170,6 +170,7 @@ export class Webtoon {
 		//     - 'true': Got posts and saved
 		//     - 'false': Reached 404, which may mean this is the end of episodes
 		//     - 'null': Something went wrong and could not get posts
+		const pageId: PageIdType = `${this.type}_${this.titleId}_${episodeNum}`;
 		let newNewestPost: PostIdType | undefined;
 	
 		const controller = new AbortController();
@@ -199,8 +200,6 @@ export class Webtoon {
 		}).catch((err) => {
 			if (err.name === "AbortError") {
 				console.error("Aborted: Perhaps too many request?");
-				// TODO: Add queue for failed fetch
-				// FAILED_URL_DUMP.push({ timestamp: new Date().getTime(), url });
 				return new Response(null, { status: 408 });
 			}
 			console.error("Error during fetch:", err);
@@ -255,12 +254,11 @@ export class Webtoon {
 				}
 			});
 	
-			// TODO: Add separate storage to the object
-			// appendPostsToStorage(posts);
+			this.appendPosts(episodeNum, posts);
 	
 			const next = json.result.pagination.next as PostIdType;
 			if (next) {
-				return this.getPosts(pageId, newNewestPost ? undefined : prevNewestPost, next);
+				return this.getPosts(episodeNum, newNewestPost ? undefined : prevNewestPost, next);
 			}
 			return {
 				status: "success",
@@ -275,32 +273,36 @@ export class Webtoon {
 		}
 	}
 
-	async getAllPosts() {
-		if (this.status !== 'idle') {
+	async getAllPosts(start: number = 1) {
+		if (this.status === 'fetching') {
 			return;
 		}
 
-		// get Posts
-
-		this.status = 'fetching';
-
+		if (this.status === 'error') {
+			let lastAttempt = this.errorQueue.pop();
+			if (lastAttempt) {
+				await this.getAllPosts(lastAttempt.episode);
+			}
+		}
+		
 		// episode is a one-based numbering
 		// const lastEpisodeNum = Math.max(...this.postsArray.map(p => p.episode));
-		let episodeNum = 1;
-
-		let pageId: PageIdType;
-
+		let episodeNum = start;
+		
+		this.status = 'fetching';
 		// service worker terminates when a single request takes >5m
 		const startTime = new Date().getTime();
 		let endTime = new Date().getTime();
 		main: while (endTime - startTime < (30 * 60 * 1000)) {
-			pageId = `${this.type}_${this.titleId}_${episodeNum}`;
-			
-			const result = await this.getPosts(pageId);
+			const result = await this.getPosts(episodeNum);
 			
 			switch (result.status) {
 				case 'fail':
 					this.status = 'error';
+					this.errorQueue.push({
+						timestamp: new Date().getTime(),
+						episode: episodeNum
+					});
 					break main;
 				case 'done':
 					break main;
@@ -482,7 +484,7 @@ export class Webtoon {
 		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 	}
 
-	async getNewestsPosts(
+	async _getNewestsPosts(
 		prev_newest_map: Map<number, PostIdType>,
 	): Promise<Post[]> {
 		const posts: Post[] = [];
@@ -498,7 +500,7 @@ export class Webtoon {
 			if (prevNewestPost) {
 				await semaphore.acquire();
 
-				const episode_posts = await this.getNewestPostsForEpisode(
+				const episode_posts = await this._getNewestPostsForEpisode(
 					episode,
 					prevNewestPost,
 					did,
@@ -522,7 +524,7 @@ export class Webtoon {
 		return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 	}
 
-	async getNewestPostsForEpisode(
+	async _getNewestPostsForEpisode(
 		episode: number,
 		prev_newest_post: PostIdType,
 		did: { reach_end: boolean },
@@ -588,6 +590,27 @@ export class Webtoon {
 		}
 
 		return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+	}
+
+	appendPosts(episodeNum: number, newPosts: Post[]) {
+		const exPosts = this.postsArray.find(item => item.episode === episodeNum)?.posts;
+
+		// if there is an existing post & has not been modified, leave as-is
+		const posts: Post[] = newPosts.map(p => {
+			const ex = exPosts?.find(item => item.id === p.id);
+			if (ex && ex.body === p.body) {
+				return ex;
+			} else {
+				return p;
+			}
+		});
+
+		this.postsArray = this.postsArray.map(item => {
+			return item.episode === episodeNum ? {
+				episode: episodeNum,
+				posts
+			} : item;
+		});
 	}
 }
 
