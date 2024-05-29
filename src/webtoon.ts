@@ -112,10 +112,14 @@ export class Webtoon {
 
 	status: "idle" | "fetching" | "error";
 
-	errorQueue: { timestamp: number; episode: number }[];
+	lastError?: { timestamp: number; episode: number };
 	postsArray: { episode: number; posts: Post[] }[];
 
-	constructor(url: string) {
+	constructor(
+		url: string, 
+		lastError?: { timestamp: number; episode: number },
+		postsArray?: { episode: number; posts: Post[] }[]
+	) {
 		this.url = url;
 		const regex = /https\:\/\/www\.webtoons\.com\/(?<locale>\w{2})\/(?<type>\w+)\/(?<title>.+)\/list\?title_no=(?<titleId>\d+)/i;
 
@@ -130,9 +134,9 @@ export class Webtoon {
 
 		}
 
-		this.status = "idle";
-		this.errorQueue = [];
-		this.postsArray = [];
+		this.status = lastError ? "error" : "idle";
+		this.lastError = lastError;
+		this.postsArray = postsArray || [];
 	}
 
 	async _getEpisodeCount() {
@@ -279,7 +283,8 @@ export class Webtoon {
 		}
 
 		if (this.status === 'error') {
-			let lastAttempt = this.errorQueue.pop();
+			let lastAttempt = this.lastError;
+			this.lastError = undefined;
 			if (lastAttempt) {
 				await this.getAllPosts(lastAttempt.episode);
 			}
@@ -299,10 +304,10 @@ export class Webtoon {
 			switch (result.status) {
 				case 'fail':
 					this.status = 'error';
-					this.errorQueue.push({
+					this.lastError = {
 						timestamp: new Date().getTime(),
 						episode: episodeNum
-					});
+					};
 					break main;
 				case 'done':
 					break main;
@@ -311,8 +316,12 @@ export class Webtoon {
 			episodeNum++;
 
 			endTime = new Date().getTime();
-			if (endTime - startTime < (4 * 60 * 1000)) {
+			if (endTime - startTime > (4 * 60 * 1000)) {
 				this.status = 'error';
+				this.lastError = {
+					timestamp: new Date().getTime(),
+					episode: episodeNum
+				};
 				break;
 			}
 		}
@@ -605,12 +614,12 @@ export class Webtoon {
 			}
 		});
 
-		this.postsArray = this.postsArray.map(item => {
-			return item.episode === episodeNum ? {
-				episode: episodeNum,
-				posts
-			} : item;
-		});
+		this.postsArray = [
+			...this.postsArray.filter(item => item.episode !== episodeNum), 
+			{episode: episodeNum, posts}
+		];
+
+		this.postsArray.sort((a, b) => b.episode - a.episode);
 	}
 }
 

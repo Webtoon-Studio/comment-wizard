@@ -1,9 +1,4 @@
-import {
-	type IPost,
-	type PageIdType,
-	Post,
-	type PostIdType,
-} from "@root/src/post";
+import { Webtoon } from "@root/src/webtoon";
 import {
 	type EpisodeNewestPost,
 	POSTS_REQUEST_EVENT_NAME,
@@ -12,8 +7,12 @@ import {
 	STORAGE_SERIES_NAME,
 	type SeriesItem,
 	getSessionFromCookie,
-	isPostIdNewer,
+	STORAGE_WEBTOONS_NAME,
 } from "./global";
+
+import {
+	Post,
+} from "@root/src/post";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -21,27 +20,8 @@ const GETTING_SERIES_DELAY_MINS = 60;
 const GETTING_NEW_POSTS_ALARM_NAME = "alarm-getting-new-posts";
 const GETTING_NEW_POSTS_PERIOD_MINS = 30;
 
-const POSTS_QUEUE: Post[] = [];
-const FAILED_URL_DUMP: { timestamp: number; url: string }[] = [];
-
 let IS_GETTING_NEW_POSTS = false;
 let IS_STORING_POSTS = false;
-// ================================================================================ //
-
-// ================================= INTERFACES =================================== //
-
-interface PostsQueryProp {
-	pageId: PageIdType;
-	prevSize?: number;
-	nextSize?: number;
-	cursor?: PostIdType;
-}
-
-type GetPostsRepsonse = {
-	status: "success" | "fail" | "done";
-	newestPost?: PostIdType;
-};
-
 // ================================================================================ //
 
 // ============================== SERIES LOAD / SAVE ============================== //
@@ -72,76 +52,117 @@ async function saveSeries(series: SeriesItem[]) {
 }
 // ================================================================================ //
 
-async function appendPostsToStorage(posts: Post[]) {
-	if (!IS_STORING_POSTS) {
-		// Store posts & queue
-		console.log("Storing Posts");
-		IS_STORING_POSTS = true;
-
-		// First get queue
-		const queue: Post[] = POSTS_QUEUE.slice();
-
-		chrome.storage.local.get(STORAGE_POSTS_NAME).then((items) => {
-			const allPosts = [...posts, ...queue];
-			if (STORAGE_POSTS_NAME in items) {
-				const exPosts = items[STORAGE_POSTS_NAME] as Post[];
-				allPosts.push(...exPosts);
-			}
-			const postsToStore: Post[] = [];
-
-			// Remove duplicates
-			allPosts.forEach((post) => {
-				if (!postsToStore.find((p) => p.id === post.id)) {
-					postsToStore.push(post);
+async function loadWebtoons(): Promise<Webtoon[]> {
+	if (chrome.storage) {
+		return chrome.storage.local.get(STORAGE_WEBTOONS_NAME).then((items) => {
+			if (STORAGE_WEBTOONS_NAME in items) {
+				const value = items[STORAGE_WEBTOONS_NAME];
+				if (Array.isArray(value) && value.every((v) => "url" in v)) {
+					return value.map((v) => new Webtoon(v.url, v.errorQueue, v.postsArray));
 				}
-			});
-
-			postsToStore.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-			chrome.storage.local
-				.set({
-					[STORAGE_POSTS_NAME]: postsToStore,
-				})
-				.then(() => {
-					console.log("Posts stored!");
-
-					POSTS_QUEUE.splice(0, queue.length);
-					IS_STORING_POSTS = false;
-				});
+			}
+			return [];
 		});
-	} else {
-		// currently storing, add to queue and try again
-		console.log("Storage is busy. Queueing the posts");
-		POSTS_QUEUE.push(...posts);
-		setTimeout(() => appendPostsToStorage([]), 500);
+	}
+	return [];
+}
+
+async function saveWebtoons(webtoons: Webtoon[]) {
+	if (chrome.storage) {
+		await chrome.storage.local.set({
+			[STORAGE_WEBTOONS_NAME]: webtoons.map((wt) => ({
+				url: wt.url,
+				errorQueue: wt.lastError,
+				postsArray: wt.postsArray
+			}))
+		});
 	}
 }
 
-async function getNewestPostsFromStorage(): Promise<
-	EpisodeNewestPost[] | null
-> {
-	return chrome.storage.local.get(STORAGE_NEWEST_NAME).then((items) => {
-		if (STORAGE_NEWEST_NAME in items) {
-			const value = items[STORAGE_NEWEST_NAME];
-			if (
-				Array.isArray(value) &&
-				value.every((v) => "_type" in v && v._type === "episodeNewestPost")
-			) {
-				return value as EpisodeNewestPost[];
-			}
-		}
-		return null;
+async function getWebtoonById(titleId: `${number}`): Promise<Webtoon | null> {
+	return loadWebtoons().then((wts) => {
+		return wts?.find(wt => wt.titleId === titleId) || null;
 	});
 }
 
-async function updateNewestPostsToStorage(newest: EpisodeNewestPost[]) {
-	chrome.storage.local.set({
-		[STORAGE_NEWEST_NAME]: newest,
+async function pushWebtoon(webtoon: Webtoon) {
+	await loadWebtoons().then((wts) => {
+		return [...wts.filter(wt => wt.titleId !== webtoon.titleId), webtoon];
+	}).then((wts) => {
+		saveWebtoons(wts);
 	});
 }
+
+// async function appendPostsToStorage(posts: Post[]) {
+// 	if (!IS_STORING_POSTS) {
+// 		// Store posts & queue
+// 		console.log("Storing Posts");
+// 		IS_STORING_POSTS = true;
+
+// 		// First get queue
+// 		const queue: Post[] = POSTS_QUEUE.slice();
+
+// 		chrome.storage.local.get(STORAGE_POSTS_NAME).then((items) => {
+// 			const allPosts = [...posts, ...queue];
+// 			if (STORAGE_POSTS_NAME in items) {
+// 				const exPosts = items[STORAGE_POSTS_NAME] as Post[];
+// 				allPosts.push(...exPosts);
+// 			}
+// 			const postsToStore: Post[] = [];
+
+// 			// Remove duplicates
+// 			allPosts.forEach((post) => {
+// 				if (!postsToStore.find((p) => p.id === post.id)) {
+// 					postsToStore.push(post);
+// 				}
+// 			});
+
+// 			postsToStore.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+// 			chrome.storage.local
+// 				.set({
+// 					[STORAGE_POSTS_NAME]: postsToStore,
+// 				})
+// 				.then(() => {
+// 					console.log("Posts stored!");
+
+// 					POSTS_QUEUE.splice(0, queue.length);
+// 					IS_STORING_POSTS = false;
+// 				});
+// 		});
+// 	} else {
+// 		// currently storing, add to queue and try again
+// 		console.log("Storage is busy. Queueing the posts");
+// 		POSTS_QUEUE.push(...posts);
+// 		setTimeout(() => appendPostsToStorage([]), 500);
+// 	}
+// }
+
+// async function getNewestPostsFromStorage(): Promise<
+// 	EpisodeNewestPost[] | null
+// > {
+// 	return chrome.storage.local.get(STORAGE_NEWEST_NAME).then((items) => {
+// 		if (STORAGE_NEWEST_NAME in items) {
+// 			const value = items[STORAGE_NEWEST_NAME];
+// 			if (
+// 				Array.isArray(value) &&
+// 				value.every((v) => "_type" in v && v._type === "episodeNewestPost")
+// 			) {
+// 				return value as EpisodeNewestPost[];
+// 			}
+// 		}
+// 		return null;
+// 	});
+// }
+
+// async function updateNewestPostsToStorage(newest: EpisodeNewestPost[]) {
+// 	chrome.storage.local.set({
+// 		[STORAGE_NEWEST_NAME]: newest,
+// 	});
+// }
 
 // This is a wrapper for getSeriesFromMyPost
 // Always use this since this will check & create alarm for reducing spamming
-const getSeries = (force = false) => {
+function getSeries(force = false) {
 	// Refactor this out due to 'force' param
 	const executeGetSeries = () => {
 		console.log("Process Start: getSeriesFromMyPost");
@@ -295,203 +316,37 @@ async function getSeriesFromMyPost(): Promise<boolean | null> {
 	return false;
 }
 
-function generatePostsQueryUrl(queryProp: PostsQueryProp) {
-	const { pageId, prevSize = 0, nextSize = 100, cursor = "" } = queryProp;
-	const baseUrl = "https://www.webtoons.com/p/api/community/v2";
-	const query: { [keyof: string]: any } = {
-		pageId,
-		pinRepresentation: "none",
-		prevSize,
-		nextSize,
-		cursor,
-		withCursor: true,
-	};
-	const queryPath = Object.keys(query)
-		.map((key) => `${key}=${query[key]}`)
-		.join("&");
-
-	`pinRepresentation=none&prevSize=0&nextSize=100`;
-	return `${baseUrl}/posts?${queryPath}`;
-}
-
-async function getPosts(
-	pageId: PageIdType,
-	prevNewestPost?: PostIdType,
-	cursor?: PostIdType,
-): Promise<GetPostsRepsonse> {
-	// Return:
-	//     - 'true': Got posts and saved
-	//     - 'false': Reached 404, which may mean this is the end of episodes
-	//     - 'null': Something went wrong and could not get posts
-	let newNewestPost: PostIdType | undefined;
-
-	const controller = new AbortController();
-	const url = generatePostsQueryUrl({ pageId, cursor });
-	const session = await getSessionFromCookie();
-
-	if (!session) {
-		console.error("Could not get session info. Perhaps not logged in?");
-		return {
-			status: "fail",
-		};
-	}
-
-	const headers = new Headers([
-		["Service-Ticket-Id", "epicom"],
-		["Accept-Encoding", "gzip, deflate, br, zstd"],
-		["Cookie", session],
-		// ["Api-Token", apiToken]
-	]);
-
-	// Wait 1800 ms before aborting the request
-	const timeoutId = setTimeout(() => controller.abort(), 1800);
-	const response = await fetch(url, {
-		headers,
-		signal: controller.signal, // To abort if takes too long
-	}).catch((err) => {
-		if (err.name === "AbortError") {
-			console.error("Aborted: Perhaps too many request?");
-			FAILED_URL_DUMP.push({ timestamp: new Date().getTime(), url });
-			return new Response(null, { status: 408 });
-		}
-		console.error("Error during fetch:", err);
-		return null;
-	});
-	clearTimeout(timeoutId);
-
-	if (!response) {
-		return {
-			status: "fail",
-		};
-	}
-
-	// NOTE: If an episode doesnt exist, then it will return a 404.
-	// This signifies that all available episodes have been gone through.
-	if (response.status === 404) {
-		return {
-			status: "done",
-		};
-	}
-
-	if (response.status === 408) {
-		return {
-			status: "fail",
-		};
-	}
-
-	try {
-		const json = await response.json();
-		if (json.status === "fail") {
-			console.log(json);
-			console.error("Failed to get posts from api: " + json.error);
-			return {
-				status: "fail",
-			};
-		}
-
-		const resultPosts = json.result.posts as IPost[];
-		const posts = resultPosts.map((p) => new Post(p));
-
-		posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-
-		posts.forEach((p) => {
-			if (!newNewestPost && p.id) {
-				if (prevNewestPost) {
-					if (isPostIdNewer(p.id, prevNewestPost)) {
-						newNewestPost = p.id;
-					}
-				} else {
-					newNewestPost = p.id;
-				}
-			}
-		});
-
-		appendPostsToStorage(posts);
-
-		const next = json.result.pagination.next as PostIdType;
-		if (next) {
-			return getPosts(pageId, newNewestPost ? undefined : prevNewestPost, next);
-		}
-		return {
-			status: "success",
-			newestPost: newNewestPost,
-		};
-	} catch (err) {
-		console.error("Something went wrong post fetch: ", err);
-		return {
-			status: "fail",
-			newestPost: newNewestPost,
-		};
-	}
-}
-
 async function getNewPosts(): Promise<boolean> {
-	// Return:
-	//     - 'true': new posts successfully fetched
-	//     - 'false': new posts not fetched (try again?)
 	const seriesList = await loadSeries();
-	if (!seriesList) {
+
+	if (!seriesList || seriesList.length === 0) {
 		getSeries(true);
 		return false;
 	}
 
-	const newest = await getNewestPostsFromStorage();
-	const newNewest: EpisodeNewestPost[] = [];
+	let result: boolean = true;
+	let webtoonsList = await loadWebtoons();
 
-	// get Posts
-	for (let i = 0; i < seriesList.length; i++) {
-		const series = seriesList[i];
-		let result;
-		let episodeNum = 1;
+	for (let series of seriesList) {
+		const exId = webtoonsList.findIndex((wt) => wt.titleId === series.titleId);
+		const wt = exId === -1 ? new Webtoon(series.link) : webtoonsList[exId];
 
-		const newestMap: Map<number, PostIdType> = new Map<number, PostIdType>();
-		if (newest) {
-			newest.forEach((item) => {
-				if (item.titleId === series.titleId) {
-					newestMap.set(item.episode, item.newestPostId);
-				}
-			});
+		await wt.getAllPosts();
+
+		if (exId > -1) {
+			webtoonsList[exId] = wt;
+		} else {
+			webtoonsList.push(wt);
 		}
 
-		while (result?.status !== "done") {
-			const pageId: PageIdType = `${series.isCanvas ? "c" : "w"}_${
-				series.titleId
-			}_${episodeNum}`;
-			result = await getPosts(pageId, newestMap.get(episodeNum));
-			if (result.newestPost) {
-				newestMap.set(episodeNum, result.newestPost);
-			}
-			if (result.status === "fail") {
-				break;
-			}
-			episodeNum += 1;
+		if (result && wt.status === 'error') {
+			result = false;
 		}
-
-		newNewest.push(
-			...Array.from(newestMap).map(
-				(v) =>
-					({
-						_type: "episodeNewestPost",
-						titleId: series.titleId,
-						episode: v[0],
-						newestPostId: v[1],
-					}) as EpisodeNewestPost,
-			),
-		);
 	}
 
-	await updateNewestPostsToStorage(newNewest);
+	await saveWebtoons(webtoonsList);
 
-	if (FAILED_URL_DUMP.length > 0) {
-		console.log(
-			"Following fetch failed:\n\n",
-			FAILED_URL_DUMP.map((v, i) => `\t${i}:\t${v.url} (${v.timestamp})`).join(
-				"\n",
-			),
-		);
-	}
-
-	return true;
+	return result;
 }
 
 // ================================ EVENT LISTENERS =============================== //
@@ -531,7 +386,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 					// getting new posts failed
 					// try again later?
 					chrome.alarms.create(GETTING_NEW_POSTS_ALARM_NAME, {
-						delayInMinutes: 1,
+						delayInMinutes: 5,
 						periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
 					});
 				}
@@ -564,17 +419,11 @@ chrome.runtime.onMessage.addListener(
 			});
 
 			// Sending what's in the storage
-			chrome.storage.local
-				.get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
-				.then((items) => {
-					if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
-						sendReponse({
-							posts: items[STORAGE_POSTS_NAME],
-							newest: items[STORAGE_NEWEST_NAME],
-						});
-					}
-				});
-
+			loadWebtoons().then((wts) => {
+				sendReponse({
+					webtoons: wts
+				})
+			});
 			return true;
 		}
 		return false;

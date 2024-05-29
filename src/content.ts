@@ -1,3 +1,4 @@
+import { Webtoon } from "@root/src/webtoon";
 import "./assets/content.css";
 import {
 	type EpisodeNewestPost,
@@ -7,6 +8,7 @@ import {
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
 	STORAGE_SETTING_NAME,
+	STORAGE_WEBTOONS_NAME,
 } from "./global";
 import type { Post } from "./post";
 
@@ -345,14 +347,13 @@ function modifyMyComments(inject: boolean) {
 		chrome.runtime
 			.sendMessage({ greeting: POSTS_REQUEST_EVENT_NAME })
 			.then((resp) => {
-				if ("posts" in resp && "newest" in resp) {
+				if ("webtoons" in resp) {
 					window.dispatchEvent(
-						new CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>(
+						new CustomEvent<{ webtoons: Webtoon[] }>(
 							POSTS_FETCHED_EVENT_NAME,
 							{
 								detail: {
-									posts: resp.posts,
-									newest: resp.newest,
+									webtoons: resp.webtoons
 								},
 							},
 						),
@@ -540,17 +541,16 @@ try {
 if (chrome.storage) {
 	chrome.storage.local.onChanged.addListener(() => {
 		chrome.storage.local
-			.get([STORAGE_POSTS_NAME, STORAGE_NEWEST_NAME])
+			.get(STORAGE_WEBTOONS_NAME)
 			.then((items) => {
-				if (STORAGE_POSTS_NAME in items && STORAGE_NEWEST_NAME in items) {
+				if (STORAGE_WEBTOONS_NAME in items) {
 					console.log("Dispatch event");
 					window.dispatchEvent(
-						new CustomEvent<{ posts: Post[]; newest: EpisodeNewestPost[] }>(
+						new CustomEvent<{ webtoons: Webtoon[] }>(
 							POSTS_FETCHED_EVENT_NAME,
 							{
 								detail: {
-									posts: items[STORAGE_POSTS_NAME],
-									newest: items[STORAGE_NEWEST_NAME],
+									webtoons: items[STORAGE_WEBTOONS_NAME]
 								},
 							},
 						),
