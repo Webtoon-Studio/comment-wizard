@@ -112,9 +112,11 @@ export class Post {
 	dislikes?: number;
 	body?: string;
 
-	isNew?: boolean;
+	isNew: boolean;
 
 	constructor(raw?: IPost) {
+		this.isNew = true; // Initialize the Post as new
+		
 		// For when manually constructing the object
 		if (raw === undefined) {
 			return;
@@ -178,6 +180,14 @@ export class Post {
 		this.hasDisliked = hasDisliked;
 		this.dislikes = dislikes;
 		this.body = raw.body;
+	}
+
+	markAsNew() {
+		this.isNew = true;
+	}
+
+	markAsRead() {
+		this.isNew = false;
 	}
 
 	async getReplies(): Promise<Post[]> {
@@ -494,6 +504,8 @@ export class Post {
 		post.body = obj.body;
 		post.episode = obj.episode;
 		post.createdAt = obj.createdAt;
+		
+		post.isNew = obj.isNew;
 
 		return post;
 	}
