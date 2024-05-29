@@ -4,6 +4,7 @@ const STORAGE_SETTING_NAME = "cs-settings";
 const STORAGE_SERIES_NAME = "cs-series-items";
 const STORAGE_NEWEST_NAME = "cs-newest-posts";
 const STORAGE_POSTS_NAME = "cs-all-posts";
+const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 
 const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
@@ -114,6 +115,7 @@ export {
 	STORAGE_SERIES_NAME,
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
+	STORAGE_WEBTOONS_NAME,
 	POSTS_REQUEST_EVENT_NAME,
 	POSTS_FETCHED_EVENT_NAME,
 	INCOM_ONMOUNTED_EVENT_NAME,
