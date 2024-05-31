@@ -1,6 +1,5 @@
 import Button from "@popup/src/common/components/button";
 import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
-import { useCounter } from "@popup/src/services/counter";
 import { useContext } from "react";
 
 interface DevConsoleProps {
@@ -9,14 +8,9 @@ interface DevConsoleProps {
 
 export default function DevConsole({ embedded }: DevConsoleProps) {
 	const { mode, toggle } = useContext(ThemeContext);
-	const [counter, updateCounter] = useCounter();
 
 	const handleToggleTheme = () => {
 		toggle();
-	};
-
-	const handleCounterUpdate = () => {
-		updateCounter();
 	};
 
 	return (
@@ -32,15 +26,6 @@ export default function DevConsole({ embedded }: DevConsoleProps) {
 				<div>
 					<span>Current Theme: {mode}</span>
 					<Button onClick={handleToggleTheme}>Toggle</Button>
-				</div>
-				<div>
-					<span>New Comments Counter</span>
-					<div>
-						<p>
-							Counter: <span>{counter}</span>
-						</p>
-						<Button onClick={handleCounterUpdate}>Update</Button>
-					</div>
 				</div>
 			</div>
 		</div>
