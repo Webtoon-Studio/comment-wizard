@@ -43,7 +43,7 @@ export default function CommentList(props: CommentListProps) {
     
     return !isLoading && posts ? (
         <div ref={rootRef}>
-            <div ref={headerRef} className="absolute top-[-100px] left-0 right-0 py-2">
+            <div ref={headerRef} className="absolute top-[-76px] h-[76px] left-0 right-0 flex items-center">
                 <CommentFilterSelect 
                     items={titles}
                 />
