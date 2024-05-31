@@ -4,6 +4,7 @@ import ReactDOM from "react-dom/client";
 import "@assets/content.css";
 
 import Main from "./main";
+import CommentProvider from "@incom/features/Comments/CommentProvider";
 
 const rootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
 
@@ -12,7 +13,9 @@ if (rootElem) {
 
 	root.render(
 		<React.StrictMode>
-			<Main />
+			<CommentProvider>
+				<Main />
+			</CommentProvider>
 		</React.StrictMode>,
 	);
 }

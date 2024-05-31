@@ -9,6 +9,8 @@ import {
 	STORAGE_POSTS_NAME,
 	STORAGE_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
+	POSTS_UPDATED_EVENT_NAME,
+	INCOM_UPLOAD_REQUEST_EVENT_NAME,
 } from "./global";
 import type { Post } from "./post";
 
@@ -361,6 +363,16 @@ function modifyMyComments(inject: boolean) {
 				}
 			});
 	});
+
+	// Sync up the stored data via service worker
+	window.addEventListener(INCOM_UPLOAD_REQUEST_EVENT_NAME, ((
+		event: CustomEvent<{ posts: Post[] }>
+	) => {
+		chrome.runtime.sendMessage({ 
+			greeting: POSTS_UPDATED_EVENT_NAME,
+			data: event.detail.posts
+		});
+	}) as EventListener);
 
 	// Inject incoming commnet root after the default comments section
 	commentArea.after(inCommentRoot);

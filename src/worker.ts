@@ -8,6 +8,7 @@ import {
 	type SeriesItem,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
+	POSTS_UPDATED_EVENT_NAME,
 } from "./global";
 
 import {
@@ -349,6 +350,26 @@ async function getNewPosts(): Promise<boolean> {
 	return result;
 }
 
+const groupBy = <T, K extends keyof any>(arr: T[], getKey: (item: T) => K) => {
+	return arr.reduce((prev, curr) => {
+		const g = getKey(curr);
+		if (!prev[g]) prev[g] = [];
+		prev[g].push(curr);
+		return prev;
+	}, {} as Record<K, T[]>);
+}
+
+function groupPostsByEpisode(posts: Post[]): { episode: number; posts: Post[] }[] {
+	const ret: { episode: number; posts: Post[] }[] = [];
+
+	const grouped = groupBy(posts, (p) => p.episode || -1);
+	Object.keys(grouped).forEach((k) => {
+		ret.push({episode: parseInt(k), posts: grouped[parseInt(k)]});
+	})
+
+	return ret;
+}
+
 // ================================ EVENT LISTENERS =============================== //
 chrome.windows.onCreated.addListener(() => {
 	console.log("windows.onCreated");
@@ -424,6 +445,25 @@ chrome.runtime.onMessage.addListener(
 					webtoons: wts
 				})
 			});
+			return true;
+		}
+		if (message.greeting === POSTS_UPDATED_EVENT_NAME) {
+			// Incoming Comments Component changed the data and is trying to sync the data
+			// Most likely the posts's `isNew` field is updaated
+			
+			const posts = message.data as Post[];
+
+			loadWebtoons().then((wts) => {
+				for (let wt of wts) {
+					const filtered = posts.filter(p => p.webtoonId === wt.titleId)
+					const grouped = groupPostsByEpisode(filtered);
+					wt.postsArray = grouped; 
+				}
+				return wts;
+			}).then((wts) => {
+				saveWebtoons(wts);
+			});
+			
 			return true;
 		}
 		return false;

@@ -7,8 +7,11 @@ const STORAGE_POSTS_NAME = "cs-all-posts";
 const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 
 const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
+const INCOM_UPLOAD_REQUEST_EVENT_NAME = "incomUploadRequest";
+
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
 const POSTS_FETCHED_EVENT_NAME = "postsFetched";
+const POSTS_UPDATED_EVENT_NAME = "postsUpdated";
 
 export interface SeriesItem {
 	_type: "seriesItem"; // internal interface identity
@@ -118,5 +121,7 @@ export {
 	STORAGE_WEBTOONS_NAME,
 	POSTS_REQUEST_EVENT_NAME,
 	POSTS_FETCHED_EVENT_NAME,
+	POSTS_UPDATED_EVENT_NAME,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_UPLOAD_REQUEST_EVENT_NAME,
 };
