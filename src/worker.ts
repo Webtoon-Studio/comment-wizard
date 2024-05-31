@@ -59,7 +59,7 @@ async function loadWebtoons(): Promise<Webtoon[]> {
 			if (STORAGE_WEBTOONS_NAME in items) {
 				const value = items[STORAGE_WEBTOONS_NAME];
 				if (Array.isArray(value) && value.every((v) => "url" in v)) {
-					return value.map((v) => new Webtoon(v.url, v.errorQueue, v.postsArray));
+					return value.map((v) => new Webtoon(v.url, v.lastError, v.postsArray));
 				}
 			}
 			return [];
@@ -73,7 +73,7 @@ async function saveWebtoons(webtoons: Webtoon[]) {
 		await chrome.storage.local.set({
 			[STORAGE_WEBTOONS_NAME]: webtoons.map((wt) => ({
 				url: wt.url,
-				errorQueue: wt.lastError,
+				lastError: wt.lastError,
 				postsArray: wt.postsArray
 			}))
 		});
@@ -350,6 +350,28 @@ async function getNewPosts(): Promise<boolean> {
 	return result;
 }
 
+function updateBadgeCount() {
+	chrome.storage.local.get(STORAGE_WEBTOONS_NAME).then((items) => {
+		if (STORAGE_WEBTOONS_NAME in items) {
+			let sum = 0;
+			const wts = items[STORAGE_WEBTOONS_NAME] as Webtoon[];
+			for (let wt of wts) {
+				for (let posts of wt.postsArray) {
+					sum += posts.posts.filter(p => p.isNew).length;
+				}
+			}
+			if (sum > 0) {
+				if (sum > 0) {
+					// TODO: set badge background as well
+					chrome.action.setBadgeText({ text: `${sum}` });
+				} else {
+					chrome.action.setBadgeText({ text: "" });
+				}
+			}
+		}
+	});
+}
+
 const groupBy = <T, K extends keyof any>(arr: T[], getKey: (item: T) => K) => {
 	return arr.reduce((prev, curr) => {
 		const g = getKey(curr);
@@ -384,6 +406,10 @@ chrome.tabs.onUpdated.addListener(() => {
 	console.log("tabs.onUpdated");
 	getSeries();
 });
+
+chrome.storage.local.onChanged.addListener(() => {
+	updateBadgeCount();
+})
 
 chrome.alarms.onAlarm.addListener((alarm) => {
 	if (alarm.name === GETTING_SERIES_ALARM_NAME) {
@@ -489,6 +515,9 @@ chrome.runtime.onInstalled.addListener((installDetails) => {
 				delayInMinutes: 0, // <- test 1, // to give time for getting Webtoons
 				periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
 			});
+
+			// Initialize the badget text
+			updateBadgeCount();
 			break;
 	}
 });
