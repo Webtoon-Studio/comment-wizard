@@ -1,11 +1,17 @@
 import { faker } from "@faker-js/faker";
 import { type PageIdType, Post, type PostIdType } from "@root/src/post";
 
+const titleIds = Array.from(new Set(Array.from(
+	new Array(faker.number.int({min:2, max: 10}))
+).map(() => faker.number.int({min:1000, max:199999}))));
+
 export function mockPostData(): Post {
 	if (!faker) {
 		return new Post();
 	}
-	const pageId = `c_109098_${faker.number.int({ min: 1, max: 200 })}`;
+
+	const titleId = titleIds[faker.number.int({min:0, max:titleIds.length-1})];
+	const pageId = `c_${titleId}_${faker.number.int({ min: 1, max: 200 })}`;
 	const contentId = `GW-epicom:0-${pageId}-${faker.number
 		.int({ min: 1, max: 1000 })
 		.toString(36)}` as PostIdType;
