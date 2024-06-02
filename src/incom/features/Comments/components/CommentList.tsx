@@ -15,12 +15,32 @@ export default function CommentList(props: CommentListProps) {
     const headerRef = useRef<HTMLDivElement>(null);
 	const [page, setPage] = useState(0);
 	const [perPage, setPerPage] = useState(20);
+    const [titleIdFilter, setTitleIdFilter] = useState("");
+    const [episodeFilter, setEpisodeFilter] = useState("");
 
     const titles = useMemo(() => {
         return posts ? (
-            Array.from(new Set(posts.map(p => p.webtoonId as string)))
+            Array.from(new Set(
+                posts
+                .map(p => p.webtoonId as string)
+                .sort((a,b) => parseInt(a) - parseInt(b))
+            ))
         ) : []
     }, [posts]);
+
+    const episodes = useMemo(() => {
+        if (posts) {
+            let eps = posts
+                .filter(p => titleIdFilter === "" ? true : p.webtoonId === titleIdFilter)
+                .map(p => p.episode || -1)
+                .sort((a,b) => a - b)
+                .filter(ep => ep >= 0)
+                .map(ep => ep.toString());
+            return Array.from(new Set(eps));
+        } else {
+            return [];
+        }
+    }, [posts, titleIdFilter]);
 
 	const handlePageChange = useCallback((newPage: number) => {
         setPage(newPage);
@@ -33,20 +53,46 @@ export default function CommentList(props: CommentListProps) {
         }
     }
 
+    const handleTitleIdFilterChange = (newValue: string) => {
+        setTitleIdFilter(newValue);
+        setEpisodeFilter("");
+    }
+
+    const handleEpisodeFilterChange = (newValue: string) => {
+        setEpisodeFilter(newValue);
+    }
+
 	const visiblePosts: Post[] = useMemo(() => {
 		return (
 			posts
+                ?.filter((p) => titleIdFilter === "" ? true : p.webtoonId === titleIdFilter)
+                ?.filter((p) => episodeFilter === "" ? true : p.episode?.toString() === episodeFilter)
 				?.slice(page * perPage, (page + 1) * perPage)
 				?.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)) || []
 		);
-	}, [posts, page, perPage]);
+	}, [posts, titleIdFilter, episodeFilter, page, perPage]);
     
     return !isLoading && posts ? (
         <div ref={rootRef}>
-            <div ref={headerRef} className="absolute top-[-76px] h-[76px] left-0 right-0 flex items-center">
-                <CommentFilterSelect 
-                    items={titles}
-                />
+            <div ref={headerRef} className="absolute top-[-86px] h-[76px] left-[-48px] right-0 flex items-center">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <span>Series: </span>
+                        <CommentFilterSelect 
+                            items={titles}
+                            value={titleIdFilter}
+                            onChange={handleTitleIdFilterChange}
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span>Episode: </span>
+                        <CommentFilterSelect 
+                            items={episodes}
+                            value={episodeFilter}
+                            onChange={handleEpisodeFilterChange}
+                        />
+                    </div>
+                </div>
             </div>
             <ul className="">
                 {visiblePosts.map((p, i) => (
@@ -62,7 +108,7 @@ export default function CommentList(props: CommentListProps) {
                 <div className="flex justify-center">
                     {posts ? (
                         <CommentPagination
-                            count={posts.length}
+                            count={visiblePosts.length}
                             page={page}
                             perPage={perPage}
                             onPageChange={handlePageChange}

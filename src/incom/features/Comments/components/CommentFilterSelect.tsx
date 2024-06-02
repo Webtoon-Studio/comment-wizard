@@ -33,11 +33,10 @@ export default function CommentFilterSelect(props: CommentFilterSelectProps) {
     }, [open]);
 
     const handleSelect = function(newItem: string) {
-        if (selected === newItem) { 
-            setSelected(undefined);
-        } else {
-            setSelected(newItem);
+        if (onChange) {
+            onChange(selected === newItem ? "" : newItem);
         }
+        setSelected(selected === newItem ? "" : newItem);
         setOpen(false);
     }
 
@@ -66,13 +65,14 @@ export default function CommentFilterSelect(props: CommentFilterSelectProps) {
                     <li 
                         key={index} 
                         className={[
+                            "cursor-pointer select-none",
                             "text-[14px] px-[9.5px] py-[6px] border-b-[1px] last:border-b-0 hover:bg-gray-100",
                             selected === item ? "bg-gray-200" : ""
                         ].join(" ")}
+                        onClick={() => handleSelect(item)}
                     >
                         <div
-                            className="cursor-pointer select-none text-center"
-                            onClick={() => handleSelect(item)}
+                            className="text-center"
                         >
                             <span>{item}</span>
                         </div>

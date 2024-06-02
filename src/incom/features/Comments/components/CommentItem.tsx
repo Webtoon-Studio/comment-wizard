@@ -47,7 +47,7 @@ export default function CommentItem(props: CommentItemProps) {
                     <span className="absolute top-[-24px] text-webtoon">{newLabel}</span>
 					<div className="">
                         <span className="text-xl text-gray-800">
-                            {post.username} on Episode {post.episode}
+                            {post.username} on Episode {post.episode} ({post.webtoonId})
                         </span>
 					</div>
                     
