@@ -4,7 +4,7 @@ import DislikeIcon from "@incom/common/components/DislikeIcon";
 import LikeIcon from "@incom/common/components/LikeIcon";
 import type { Post, PostIdType } from "@root/src/post";
 import { useCallback, useContext, useEffect, useId, useMemo, useRef, useState } from "react";
-import useOnScreen from "@incom/common/hooks/onScreen";
+import useOnScreen from "@incom/common/hooks/useOnScreen";
 
 interface CommentItemProps {
 	post: Post;

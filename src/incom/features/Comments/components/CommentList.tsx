@@ -76,22 +76,19 @@ export default function CommentList(props: CommentListProps) {
         <div ref={rootRef}>
             <div ref={headerRef} className="absolute top-[-86px] h-[76px] left-[-48px] right-0 flex items-center">
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <span>Series: </span>
-                        <CommentFilterSelect 
-                            items={titles}
-                            value={titleIdFilter}
-                            onChange={handleTitleIdFilterChange}
-                        />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span>Episode: </span>
-                        <CommentFilterSelect 
-                            items={episodes}
-                            value={episodeFilter}
-                            onChange={handleEpisodeFilterChange}
-                        />
-                    </div>
+                    <CommentFilterSelect 
+                        label="Series"
+                        items={titles}
+                        value={titleIdFilter}
+                        onChange={handleTitleIdFilterChange}
+                    />
+                    <CommentFilterSelect 
+                        label="Episode"
+                        width={10}
+                        items={episodes}
+                        value={episodeFilter}
+                        onChange={handleEpisodeFilterChange}
+                    />
                 </div>
             </div>
             <ul className="">
