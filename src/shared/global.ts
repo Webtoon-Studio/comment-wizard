@@ -1,4 +1,4 @@
-import type { PostIdType } from "@root/src/post";
+import type { PostIdType } from "@shared/post";
 
 const STORAGE_SETTING_NAME = "cs-settings";
 const STORAGE_SERIES_NAME = "cs-series-items";
@@ -9,6 +9,15 @@ const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
 const POSTS_FETCHED_EVENT_NAME = "postsFetched";
+
+const IS_DEV = (() => {
+	try {
+		return import.meta.env.DEV;
+	} catch {
+		return false;
+	}
+})();
+
 
 export interface SeriesItem {
 	_type: "seriesItem"; // internal interface identity
@@ -111,6 +120,7 @@ export async function getApiToken(): Promise<string | undefined> {
 }
 
 export {
+	IS_DEV,
 	STORAGE_SETTING_NAME,
 	STORAGE_SERIES_NAME,
 	STORAGE_NEWEST_NAME,

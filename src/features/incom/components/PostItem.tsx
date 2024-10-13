@@ -1,8 +1,8 @@
-import Button from "@root/src/incom/components/Button";
-import DeleteIcon from "@root/src/incom/components/DeleteIcon";
-import DislikeIcon from "@root/src/incom/components/DislikeIcon";
-import LikeIcon from "@root/src/incom/components/LikeIcon";
-import type { Post } from "@root/src/post";
+import Button from "@incom/components/Button";
+import DeleteIcon from "@incom/components/DeleteIcon";
+import DislikeIcon from "@incom/components/DislikeIcon";
+import LikeIcon from "@incom/components/LikeIcon";
+import type { Post } from "@shared/post";
 import { useId } from "react";
 
 interface PostItemProps {

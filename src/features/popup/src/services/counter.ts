@@ -1,4 +1,4 @@
-import { IS_DEV } from "@root/src/popup";
+import { IS_DEV } from "@shared/global";
 import { useEffect, useState } from "react";
 
 export function useCounter() {

@@ -9,9 +9,13 @@
     /* Path Options */
     "baseUrl": "",
     "paths": {
-      "@assets/*": ["src/assets/*"],
-      "@incom/*": ["src/incom/*"],
-      "@popup/*": ["src/popup/*"],
+      "@asset/*": ["src/asset/*"],
+      "@incom/*": ["src/features/incom/*"],
+      "@popup/*": ["src/features/popup/*"],
+      "@scripts/*": ["src/scripts/*"],
+      "@shared/*": ["src/shared/*"],
+      "@src/*": ["src/*"],
+
       "@root/*": ["*"]
       //     "@dashboard/*": ["dashboard/*"],
       //     "@guide/*": ["guide/*"],
@@ -32,6 +36,6 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["**/*.tsx", "**/*.ts"],
+  "include": ["**/*.tsx", "**/*.ts", "webpack.config.js"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

@@ -1,13 +1,13 @@
 import Loading from "@incom/components/Loading";
 import { mockPostData } from "@root/src/mock";
-import type { Post } from "@root/src/post";
+import type { Post } from "@root/src/shared/post";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
 	POSTS_FETCHED_EVENT_NAME,
 	isPostIdNewer,
-} from "../global";
+} from "@shared/global";
 import PostItem from "./components/PostItem";
 
 export const IS_PROD = (() => {

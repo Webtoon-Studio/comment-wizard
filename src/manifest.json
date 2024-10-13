@@ -5,14 +5,14 @@
 	"author": "Freiha",
 	"manifest_version": 3,
 	"icons": {
-		"16": "assets/icon16.png",
-		"32": "assets/icon32.png",
-		"48": "assets/icon48.png",
-		"128": "assets/icon128.png"
+		"16": "asset/icon16.png",
+		"32": "asset/icon32.png",
+		"48": "asset/icon48.png",
+		"128": "asset/icon128.png"
 	},
 	"action": {
-		"default_icon": "assets/icon.png",
-		"default_popup": "popup.html",
+		"default_icon": "asset/icon.png",
+		"default_popup": "popup/index.html",
 		"default_title": "Comment Wizard"
 	},
 	"permissions": ["storage", "cookies", "alarms", "unlimitedStorage"],
@@ -29,7 +29,7 @@
 	},
 	"web_accessible_resources": [
 		{
-			"resources": ["assets/*.js", "assets/*.css", "incom.js"],
+			"resources": ["incom/*", "content.css"],
 			"matches": ["https://www.webtoons.com/*"]
 		}
 	],

@@ -1,6 +1,6 @@
 import type { ISetting } from "@popup/src/interface";
-import { STORAGE_SETTING_NAME } from "@root/src/global";
-import { IS_DEV } from "@root/src/popup";
+import { STORAGE_SETTING_NAME } from "@root/src/shared/global";
+import { IS_DEV } from "@shared/global";
 import { useEffect, useState } from "react";
 
 const defaultSetting: ISetting[] = [

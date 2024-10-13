@@ -1,19 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 
-import "@assets/popup.css";
+import "./index.css";
 
 import DevConsole from "@popup/src/_dev/DevConsole";
 import App from "@popup/src/app/App";
 import ThemeProvider from "@popup/src/common/context/ThemeProvider";
-
-const IS_DEV = (() => {
-	try {
-		return import.meta.env.DEV;
-	} catch {
-		return false;
-	}
-})();
+import { IS_DEV } from "@shared/global";
 
 const root = ReactDOM.createRoot(
 	document.getElementById("root") as HTMLElement,
@@ -27,5 +20,3 @@ root.render(
 		</ThemeProvider>
 	</React.StrictMode>,
 );
-
-export { IS_DEV };

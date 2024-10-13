@@ -1,5 +1,5 @@
-import { Webtoon } from "@root/src/webtoon";
-import "./assets/content.css";
+import { Webtoon } from "@shared/webtoon";
+import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
@@ -9,8 +9,12 @@ import {
 	STORAGE_POSTS_NAME,
 	STORAGE_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
-} from "./global";
-import type { Post } from "./post";
+} from "../shared/global";
+import type { Post } from "@shared/post";
+
+const contentCssPath = "content.css";
+const incomScriptPath = "incom/index.js";
+
 
 const setting = {
 	incomingComments: true,
@@ -254,7 +258,7 @@ function modifyMyComments(inject: boolean) {
 	};
 
 	// Inject css file used for injected react content
-	const css = createCss({ path: "assets/content.css" });
+	const css = createCss({ path: contentCssPath });
 	if (css) {
 		document.head.appendChild(css);
 	}
@@ -366,7 +370,7 @@ function modifyMyComments(inject: boolean) {
 	commentArea.after(inCommentRoot);
 
 	const script = createScript({
-		path: "incom.js",
+		path: incomScriptPath,
 		type: "module",
 	});
 

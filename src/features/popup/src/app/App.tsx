@@ -5,7 +5,7 @@ import ThemeSwitch from "@popup/src/features/components/themeSwitch";
 import { useSetting } from "@popup/src/services/setting";
 
 import SettingButton from "@popup/src/features/components/settingButton";
-import { IS_DEV } from "@root/src/popup";
+import { IS_DEV } from "@shared/global";
 import { FaGear } from "react-icons/fa6";
 
 export default function App() {

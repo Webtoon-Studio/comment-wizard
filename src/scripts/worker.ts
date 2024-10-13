@@ -1,4 +1,4 @@
-import { Webtoon } from "@root/src/webtoon";
+import { Webtoon } from "@shared/webtoon";
 import {
 	type EpisodeNewestPost,
 	POSTS_REQUEST_EVENT_NAME,
@@ -8,11 +8,11 @@ import {
 	type SeriesItem,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
-} from "./global";
+} from "../shared/global";
 
 import {
 	Post,
-} from "@root/src/post";
+} from "@root/src/shared/post";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";

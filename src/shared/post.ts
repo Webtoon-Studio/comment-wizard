@@ -1,5 +1,5 @@
-import { getApiToken, getSessionFromCookie } from "@root/src/global";
-import { webtoonFetch } from "@root/src/webtoon";
+import { getApiToken, getSessionFromCookie } from "@shared/global";
+import { webtoonFetch } from "@shared/webtoon";
 
 export type PageIdType = `${"w" | "c"}_${number}_${number}`;
 export type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;

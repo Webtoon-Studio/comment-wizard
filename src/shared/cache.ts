@@ -1,4 +1,4 @@
-import { Post, type PostIdType } from "./post";
+import { Post, type PostIdType } from "@shared/post";
 
 export class Cache {
 	posts: Post[];

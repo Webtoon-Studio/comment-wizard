@@ -82,14 +82,14 @@ As of 2024-4-5 this is the shape of the posts api:
 }
 */
 
-import { getCurrentUserSession, getSessionFromCookie, isPostIdNewer } from "@root/src/global";
+import { getCurrentUserSession, getSessionFromCookie, isPostIdNewer } from "@root/src/shared/global";
 import {
 	type PageIdType,
 	Post,
 	type PostIdType,
 	type PostResponse,
 	IPost,
-} from "@root/src/post";
+} from "@root/src/shared/post";
 import { Semaphore } from "./semaphore";
 
 interface PostsQueryProp {

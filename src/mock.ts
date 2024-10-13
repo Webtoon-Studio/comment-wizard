@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { type PageIdType, Post, type PostIdType } from "@root/src/post";
+import { type PageIdType, Post, type PostIdType } from "@root/src/shared/post";
 
 export function mockPostData(): Post {
 	if (!faker) {
