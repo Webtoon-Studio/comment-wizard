@@ -3,8 +3,9 @@ import type { SeriesItem } from "@shared/global";
 import type { ComponentProps, MouseEvent } from "react";
 
 interface SeriesPanelItemProps extends ComponentProps<"div"> {
-    item: SeriesItem;
+    item?: SeriesItem;
     selected?: boolean;
+    isLoading?: boolean;
 }
 
 export default function SeriesPanelItem(props: SeriesPanelItemProps) {
@@ -22,28 +23,31 @@ export default function SeriesPanelItem(props: SeriesPanelItemProps) {
     return (
         <div 
             className={[
-                "relative px-2 py-6 cursor-default",
-                selected ? "bg-gray-100 dark:bg-gray-900" : ""
+                "relative px-2 py-1 cursor-pointer rounded-md transition",
+                item ? "hover:bg-gray-200" : "",
+                selected ? "bg-gray-200 dark:bg-gray-900" : ""
             ].join(" ")}
         >
-            <div className="absolute top-0 left-1 right-1 p-1 flex justify-between items-center text-xs text-gray-600 dark:text-gray-400">
-                <div>
-                    <span>Id: {item.titleId}</span>
-                </div>
-                <div>
-                    <RefreshIcon />
-                </div>
-            </div>
             <div 
-                className={[
-                    "text-center cursor-pointer hover:font-medium",
-                    selected ? "font-medium" : "font-normal"
-                ].join(" ")}
-                onClick={handleTitleClick}
+                className="w-full flex items-center gap-2"
             >
-                <span>
-                    {item.title}
-                </span>
+                <div 
+                    className={[
+                        "flex-auto text-left select-none truncate",
+                    ].join(" ")}
+                    onClick={handleTitleClick}
+                >
+                    {item ? (
+                        <span>
+                            {item.title}
+                        </span>
+                    ) : (
+                        <div className="inline-block h-4 w-[16ch] bg-gray-400 animate-pulse"/>
+                    )}
+                </div>
+                <div className="text-xs text-gray-400">
+                    {item?.titleId}
+                </div>
             </div>
         </div>
     )
