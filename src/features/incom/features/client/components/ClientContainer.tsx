@@ -28,7 +28,7 @@ export default function ClientContainer(props: ClientContainerProps) {
                 height: thisHeight
             }}
         >
-            <div className="w-full h-full border-2 rounded-md p-4">
+            <div className="w-full h-full border-2 rounded-md">
                 {children}
             </div>
         </div>

@@ -16,7 +16,7 @@ export const seriesSlice = createSlice({
     initialState: initialState,
     reducers: {
         fetchSeries: (state) => {
-            dispatchEvent(new CustomEvent(
+            window.dispatchEvent(new CustomEvent(
                 INCOM_REQUEST_SERIES_ITEM_EVENT
             ));
         },

@@ -150,7 +150,7 @@ export default function Main() {
 			<ClientContainer>
 				{!isLoading ? (
 					<div className="w-full h-full flex ">
-						<div>
+						<div className="h-full border-r-2">
 							<SeriesSidePanel />
 						</div>
 						<div className="flex-auto">
