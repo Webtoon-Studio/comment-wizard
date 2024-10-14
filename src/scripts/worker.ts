@@ -8,6 +8,7 @@ import {
 	type SeriesItem,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
+	INCOM_REQUEST_SERIES_ITEM_EVENT,
 } from "../shared/global";
 
 import {
@@ -423,6 +424,24 @@ chrome.runtime.onMessage.addListener(
 				sendReponse({
 					webtoons: wts
 				})
+			});
+			return true;
+		}
+		if (message.greeting === INCOM_REQUEST_SERIES_ITEM_EVENT) {
+			console.log("runtime: Incom requests series items");
+			getSeriesFromMyPost().then(result => {
+				if (result !== null) {
+					loadSeries().then((loaded) => {
+						console.log("runtime: Send response to Series Items Request");
+						sendReponse({
+							series: loaded
+						});
+					});
+				} else {
+					sendReponse({
+						series: null
+					});
+				}
 			});
 			return true;
 		}

@@ -5,6 +5,8 @@ import { IS_DEV } from "@shared/global";
 import "./index.css";
 
 import Main from "./main";
+import { Provider } from "react-redux";
+import { store } from "@incom/common/store";
 
 const rootElem = document.getElementById(
 	IS_DEV ? "root" : "cs-in-comment-root"
@@ -15,7 +17,9 @@ if (rootElem) {
 
 	root.render(
 		<React.StrictMode>
-			<Main />
+			<Provider store={store}>
+				<Main />
+			</Provider>
 		</React.StrictMode>,
 	);
 }

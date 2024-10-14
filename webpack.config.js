@@ -50,9 +50,6 @@ const config = function (env, argv) {
       "popup/index": "./src/features/popup/index.tsx",
     },
     devtool: "inline-source-map",
-    devServer: {
-      static: "./dist/incom"
-    },
     output: {
         filename: '[name].js',
         path: resolve(__dirname, 'build/src'),

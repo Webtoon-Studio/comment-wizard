@@ -1,5 +1,12 @@
 import type { PostIdType } from "@shared/post";
 
+function generateRandomString(): string {
+	const dec2hex = (dec: number) => dec.toString(16).padStart(2, "0");
+	var arr = new Uint8Array(4);
+	crypto.getRandomValues(arr);
+	return Array.from(arr, dec2hex).join('');
+}
+
 const STORAGE_SETTING_NAME = "cs-settings";
 const STORAGE_SERIES_NAME = "cs-series-items";
 const STORAGE_NEWEST_NAME = "cs-newest-posts";
@@ -9,6 +16,11 @@ const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
 const POSTS_FETCHED_EVENT_NAME = "postsFetched";
+
+const INCOM_REQUEST_SERIES_ITEM_EVENT = "incomSeriesRequest";
+const INCOM_RESPONSE_SERIES_ITEM_EVENT = "incomSeriesResponse";
+const INCOM_REQUEST_POSTS_EVENT = "incomPostsRequest";
+
 
 const IS_DEV = (() => {
 	try {
@@ -129,4 +141,7 @@ export {
 	POSTS_REQUEST_EVENT_NAME,
 	POSTS_FETCHED_EVENT_NAME,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_REQUEST_SERIES_ITEM_EVENT,
+	INCOM_RESPONSE_SERIES_ITEM_EVENT,
+	INCOM_REQUEST_POSTS_EVENT
 };

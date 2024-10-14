@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Source code for extension published in webstore including build scripts.",
   "scripts": {
-    "preview:popup": "vite --mode=development --config=vite.popup.config.ts",
-    "preview:incom": "vite --mode=development --config=vite.incom.config.ts",
+    "preview:popup": "webpack serve --mode development --config webpack.config.js --static ./dist/popup --open",
+    "preview:incom": "webpack serve --mode development --config webpack.config.js --static ./dist/incom --open",
     "dev": "webpack --mode=development",
     "build": "webpack --mode=production",
     "build:firefox": "webpack --mode=production --config=webpack.firefox.config.ts",
@@ -25,11 +25,13 @@
   },
   "homepage": "https://github.com/freiha/comment-wizard#readme",
   "dependencies": {
+    "@reduxjs/toolkit": "^2.2.8",
     "@types/firefox-webext-browser": "^120.0.3",
     "prettier": "^2.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-icons": "^5.0.1"
+    "react-icons": "^5.0.1",
+    "react-redux": "^9.1.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^8.4.1",

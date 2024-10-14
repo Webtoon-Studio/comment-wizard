@@ -3,8 +3,11 @@ import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_REQUEST_SERIES_ITEM_EVENT,
+	INCOM_RESPONSE_SERIES_ITEM_EVENT,
 	POSTS_FETCHED_EVENT_NAME,
 	POSTS_REQUEST_EVENT_NAME,
+	type SeriesItem,
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
 	STORAGE_SETTING_NAME,
@@ -160,6 +163,56 @@ interface ElementProp {
 	children: HTMLElement[];
 
 	[index: string]: any;
+}
+
+function attachEventListners() {
+	// Setup event listener
+	window.addEventListener(
+		INCOM_REQUEST_SERIES_ITEM_EVENT, 
+		() => {
+			console.log("Handling SeriesItems Request event");
+			chrome.runtime
+			.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
+			.then((resp) => {
+				console.log(resp);
+				if ("series" in resp || resp.series !== null) {
+					dispatchEvent(
+						new CustomEvent<{ series: SeriesItem[] }>(
+							INCOM_RESPONSE_SERIES_ITEM_EVENT,
+							{
+								detail: {
+									series: resp.series
+								}
+							}
+						)
+					);
+				}
+			})
+		}
+	);
+
+	window.addEventListener(
+		INCOM_ONMOUNTED_EVENT_NAME, 
+		() => {
+			console.log("inCommentRoot onload?");
+			chrome.runtime
+			.sendMessage({ greeting: POSTS_REQUEST_EVENT_NAME })
+			.then((resp) => {
+				if ("webtoons" in resp) {
+					window.dispatchEvent(
+						new CustomEvent<{ webtoons: Webtoon[] }>(
+							POSTS_FETCHED_EVENT_NAME,
+							{
+								detail: {
+									webtoons: resp.webtoons
+								},
+							},
+						),
+					);
+				}
+			});
+		}
+	);
 }
 
 function modifyMyComments(inject: boolean) {
@@ -345,26 +398,7 @@ function modifyMyComments(inject: boolean) {
 	inCommentRoot.setAttribute("data-selected", isIncoming ? "true" : "false");
 	inCommentRoot.setAttribute("tab-id", "1");
 
-	// Setup event listener
-	window.addEventListener(INCOM_ONMOUNTED_EVENT_NAME, () => {
-		console.log("inCommentRoot onload?");
-		chrome.runtime
-			.sendMessage({ greeting: POSTS_REQUEST_EVENT_NAME })
-			.then((resp) => {
-				if ("webtoons" in resp) {
-					window.dispatchEvent(
-						new CustomEvent<{ webtoons: Webtoon[] }>(
-							POSTS_FETCHED_EVENT_NAME,
-							{
-								detail: {
-									webtoons: resp.webtoons
-								},
-							},
-						),
-					);
-				}
-			});
-	});
+	attachEventListners();
 
 	// Inject incoming commnet root after the default comments section
 	commentArea.after(inCommentRoot);

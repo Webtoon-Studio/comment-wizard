@@ -1,5 +1,37 @@
 import { faker } from "@faker-js/faker";
-import { type PageIdType, Post, type PostIdType } from "@root/src/shared/post";
+import type { SeriesItem } from "@shared/global";
+import { type PageIdType, Post, type PostIdType } from "@shared/post";
+
+export function mockSeriesItem(): SeriesItem {
+	if (!faker) {
+		return {
+			_type: "seriesItem",
+			title: "Mock Test Title",
+			link: "",
+			titleId: "0",
+			isCanvas: true,
+			newCount: 0
+		} as SeriesItem;
+	}
+
+	const title = faker.music.songName();
+	const link = "";
+	const titleId = faker.string.numeric({
+		length: {min: 5, max: 6}, 
+		allowLeadingZeros: false
+	});
+	const isCanvas = true;
+	const newCount = faker.number.int({min: 0, max: 200});
+
+	return {
+		_type: "seriesItem",
+		title,
+		link,
+		titleId,
+		isCanvas,
+		newCount
+	} as SeriesItem;
+}
 
 export function mockPostData(): Post {
 	if (!faker) {

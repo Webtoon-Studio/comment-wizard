@@ -1,14 +1,20 @@
-import Loading from "@incom/components/Loading";
-import { mockPostData } from "@root/src/mock";
-import type { Post } from "@root/src/shared/post";
+import Loading from "@shared/components/Loading";
+import { mockPostData, mockSeriesItem } from "@root/src/mock";
+import type { Post } from "@shared/post";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_RESPONSE_SERIES_ITEM_EVENT,
 	POSTS_FETCHED_EVENT_NAME,
+	type SeriesItem,
 	isPostIdNewer,
 } from "@shared/global";
-import PostItem from "./components/PostItem";
+import PostItem from "@incom/features/components/PostItem";
+import ClientContainer from "@incom/features/client/components/ClientContainer";
+import { useAppDispatch } from "@incom/common/hook";
+import { hydrateSeries } from "@incom/features/series/slice";
+import SeriesSidePanel from "@incom/features/series/components/SeriesSidePanel";
 
 export const IS_PROD = (() => {
 	try {
@@ -67,6 +73,7 @@ function Pagination(props: PaginationProps) {
 }
 
 export default function Main() {
+	const dispatch = useAppDispatch();
 	const ref = useRef<HTMLDivElement>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [posts, setPosts] = useState<Post[] | null>(null);
@@ -80,25 +87,32 @@ export default function Main() {
 		console.log("Is Prod?", IS_PROD);
 		if (IS_PROD) {
 			console.log("setting event listener in main");
-			window.addEventListener(POSTS_FETCHED_EVENT_NAME, ((
-				event: CustomEvent<{ posts?: Post[]; newest?: EpisodeNewestPost[] }>,
-			) => {
-				console.log("event received: ", event);
-				const fetchedPosts = event.detail.posts;
-				const newPosts: Post[] = [...(posts || [])];
-				fetchedPosts?.forEach((post) => {
-					if (!newPosts.find((p) => p.id === post.id)) {
-						newPosts.push(post);
-					}
-				});
-				setPosts(newPosts);
-				setNewest((event.detail.newest as EpisodeNewestPost[]) ?? null);
-				setIsLoading(false);
-			}) as EventListener);
-			window.dispatchEvent(new CustomEvent(INCOM_ONMOUNTED_EVENT_NAME));
+			const handleSeriesItemResponse = (evt: CustomEvent<{ series: SeriesItem[] }>) => {
+				console.log("Series Items Received");
+				dispatch(hydrateSeries(evt.detail.series));
+			}
+
+			window.addEventListener(
+				INCOM_RESPONSE_SERIES_ITEM_EVENT, 
+				handleSeriesItemResponse as EventListener
+			);
+
+			setIsLoading(false);
+
+			return () => {
+				window.removeEventListener(
+					INCOM_RESPONSE_SERIES_ITEM_EVENT, 
+					handleSeriesItemResponse as EventListener
+				);
+			}
 		} else {
-			setPosts(Array.from(new Array(5000)).map(() => mockPostData()));
-			setTimeout(() => setIsLoading(false), 2000);
+			const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
+			dispatch(hydrateSeries(mockSeries));
+
+			const timeoutId = setTimeout(() => { setIsLoading(false); }, 400);
+			return () => {
+				clearTimeout(timeoutId);
+			};
 		}
 	}, []);
 
@@ -133,38 +147,43 @@ export default function Main() {
 
         </div>
       </div> */}
-			<div className="relative">
+			<ClientContainer>
 				{!isLoading ? (
-					<>
-						<ul className="">
-							{visiblePosts.map((p, i) => (
-								<li
-									key={i}
-									className="py-[30px] border-b-2 last-child:border-b-0"
-								>
-									<PostItem post={p} />
-								</li>
-							))}
-						</ul>
+					<div className="w-full h-full flex ">
 						<div>
-							<div className="flex justify-center">
-								{posts ? (
-									<Pagination
-										count={posts.length}
-										page={page}
-										perPage={perPage}
-										onPageChange={handlePageChange}
-									/>
-								) : null}
+							<SeriesSidePanel />
+						</div>
+						<div className="flex-auto">
+							<ul className="">
+								{visiblePosts.map((p, i) => (
+									<li
+										key={i}
+										className="py-[30px] border-b-2 last-child:border-b-0"
+									>
+										<PostItem post={p} />
+									</li>
+								))}
+							</ul>
+							<div>
+								<div className="flex justify-center">
+									{posts ? (
+										<Pagination
+											count={posts.length}
+											page={page}
+											perPage={perPage}
+											onPageChange={handlePageChange}
+										/>
+									) : null}
+								</div>
 							</div>
 						</div>
-					</>
+					</div>
 				) : (
 					<div className="w-full min-h-[50vh] flex justify-center items-center pb-[10px]">
 						<Loading />
 					</div>
 				)}
-			</div>
+			</ClientContainer>
 		</div>
 	);
 }
