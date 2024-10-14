@@ -14,7 +14,8 @@ export default function ClientContainer(props: ClientContainerProps) {
         }
 
         window.addEventListener("resize", handleWindowResize);
-
+        handleWindowResize();
+        
         return () => {
             window.removeEventListener("resize", handleWindowResize);
         }
@@ -27,7 +28,7 @@ export default function ClientContainer(props: ClientContainerProps) {
                 height: thisHeight
             }}
         >
-            <div className="border-2 rounded-md p-4">
+            <div className="w-full h-full border-2 rounded-md p-4">
                 {children}
             </div>
         </div>

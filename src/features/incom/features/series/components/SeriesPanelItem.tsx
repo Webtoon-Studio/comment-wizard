@@ -11,7 +11,7 @@ export default function SeriesPanelItem(props: SeriesPanelItemProps) {
     } = props;
 
     return (
-        <div>
+        <div >
             
         </div>
     )

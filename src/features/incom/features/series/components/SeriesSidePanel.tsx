@@ -13,9 +13,9 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
     const series = useAppSelector(selectSeries);
 
     return (
-        <ul>
+        <ul className="w-[220px]">
             {series.map((s,i) => (
-                <li key={i}>
+                <li key={i} className="border-2">
                     <SeriesPanelItem item={s} />
                 </li>
             ))}
