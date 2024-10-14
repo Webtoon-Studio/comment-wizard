@@ -2,10 +2,10 @@ import {
 	Rgb,
 	getComponentColor,
 	getInverseColorHex,
-} from "@popup/src/common/utils/colorHelper";
-import type { ComponentColorType } from "@popup/src/interface";
+} from "@shared/utils/colorHelper";
+import type { ComponentColorType } from "@popup/interface";
 import { type ComponentProps, useContext, useState } from "react";
-import { ThemeContext } from "../context/ThemeProvider";
+import { ThemeContext } from "../../features/popup/context/ThemeProvider";
 
 export interface ButtonProps extends Omit<ComponentProps<"button">, "color"> {
 	round?: boolean | "full";

@@ -1,10 +1,10 @@
-import Button from "@popup/src/common/components/button";
-import Switch from "@popup/src/common/components/switch";
-import ToolTip from "@popup/src/common/components/toolTip";
-import ThemeSwitch from "@popup/src/features/components/themeSwitch";
-import { useSetting } from "@popup/src/services/setting";
+import Button from "@shared/components/button";
+import Switch from "@shared/components/switch";
+import ToolTip from "@shared/components/toolTip";
+import ThemeSwitch from "@popup/features/components/themeSwitch";
+import { useSetting } from "@popup/services/setting";
 
-import SettingButton from "@popup/src/features/components/settingButton";
+import SettingButton from "@popup/features/components/settingButton";
 import { IS_DEV } from "@shared/global";
 import { FaGear } from "react-icons/fa6";
 

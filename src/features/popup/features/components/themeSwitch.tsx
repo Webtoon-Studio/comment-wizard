@@ -1,11 +1,11 @@
-import Button, { type ButtonProps } from "@popup/src/common/components/button";
-import Switch, { SwitchProps } from "@popup/src/common/components/switch";
-import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
-import type { IComponentColor } from "@popup/src/interface";
+import Button, { type ButtonProps } from "@shared/components/button";
+import Switch, { SwitchProps } from "@shared/components/switch";
+import { ThemeContext } from "@popup/context/ThemeProvider";
+import type { IComponentColor } from "@popup/interface";
 import { useContext, useMemo } from "react";
 import { FaSun } from "react-icons/fa6";
 import { FaMoon } from "react-icons/fa6";
-import { Rgb, twColor } from "../../common/utils/colorHelper";
+import { Rgb, twColor } from "../../../../shared/utils/colorHelper";
 
 interface ThemeSwitchProps extends ButtonProps {}
 

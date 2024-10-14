@@ -1,7 +1,7 @@
-import Button from "@incom/components/Button";
-import DeleteIcon from "@incom/components/DeleteIcon";
-import DislikeIcon from "@incom/components/DislikeIcon";
-import LikeIcon from "@incom/components/LikeIcon";
+import Button from "@incom/features/components/Button";
+import DeleteIcon from "@incom/features/components/DeleteIcon";
+import DislikeIcon from "@incom/features/components/DislikeIcon";
+import LikeIcon from "@incom/features/components/LikeIcon";
 import type { Post } from "@shared/post";
 import { useId } from "react";
 

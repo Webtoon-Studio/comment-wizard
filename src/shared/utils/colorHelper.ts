@@ -1,4 +1,4 @@
-import type { ComponentColorType, IComponentColor } from "@popup/src/interface";
+import type { ComponentColorType, IComponentColor } from "@popup/interface";
 import twConfig from "@root/tailwind.config";
 import resolveConfig from "tailwindcss/resolveConfig";
 

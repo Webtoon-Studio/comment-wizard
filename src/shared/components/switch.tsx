@@ -1,13 +1,13 @@
 import {
 	getComponentColor,
 	twColor,
-} from "@popup/src/common/utils/colorHelper";
-import useControlled from "@popup/src/common/utils/useControlled";
+} from "@shared/utils/colorHelper";
+import useControlled from "@shared/utils/useControlled";
 import type {
 	ComponentColorType,
 	ComponentSizeType,
 	IComponentColor,
-} from "@popup/src/interface";
+} from "@popup/interface";
 import {
 	type ChangeEvent,
 	type ComponentProps,
@@ -16,7 +16,7 @@ import {
 	useContext,
 	useId,
 } from "react";
-import { ThemeContext } from "../context/ThemeProvider";
+import { ThemeContext } from "../../features/popup/context/ThemeProvider";
 
 export interface SwitchProps
 	extends Omit<ComponentProps<"div">, "color" | "onChange"> {

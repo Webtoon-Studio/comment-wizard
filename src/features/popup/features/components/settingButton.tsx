@@ -1,7 +1,7 @@
-import Button from "@popup/src/common/components/button";
-import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
-import { Rgb, twColor } from "@popup/src/common/utils/colorHelper";
-import type { IComponentColor } from "@popup/src/interface";
+import Button from "@shared/components/button";
+import { ThemeContext } from "@popup/context/ThemeProvider";
+import { Rgb, twColor } from "@shared/utils/colorHelper";
+import type { IComponentColor } from "@popup/interface";
 import { useContext, useMemo, useState } from "react";
 import { FaGear } from "react-icons/fa6";
 

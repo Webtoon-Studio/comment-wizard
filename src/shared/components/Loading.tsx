@@ -8,7 +8,7 @@ export default function Loading() {
 	useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			setCount((count + 1) % word.length);
-		}, 500);
+		}, 200);
 		return () => {
 			clearTimeout(timeoutId);
 		};

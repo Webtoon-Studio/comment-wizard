@@ -1,6 +1,6 @@
-import Button from "@popup/src/common/components/button";
-import { ThemeContext } from "@popup/src/common/context/ThemeProvider";
-import { useCounter } from "@popup/src/services/counter";
+import Button from "@shared/components/button";
+import { ThemeContext } from "@popup/context/ThemeProvider";
+import { useCounter } from "@popup/services/counter";
 import { useContext } from "react";
 
 interface DevConsoleProps {
