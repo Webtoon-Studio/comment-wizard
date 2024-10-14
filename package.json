@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Source code for extension published in webstore including build scripts.",
   "scripts": {
-    "preview:popup": "webpack serve --mode development --config webpack.config.js --static ./dist/popup --open",
-    "preview:incom": "webpack serve --mode development --config webpack.config.js --static ./dist/incom --open",
+    "serve:popup": "webpack serve --mode development --config webpack.config.js --static ./dist/popup --open",
+    "serve:incom": "webpack serve --mode development --config webpack.config.js --static ./dist/incom --open",
     "dev": "webpack --mode=development",
     "build": "webpack --mode=production",
     "build:firefox": "webpack --mode=production --config=webpack.firefox.config.ts",
