@@ -94,7 +94,7 @@ function createCss(props: CssProps): HTMLLinkElement | null {
 	return null;
 }
 
-function modifyCommentsMenu(inject: boolean) {
+function modifyCommentsMenu(inject: boolean, attempt?: number) {
 	const menuId = "layerMy";
 
 	const menu = document.getElementById(menuId);
@@ -147,9 +147,12 @@ function modifyCommentsMenu(inject: boolean) {
 			inCommentItemParent.remove();
 		}
 	} else {
-		setTimeout(() => {
-			modifyCommentsMenu(inject);
-		}, 500);
+		// Limit attempts in case no menu found (e.g. zh-hant locale)
+		if (!attempt || attempt <= 3) {
+			setTimeout(() => {
+				modifyCommentsMenu(inject, attempt ? attempt + 1 : 1);
+			}, 500);
+		}
 	}
 }
 
