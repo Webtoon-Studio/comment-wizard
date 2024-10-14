@@ -5,7 +5,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
+	IS_DEV,
 	POSTS_FETCHED_EVENT_NAME,
 	type SeriesItem,
 	isPostIdNewer,
@@ -85,18 +87,30 @@ export default function Main() {
 	//     - Set up event listner to communicate with service worker
 	useEffect(() => {
 		console.log("Is Prod?", IS_PROD);
-		if (IS_PROD) {
-			console.log("setting event listener in main");
-			const handleSeriesItemResponse = (evt: CustomEvent<{ series: SeriesItem[] }>) => {
-				console.log("Series Items Received");
-				dispatch(hydrateSeries(evt.detail.series));
-			}
 
-			window.addEventListener(
-				INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-				handleSeriesItemResponse as EventListener
-			);
+		const handleSeriesItemResponse = (evt: CustomEvent<{ series: SeriesItem[] | null }>) => {
+			console.log("Series Items Received");
+			dispatch(hydrateSeries(evt.detail.series));
+		}
 
+		window.addEventListener(
+			INCOM_RESPONSE_SERIES_ITEM_EVENT, 
+			handleSeriesItemResponse as EventListener
+		);
+
+		if (IS_DEV) {
+			const timeoutId = setTimeout(() => { setIsLoading(false); }, 400);
+
+			return () => {
+
+				window.removeEventListener(
+					INCOM_RESPONSE_SERIES_ITEM_EVENT, 
+					handleSeriesItemResponse as EventListener
+				);
+
+				clearTimeout(timeoutId);
+			};
+		} else {
 			setIsLoading(false);
 
 			return () => {
@@ -105,14 +119,6 @@ export default function Main() {
 					handleSeriesItemResponse as EventListener
 				);
 			}
-		} else {
-			const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
-			dispatch(hydrateSeries(mockSeries));
-
-			const timeoutId = setTimeout(() => { setIsLoading(false); }, 400);
-			return () => {
-				clearTimeout(timeoutId);
-			};
 		}
 	}, []);
 

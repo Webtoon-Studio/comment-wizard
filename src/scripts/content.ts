@@ -175,9 +175,9 @@ function attachEventListners() {
 			.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
 			.then((resp) => {
 				console.log(resp);
-				if ("series" in resp || resp.series !== null) {
+				if ("series" in resp) {
 					window.dispatchEvent(
-						new CustomEvent<{ series: SeriesItem[] }>(
+						new CustomEvent<{ series: SeriesItem[] | null}>(
 							INCOM_RESPONSE_SERIES_ITEM_EVENT,
 							{
 								detail: {

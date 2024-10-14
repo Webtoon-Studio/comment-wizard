@@ -1,14 +1,17 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
-import { INCOM_REQUEST_SERIES_ITEM_EVENT, type SeriesItem } from "@shared/global";
+import { INCOM_REQUEST_SERIES_ITEM_EVENT, INCOM_RESPONSE_SERIES_ITEM_EVENT, IS_DEV, type SeriesItem } from "@shared/global";
+import { mockSeriesItem } from "@src/mock";
 
 export interface SeriesState {
-    status: 'idle' | 'loading' | 'failed';
+    status: 'idle' | 'loading' | 'hydrating' | 'failed';
     seriesItems: SeriesItem[];
+    current: SeriesItem | null;
 }
 
 const initialState: SeriesState = {
     status: 'idle',
     seriesItems: [],
+    current: null
 };
 
 export const seriesSlice = createSlice({
@@ -16,25 +19,40 @@ export const seriesSlice = createSlice({
     initialState: initialState,
     reducers: {
         fetchSeries: (state) => {
-            window.dispatchEvent(new CustomEvent(
-                INCOM_REQUEST_SERIES_ITEM_EVENT
-            ));
+            state.status = "loading";
+
+            if (IS_DEV) {
+				const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
+				state.seriesItems = mockSeries;
+                state.status = 'idle';
+            } else {
+                window.dispatchEvent(new CustomEvent(
+                    INCOM_REQUEST_SERIES_ITEM_EVENT
+                ));
+            }
         },
-        hydrateSeries: (state, action: PayloadAction<SeriesItem[]>) => {
-            state.seriesItems = action.payload;
-        }
+        hydrateSeries: (state, action: PayloadAction<SeriesItem[]|null>) => {
+            if (action.payload === null) {
+                state.status = "failed";
+            } else {
+                state.seriesItems = action.payload;
+                state.status = 'idle';
+            }
+        },
+        setCurrentSeries: (state, action: PayloadAction<SeriesItem|null>) => {
+            state.current = action.payload;
+        },
     },
     selectors: {
-        selectSeries: (state) => state.seriesItems
+
     }
 });
 
 export const { 
-    fetchSeries, hydrateSeries,
+    fetchSeries, hydrateSeries, setCurrentSeries
 } = seriesSlice.actions;
 
 export const {
-    selectSeries
 } = seriesSlice.selectors;
 
 export default seriesSlice.reducer;
