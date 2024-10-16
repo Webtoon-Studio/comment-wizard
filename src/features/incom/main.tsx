@@ -17,6 +17,8 @@ import ClientContainer from "@incom/features/client/components/ClientContainer";
 import { useAppDispatch } from "@incom/common/hook";
 import { hydrateSeries } from "@incom/features/series/slice";
 import SeriesSidePanel from "@incom/features/series/components/SeriesSidePanel";
+import PostSidePanel from "@incom/features/post/components/PostSidePanel";
+import EpisodeSidePanel from "@incom/features/episode/components/EpisodeSidePanel";
 
 export const IS_PROD = (() => {
 	try {
@@ -159,29 +161,8 @@ export default function Main() {
 						<div className="h-full border-r-2">
 							<SeriesSidePanel />
 						</div>
-						<div className="flex-auto">
-							<ul className="">
-								{visiblePosts.map((p, i) => (
-									<li
-										key={i}
-										className="py-[30px] border-b-2 last-child:border-b-0"
-									>
-										<PostItem post={p} />
-									</li>
-								))}
-							</ul>
-							<div>
-								<div className="flex justify-center">
-									{posts ? (
-										<Pagination
-											count={posts.length}
-											page={page}
-											perPage={perPage}
-											onPageChange={handlePageChange}
-										/>
-									) : null}
-								</div>
-							</div>
+						<div className="h-full border-r-2">
+							<EpisodeSidePanel />
 						</div>
 					</div>
 				) : (
