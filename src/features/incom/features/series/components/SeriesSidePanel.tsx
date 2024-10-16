@@ -31,7 +31,7 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
             <div className="border-b-2">
                 <SeriesMenu />
             </div>
-            <ul className="w-[300px]">
+            <ul className="w-[240px]">
                 {status === 'idle' ? series.map((s, i) => (
                     <li key={i} className="p-2">
                         <SeriesPanelItem 
