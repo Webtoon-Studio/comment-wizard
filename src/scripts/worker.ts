@@ -1,19 +1,15 @@
 import { Webtoon } from "@shared/webtoon";
 import {
-	type EpisodeNewestPost,
 	POSTS_REQUEST_EVENT_NAME,
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
 	STORAGE_SERIES_NAME,
-	type SeriesItem,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
-} from "../shared/global";
-
-import {
-	Post,
-} from "@root/src/shared/post";
+	type SeriesItem,
+	type EpisodeNewestPost,
+} from "@shared/global";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -221,9 +217,9 @@ async function getSeriesFromMyPost(): Promise<boolean | null> {
 	// Using Regex since no DOM in service worker
 	const webtoons: SeriesItem[] = [];
 
-	const reItem = /<li class="item">(?<series>.+?)(?=<\/li>)/gs;
-	const reLink = /<a.+href=\"(.+?)(?=\")/i;
-	const reTitle = /<p.+class="subj">(.+?)(?=<\/p>)/i;
+	const reItem = /<li[^<>]*class="item"[^<>]*>(?<series>.+?)(?=<\/li>)/gs;
+	const reLink = /<a[^<>]*href=\"(.+?)(?=\")/i;
+	const reTitle = /<p[^<>]*class="subj"[^<>]*>(.+?)(?=<\/p>)/i;
 	const reDetail =
 		/.*webtoons\.com\/\w{2,4}\/(?<type>.+?)(?=\/).+title_no=(?<titleId>\d+)/i;
 
