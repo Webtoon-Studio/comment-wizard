@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import type { SeriesItem } from "@shared/global";
+import type { EpisodeItem, SeriesItem } from "@shared/global";
 import { type PageIdType, Post, type PostIdType } from "@shared/post";
 
 export function mockSeriesItem(): SeriesItem {
@@ -32,6 +32,47 @@ export function mockSeriesItem(): SeriesItem {
 		newCount
 	} as SeriesItem;
 }
+
+export function mockEnd(page: number): boolean {
+	if (!faker) {
+		return page >= 5 + Math.ceil(Math.random() * 20);
+	}
+	return page >= faker.number.int({min: 5, max: 30});
+}
+
+export function mockEpisodeItems(titleId: `${number}`, page: number): EpisodeItem[] {
+	const numberItems = 10;
+
+	if (!faker) {
+		return Array.from(new Array(numberItems)).map((_, i) => ({
+			_type: "episodeItem",
+			seriesId: titleId,
+			index: ((page-1) * numberItems) + i + 1,
+			thumb: "",
+			title: "Mock Test Episode Title",
+			date: new Date(new Date(2020-page, 0, 1).getTime() - ((numberItems - i) * 1000 * 60 * 60 * 24 * Math.ceil(7 + (Math.random() * 7)))).getTime()
+		} satisfies EpisodeItem));
+	}
+
+
+	const startDate = faker.date.past({ years: page+1, refDate: new Date()});
+
+	return Array.from(new Array(numberItems)).map((_, i) => {
+		const title = faker.music.songName();
+		const thumb = faker.image.avatar();
+		const endDate = startDate.setDate(startDate.getDate() + faker.number.int({min: 7, max: 14}));
+		const date = faker.date.between({ from: startDate, to: endDate}).getTime();
+		return {
+			_type: "episodeItem",
+			seriesId: titleId,
+			index: ((page - 1) * numberItems) + i + 1,
+			thumb,
+			title,
+			date
+		} satisfies EpisodeItem;
+	})
+}
+
 
 export function mockPostData(): Post {
 	if (!faker) {

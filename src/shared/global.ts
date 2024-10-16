@@ -40,6 +40,15 @@ export interface SeriesItem {
 	newCount?: number;
 }
 
+export interface EpisodeItem {
+	_type: "episodeItem"; // internal interface identity
+	seriesId: `${number}`;
+	index: number;
+	thumb: string;
+	title: string;
+	date: number;
+}
+
 export interface EpisodeNewestPost {
 	_type: "episodeNewestPost";
 	titleId: string;
