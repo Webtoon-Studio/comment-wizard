@@ -13,6 +13,8 @@ export default function ClientContainer(props: ClientContainerProps) {
             setThisHeight(window.innerHeight);
         }
 
+        document.documentElement.style.scrollSnapType = "y proximity";
+
         window.addEventListener("resize", handleWindowResize);
         handleWindowResize();
         
@@ -23,7 +25,7 @@ export default function ClientContainer(props: ClientContainerProps) {
 
     return (
         <div 
-            className="w-full p-2"
+            className="w-full py-[40px] snap-always snap-center"
             style={{
                 height: thisHeight
             }}
