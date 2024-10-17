@@ -241,6 +241,9 @@ export class Webtoon {
 				};
 			}
 	
+			// await some time
+            await new Promise(resolve => setTimeout(resolve, 300));
+
 			const resultPosts = json.result.posts as IPost[];
 			const posts = resultPosts.map((p) => new Post(p));
 	
