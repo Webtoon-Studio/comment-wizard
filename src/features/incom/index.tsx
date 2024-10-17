@@ -8,12 +8,24 @@ import Main from "./main";
 import { Provider } from "react-redux";
 import { store } from "@incom/common/store";
 
-const rootElem = document.getElementById(
+let rootElem = document.getElementById(
 	IS_DEV ? "root" : "cs-in-comment-root"
 ) as HTMLElement;
 
+if (rootElem === null) {
+	// Perhaps its a DEV build on webtoon?
+	rootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
+}
+
 if (rootElem) {
 	const root = ReactDOM.createRoot(rootElem);
+
+	// To mock webtoon page where the app is injected to
+	if (IS_DEV) {
+		document.body.style.backgroundColor = "black";
+		rootElem.style.width = "fit-content";
+		rootElem.style.backgroundColor = "white";
+	}
 
 	root.render(
 		<React.StrictMode>

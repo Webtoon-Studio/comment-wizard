@@ -148,7 +148,7 @@ export default function Main() {
 	}, [posts, newest, page, perPage]);
 
 	return (
-		<div ref={ref} className="">
+		<div ref={ref} className={IS_DEV ? "w-[1110px]" : ""}>
 			{/* <div className="absolute left-0 top-[-4rem] w-[300px] h-[3rem] px-4 py-2 border-2 rounded-full bg-[#8c8c8c] text-white font-medium">
         <div className="h-full flex items-center">
           <span>Filter</span>
