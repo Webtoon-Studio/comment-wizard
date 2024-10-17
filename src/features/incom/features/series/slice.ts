@@ -4,13 +4,13 @@ import { mockSeriesItem } from "@src/mock";
 
 export interface SeriesState {
     status: 'idle' | 'loading' | 'hydrating' | 'failed';
-    seriesItems: SeriesItem[];
+    items: SeriesItem[];
     current: SeriesItem | null;
 }
 
 const initialState: SeriesState = {
     status: 'idle',
-    seriesItems: [],
+    items: [],
     current: null
 };
 
@@ -23,7 +23,7 @@ export const seriesSlice = createSlice({
 
             if (IS_DEV) {
 				const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
-				state.seriesItems = mockSeries;
+				state.items = mockSeries;
                 state.status = 'idle';
             } else {
                 window.dispatchEvent(new CustomEvent(
@@ -35,7 +35,7 @@ export const seriesSlice = createSlice({
             if (action.payload === null) {
                 state.status = "failed";
             } else {
-                state.seriesItems = action.payload;
+                state.items = action.payload;
                 state.status = 'idle';
             }
         },

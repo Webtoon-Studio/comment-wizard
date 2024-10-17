@@ -12,7 +12,7 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
 
     } = props;
     const dispatch = useAppDispatch();
-    const { status, seriesItems: series, current } = useAppSelector(state => state.series);
+    const { status, items: series, current } = useAppSelector(state => state.series);
 
     useEffect(() => {
         dispatch(fetchSeries());
@@ -31,7 +31,7 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
             <div className="border-b-2">
                 <SeriesMenu />
             </div>
-            <ul className="w-[240px]">
+            <ul className="w-[200px]">
                 {status === 'idle' ? series.map((s, i) => (
                     <li key={i} className="p-2">
                         <SeriesPanelItem 
