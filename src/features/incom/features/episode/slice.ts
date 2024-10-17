@@ -4,8 +4,73 @@ import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/tool
 import { IS_DEV, type EpisodeItem } from "@shared/global";
 import { mockEnd, mockEpisodeItems, mockSeriesItem } from "@src/mock";
 
-export const fetchEpisodes = createAsyncThunk<
-    { items: EpisodeItem[], newPagination: SeriesPaginationType },
+type FetchResult = { items: EpisodeItem[], newPagination: SeriesPaginationType };
+
+const fetchEpisodesFromPage = async (link: string, titleId: `${number}`, page: number): Promise<FetchResult>  => {
+    const episodeItems: EpisodeItem[] = [];
+    const subfix = page > 1 ? `&&page=${page}` : "";
+    const url = link + subfix;
+
+    let resp = await fetch(url);
+
+    if (resp.redirected) {
+        const redirectedUrl = resp.url;
+        resp = await fetch(
+            redirectedUrl + subfix
+        );
+    }
+
+    const html = await resp.text();
+    const dom = new DOMParser();
+    const doc = dom.parseFromString(html, "text/html");
+
+    // check if done
+    const pag = doc.querySelector("div.paginate > a[aria-current=true] > span");
+    const realPage = pag && pag.textContent ? parseInt(pag.textContent) : null;
+    if (pag === null || realPage === null || realPage !== page) {
+        return {
+            items: [],
+            newPagination: {
+                titleId,
+                page: realPage || page - 1,
+                isEnd: true
+            }
+        }
+    }
+
+    const queriedItems = doc.querySelectorAll<HTMLLIElement>("li._episodeItem");
+    for (let item of queriedItems) {
+        const index = item.getAttribute("data-episode-no");
+        const thumb = item.querySelector<HTMLImageElement>("span.thmb > img")?.src || null;
+        const title = item.querySelector<HTMLSpanElement>("span.subj > span")?.textContent || null;
+        const date = item.querySelector<HTMLSpanElement>("span.date")?.textContent || null;
+
+        if (index && thumb && title && date) {
+            const newItem = {
+                _type: "episodeItem",
+                seriesId: titleId,
+                index: parseInt(index),
+                thumb: thumb.replace("webtoon-phinf", "swebtoon-phinf"),
+                title,
+                date: new Date(date).getTime()
+            } satisfies EpisodeItem;
+            console.log("New episode item parsed:", newItem);
+            episodeItems.push(newItem);
+        }
+    }
+
+    return {
+        items: episodeItems,
+        newPagination: {
+            titleId,
+            page,
+            isEnd: false
+        }
+    };
+}
+
+export const getPageEpisodes = createAsyncThunk<
+    FetchResult,
     `${number}`,
     {
         state: RootState,
@@ -14,14 +79,13 @@ export const fetchEpisodes = createAsyncThunk<
         }
     }
 >(
-    "episode/fetchEpisodes",
+    "episode/getPageEpisodes",
     async (titleId, thunkAPI) => {
-        const { episode: { paginations: pagination }, series: { seriesItems } } = thunkAPI.getState() as RootState;
+        const { episode: { paginations: pagination }, series: { items: seriesItems } } = thunkAPI.getState() as RootState;
         const page = (pagination.find(p => p.titleId === titleId)?.page || 0) + 1; // incremented
         
         const targetSeries = seriesItems.find(s => s.titleId === titleId);
-        const subfix = page > 1 ? `&&page=${page}` : "";
-        const url = targetSeries ? targetSeries.link + subfix :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}${subfix}`;
+        const link = targetSeries ? targetSeries.link :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
 
         if (IS_DEV) {
             const items = mockEpisodeItems(titleId, page);
@@ -36,53 +100,67 @@ export const fetchEpisodes = createAsyncThunk<
             };
         }
 
-        const episodeItems: EpisodeItem[] = [];
-
-        let resp = await fetch(url);
-
-        if (resp.redirected) {
-            const redirectedUrl = resp.url;
-            resp = await fetch(
-                redirectedUrl + subfix
-            );
-        }
-
-        const html = await resp.text();
-        const dom = new DOMParser();
-        const doc = dom.parseFromString(html, "text/html");
-
-        // check if done
-        const pag = doc.querySelector("div.paginate > a[aria-current=true] > span");
-        const realPage = pag && pag.textContent ? parseInt(pag.textContent) : null;
-        if (pag === null || realPage === null || realPage !== page) {
-            return {
-                items: [],
-                newPagination: {
-                    titleId,
-                    page: realPage || page - 1,
-                    isEnd: true
-                }
+        const result = await fetchEpisodesFromPage(link, titleId, page);
+        return result;
+    },
+    {
+        condition: (titleId, { getState }) => {
+            const { episode: {status, paginations: pages} } = getState() as RootState;
+            if (status === 'loading') {
+                return false;
+            }
+            if (pages.find(p => p.titleId === titleId)?.isEnd === true) {
+                return false;
             }
         }
+    }
+);
 
-        const queriedItems = doc.querySelectorAll<HTMLLIElement>("li._episodeItem");
-        for (let item of queriedItems) {
-            const index = item.getAttribute("data-episode-no");
-            const thumb = item.querySelector<HTMLImageElement>("span.thmb > img")?.src || null;
-            const title = item.querySelector<HTMLSpanElement>("span.subj > span")?.textContent || null;
-            const date = item.querySelector<HTMLSpanElement>("span.date")?.textContent || null;
+export const getAllEpisodes = createAsyncThunk<
+    FetchResult,
+    `${number}`,
+    {
+        state: RootState,
+        rejectedMeta: {
+            message: string
+        }
+    }
+>(
+    "episode/getAllEpisodes",
+    async (titleId, thunkAPI) => {
+        const { episode: { paginations: pagination }, series: { items: seriesItems } } = thunkAPI.getState() as RootState;
+        let page = (pagination.find(p => p.titleId === titleId)?.page || 0); 
+        
+        const targetSeries = seriesItems.find(s => s.titleId === titleId);
+        const link = targetSeries ? targetSeries.link :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
+        
+        const episodeItems: EpisodeItem[] = [];
+        let isEnd = false;
 
-            if (index && thumb && title && date) {
-                const newItem = {
-                    _type: "episodeItem",
-                    seriesId: titleId,
-                    index: parseInt(index),
-                    thumb: thumb.replace("webtoon-phinf", "swebtoon-phinf"),
-                    title,
-                    date: new Date(date).getTime()
-                } satisfies EpisodeItem;
-                console.log("New episode item parsed:", newItem);
-                episodeItems.push(newItem);
+        const maxWaitMinutes = 5;
+        const startTime = new Date().getTime();
+        let currTime;
+
+        while (isEnd === false) {
+            page += 1; // incremented
+            currTime = new Date().getTime();
+
+            if (IS_DEV) {
+                const items = mockEpisodeItems(titleId, page);
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                episodeItems.push(...items);                
+                isEnd = mockEnd(page);
+            } else {
+                const result = await fetchEpisodesFromPage(link, titleId, page);
+
+                episodeItems.push(...result.items);
+                isEnd = result.newPagination.isEnd;
+            }
+            
+            // Check if it's taking too long
+            if (currTime - startTime > (maxWaitMinutes * 60 * 1000)) {
+                break;
             }
         }
 
@@ -91,7 +169,7 @@ export const fetchEpisodes = createAsyncThunk<
             newPagination: {
                 titleId,
                 page,
-                isEnd: false
+                isEnd
             }
         };
     },
@@ -106,7 +184,9 @@ export const fetchEpisodes = createAsyncThunk<
             }
         }
     }
-)
+);
+
+export type EpisodeFilterType = { key: keyof EpisodeItem, value: string };
 
 export type SeriesPaginationType = { titleId: `${number}`, page: number, isEnd: boolean};
 
@@ -115,6 +195,7 @@ export interface EpisodeState {
     items: EpisodeItem[];
     paginations: SeriesPaginationType[];
     current: EpisodeItem | null;
+    filter: EpisodeFilterType | null;
 }
 
 const initialState: EpisodeState = {
@@ -122,6 +203,7 @@ const initialState: EpisodeState = {
     items: [],
     paginations: [],
     current: null,
+    filter: null,
 };
 
 export const episodeSlice = createAppSlice({
@@ -131,12 +213,15 @@ export const episodeSlice = createAppSlice({
         setCurrentEpisode: (state, action: PayloadAction<EpisodeItem|null>) => {
             state.current = action.payload;
         },
+        setFilter: (state, action: PayloadAction<EpisodeFilterType|null>) => {
+            state.filter = action.payload;
+        }
     },
     extraReducers: (builder) => {
-        builder.addCase(fetchEpisodes.pending, (state) => {
+        builder.addCase(getPageEpisodes.pending, (state) => {
             state.status = 'loading';
         }),
-        builder.addCase(fetchEpisodes.fulfilled, (state, action) => {
+        builder.addCase(getPageEpisodes.fulfilled, (state, action) => {
             const titleId = action.payload.newPagination.titleId;
             state.paginations = [
                 ...state.paginations.filter(p => p.titleId !== titleId),
@@ -156,7 +241,38 @@ export const episodeSlice = createAppSlice({
 
             state.status = 'idle';
         }),
-        builder.addCase(fetchEpisodes.rejected, (state, _action) => {
+        builder.addCase(getPageEpisodes.rejected, (state, _action) => {
+            state.status = 'failed';
+        }),
+
+        builder.addCase(getAllEpisodes.pending, (state) => {
+            state.status = 'loading';
+        }),
+        builder.addCase(getAllEpisodes.fulfilled, (state, action) => {
+            const titleId = action.payload.newPagination.titleId;
+            state.paginations = [
+                ...state.paginations.filter(p => p.titleId !== titleId),
+                action.payload.newPagination
+            ];
+            
+            const newItems = [
+                ...state.items,
+                ...action.payload.items
+            ].filter((v, i, arr) => {
+                return arr.slice(i+1).find(
+                    fv => fv.seriesId === v.seriesId && fv.index === v.index
+                ) === undefined;
+            });
+
+            state.items = newItems;
+            
+            if (action.payload.newPagination.isEnd === true) {
+                state.status = 'idle';
+            } else {
+                state.status = 'failed';
+            }
+        }),
+        builder.addCase(getAllEpisodes.rejected, (state, _action) => {
             state.status = 'failed';
         })
     },
@@ -166,7 +282,8 @@ export const episodeSlice = createAppSlice({
 });
 
 export const { 
-    setCurrentEpisode
+    setCurrentEpisode,
+    setFilter,
 } = episodeSlice.actions;
 
 export const {

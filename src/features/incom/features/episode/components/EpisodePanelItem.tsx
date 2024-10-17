@@ -33,7 +33,7 @@ export default function EpisodePanelItem(props: EpisodePanelItemProps) {
             onClick={handleClick}
         >
             <div className="h-full flex items-center">
-                <div className="w-[64px] h-[64px] overflow-clip rounded-md">
+                <div className="w-[32px] h-[32px] overflow-clip rounded-md">
                     {item ? (
                         <img src={item.thumb} alt={item.title}/>
                     ) : (
