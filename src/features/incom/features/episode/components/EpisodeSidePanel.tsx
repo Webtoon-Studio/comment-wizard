@@ -11,7 +11,7 @@ export default function EpisodeSidePanel(props: EpisodeSidePanelProps) {
     const dispatch = useAppDispatch();
     const {current: currSeries} = useAppSelector(state => state.series);
     const {status, current: currEpisode, paginations, filter} = useAppSelector(state => state.episode);
-    const currentItems = useAppSelector(state => selectSeriesEpisodes(state, currSeries?.titleId));
+    const currentItems = useAppSelector((state) => selectSeriesEpisodes(currSeries?.titleId)(state));
     
     const listRef = useRef<HTMLUListElement>(null);
 

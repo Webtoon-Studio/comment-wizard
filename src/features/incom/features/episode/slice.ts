@@ -1,6 +1,6 @@
 import { createAppSlice } from "@incom/common/hook";
 import type { RootState } from "@incom/common/store";
-import { createAsyncThunk, createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import { createAsyncThunk, createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { IS_DEV, type EpisodeItem } from "@shared/global";
 import { mockEnd, mockEpisodeItems, mockSeriesItem } from "@src/mock";
 
@@ -277,9 +277,15 @@ export const episodeSlice = createAppSlice({
         })
     },
     selectors: {
-        selectSeriesEpisodes: (state, titleId?: `${number}`) => titleId ? state.items.filter((ei) => ei.seriesId === titleId) : [],
     }
 });
+
+export const selectEpisodeItems = (state: RootState) => state.episode.items;
+
+export const selectSeriesEpisodes = (titleId?: `${number}`) => createSelector(
+    [selectEpisodeItems],
+    (items: EpisodeItem[]) => titleId ? items.filter((ei) => ei.seriesId === titleId) : []
+)
 
 export const { 
     setCurrentEpisode,
@@ -287,7 +293,6 @@ export const {
 } = episodeSlice.actions;
 
 export const {
-    selectSeriesEpisodes
 } = episodeSlice.selectors;
 
 export default episodeSlice.reducer;
