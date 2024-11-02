@@ -7,7 +7,7 @@ import webpack from 'webpack';
 
 const __dirname = resolve(import.meta.dirname);
 
-const htmlPlugins = (mode) => {
+const htmlPlugins = (_mode) => {
   const plugins = [
     new HtmlWebpackPlugin({
       template: resolve(__dirname, "src/template.html"),
@@ -15,19 +15,15 @@ const htmlPlugins = (mode) => {
       scriptLoading: "module",
       inject: "body",
       chunks: ["popup/index"],
+    }),
+    new HtmlWebpackPlugin({
+      template: resolve(__dirname, "src/template.html"),
+      filename: "incom/index.html",
+      scriptLoading: "module",
+      inject: "body",
+      chunks: ["incom/index"],
     })
-  ];
-  if (mode === 'development') {
-    plugins.push(
-      new HtmlWebpackPlugin({
-        template: resolve(__dirname, "src/template.html"),
-        filename: "incom/index.html",
-        scriptLoading: "module",
-        inject: "body",
-        chunks: ["incom/index"],
-      })
-    );
-  }
+  ]
   return plugins;
 }
 
