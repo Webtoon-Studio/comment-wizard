@@ -7,6 +7,7 @@ import "./index.css";
 import Main from "./main";
 import { Provider } from "react-redux";
 import { store } from "@incom/common/store";
+import EventProvider from "@incom/features/client/components/EventProvider";
 
 let rootElem = document.getElementById(
 	IS_DEV ? "root" : "cs-in-comment-root"
@@ -30,7 +31,9 @@ if (rootElem) {
 	root.render(
 		<React.StrictMode>
 			<Provider store={store}>
-				<Main />
+				<EventProvider>
+					<Main />
+				</EventProvider>
 			</Provider>
 		</React.StrictMode>,
 	);

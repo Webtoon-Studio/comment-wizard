@@ -79,50 +79,11 @@ function Pagination(props: PaginationProps) {
 export default function Main() {
 	const dispatch = useAppDispatch();
 	const ref = useRef<HTMLDivElement>(null);
-	const [isLoading, setIsLoading] = useState(true);
 	const [posts, setPosts] = useState<Post[] | null>(null);
 	const [newest, setNewest] = useState<EpisodeNewestPost[] | null>(null);
 	const [page, setPage] = useState(0);
 	const [perPage, setPerPage] = useState(20);
 
-	// OnMount
-	//     - Set up event listner to communicate with service worker
-	useEffect(() => {
-		console.log("Is Prod?", IS_PROD);
-
-		const handleSeriesItemResponse = (evt: CustomEvent<{ series: SeriesItem[] | null }>) => {
-			console.log("Series Items Received");
-			dispatch(hydrateSeries(evt.detail.series));
-		}
-
-		window.addEventListener(
-			INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-			handleSeriesItemResponse as EventListener
-		);
-
-		if (IS_DEV) {
-			const timeoutId = setTimeout(() => { setIsLoading(false); }, 400);
-
-			return () => {
-
-				window.removeEventListener(
-					INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-					handleSeriesItemResponse as EventListener
-				);
-
-				clearTimeout(timeoutId);
-			};
-		} else {
-			setIsLoading(false);
-
-			return () => {
-				window.removeEventListener(
-					INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-					handleSeriesItemResponse as EventListener
-				);
-			}
-		}
-	}, []);
 
 	const handlePageChange = (newPage: number) => {
 		setPage(newPage);
@@ -156,20 +117,14 @@ export default function Main() {
         </div>
       </div> */}
 			<ClientContainer>
-				{!isLoading ? (
-					<div className="w-full h-full flex ">
-						<div className="h-full border-r-2">
-							<SeriesSidePanel />
-						</div>
-						<div className="h-full border-r-2">
-							<EpisodeSidePanel />
-						</div>
+				<div className="w-full h-full flex ">
+					<div className="h-full border-r-2">
+						<SeriesSidePanel />
 					</div>
-				) : (
-					<div className="w-full min-h-[50vh] flex justify-center items-center pb-[10px]">
-						<Loading />
+					<div className="h-full border-r-2">
+						<EpisodeSidePanel />
 					</div>
-				)}
+				</div>
 			</ClientContainer>
 		</div>
 	);
