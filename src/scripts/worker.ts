@@ -9,6 +9,7 @@ import {
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	type SeriesItem,
 	type EpisodeNewestPost,
+	INCOM_REQUEST_POSTS_EVENT,
 } from "@shared/global";
 
 // =============================== GLOBAL VARIABLES =============================== //
@@ -439,6 +440,15 @@ chrome.runtime.onMessage.addListener(
 					});
 				}
 			});
+			return true;
+		}
+		if (message.greeting === INCOM_REQUEST_POSTS_EVENT) {
+			console.log("runtime: Incom requests posts");
+			const titleId: `${number}` = message.titleId;
+			const episodeNo: number | undefined = message.episodeNo;
+			
+			sendReponse({posts: []}); // TODO
+
 			return true;
 		}
 		return false;

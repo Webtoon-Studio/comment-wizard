@@ -3,7 +3,9 @@ import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_REQUEST_POSTS_EVENT,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
+	INCOM_RESPONSE_POSTS_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
 	POSTS_FETCHED_EVENT_NAME,
 	POSTS_REQUEST_EVENT_NAME,
@@ -192,6 +194,34 @@ function attachEventListners() {
 				}
 			})
 		}
+	);
+
+	window.addEventListener(
+		INCOM_REQUEST_POSTS_EVENT, 
+		((event: CustomEvent<{ titleId?: `${number}`, episodeNo?: number}>) => {
+			console.log("Handling Posts Request event");
+			chrome.runtime
+			.sendMessage({ 
+				greeting: INCOM_REQUEST_POSTS_EVENT,
+				titleId: event.detail.titleId,
+				episodeNo: event.detail.episodeNo
+			})
+			.then((resp) => {
+				console.log(resp);
+				if ("posts" in resp) {
+					window.dispatchEvent(
+						new CustomEvent<{ posts: Post[] | null}>(
+							INCOM_RESPONSE_POSTS_EVENT,
+							{
+								detail: {
+									posts: resp.posts
+								}
+							}
+						)
+					);
+				}
+			})
+		}) as EventListener
 	);
 
 	window.addEventListener(

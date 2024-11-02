@@ -13,13 +13,14 @@ const STORAGE_NEWEST_NAME = "cs-newest-posts";
 const STORAGE_POSTS_NAME = "cs-all-posts";
 const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 
-const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
 const POSTS_FETCHED_EVENT_NAME = "postsFetched";
 
+const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
 const INCOM_REQUEST_SERIES_ITEM_EVENT = "incomSeriesRequest";
 const INCOM_RESPONSE_SERIES_ITEM_EVENT = "incomSeriesResponse";
 const INCOM_REQUEST_POSTS_EVENT = "incomPostsRequest";
+const INCOM_RESPONSE_POSTS_EVENT = "incomePostsResponse";
 
 
 const IS_DEV = (() => {
@@ -152,5 +153,6 @@ export {
 	INCOM_ONMOUNTED_EVENT_NAME,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
-	INCOM_REQUEST_POSTS_EVENT
+	INCOM_REQUEST_POSTS_EVENT,
+	INCOM_RESPONSE_POSTS_EVENT
 };
