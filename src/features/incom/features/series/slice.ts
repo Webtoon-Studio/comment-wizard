@@ -19,12 +19,24 @@ export const seriesSlice = createSlice({
     initialState: initialState,
     reducers: {
         fetchSeries: (state) => {
+            console.log("fetchSeries");
+
+            if (state.status === 'loading') return;
+
             state.status = "loading";
 
             if (IS_DEV) {
 				const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
-				state.items = mockSeries;
-                state.status = 'idle';
+                setTimeout(() => {
+                    window.dispatchEvent(new CustomEvent<{ series: SeriesItem[] | null }>(
+                        INCOM_RESPONSE_SERIES_ITEM_EVENT,
+                        {
+                            detail: {
+                                series: mockSeries
+                            }
+                        }
+                    )); 
+                }, 300);
             } else {
                 window.dispatchEvent(new CustomEvent(
                     INCOM_REQUEST_SERIES_ITEM_EVENT
@@ -32,6 +44,8 @@ export const seriesSlice = createSlice({
             }
         },
         hydrateSeries: (state, action: PayloadAction<SeriesItem[]|null>) => {
+            console.log("hydrateSeries");
+
             if (action.payload === null) {
                 state.status = "failed";
             } else {
