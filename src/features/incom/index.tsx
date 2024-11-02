@@ -9,17 +9,11 @@ import { Provider } from "react-redux";
 import { store } from "@incom/common/store";
 import EventProvider from "@incom/features/client/components/EventProvider";
 
-let rootElem = document.getElementById(
-	IS_DEV ? "root" : "cs-in-comment-root"
-) as HTMLElement;
-
-if (rootElem === null) {
-	// Perhaps its a DEV build on webtoon?
-	rootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
-}
+let rootElem = document.getElementById("root") as HTMLElement;
+let injectRootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
 
 if (rootElem) {
-	const root = ReactDOM.createRoot(rootElem);
+	const root = ReactDOM.createRoot(rootElem === null ? injectRootElem : rootElem);
 
 	// To mock webtoon page where the app is injected to
 	if (IS_DEV) {
