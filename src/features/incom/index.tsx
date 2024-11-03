@@ -12,7 +12,7 @@ import EventProvider from "@incom/features/client/components/EventProvider";
 let rootElem = document.getElementById("root") as HTMLElement;
 let injectRootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
 
-if (rootElem) {
+if (rootElem || injectRootElem) {
 	const root = ReactDOM.createRoot(rootElem === null ? injectRootElem : rootElem);
 
 	// To mock webtoon page where the app is injected to
