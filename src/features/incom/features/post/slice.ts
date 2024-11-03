@@ -1,7 +1,9 @@
 import { createAppSlice } from "@incom/common/hook";
 import type { PayloadAction } from "@reduxjs/toolkit";
-import { INCOM_REQUEST_POSTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, IS_DEV } from "@shared/global";
-import type { Post } from "@shared/post";
+import { INCOM_REQUEST_POSTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, IS_DEV, type EpisodeItem, type SeriesItem } from "@shared/global";
+import { IPost, Post } from "@shared/post";
+import type { TitleIdType } from "@shared/webtoon";
+import { mockPostData } from "@src/mock";
 
 export interface PostState {
     status: 'idle' | 'loading' | 'hydrating' | 'failed';
@@ -19,37 +21,48 @@ export const postSlice = createAppSlice({
     name: 'post',
     initialState: initialState,
     reducers: {
-        requestGetPosts: (state) => {
+        requestGetPosts: (state, action: PayloadAction<{ series: SeriesItem | null, episode: EpisodeItem | null }>) => {
             console.log("requestGetPosts");
             if (state.status === 'loading') return;
-            
+
+            if (action.payload.series === null) {
+                state.status = "idle";
+                state.items = [];
+                return;
+            }
             state.status = "loading";
 
             if (IS_DEV) {
-				const mockPosts: Post[] = [];
+				const mockPosts: IPost[] = Array.from(new Array(100)).map(_ => mockPostData());
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent<{ series: Post[] | null }>(
+                    window.dispatchEvent(new CustomEvent<{ posts: IPost[] | null }>(
                         INCOM_RESPONSE_POSTS_EVENT,
                         {
                             detail: {
-                                series: mockPosts
+                                posts: mockPosts
                             }
                         }
                     ));
                 }, 300);
             } else {
-                window.dispatchEvent(new CustomEvent(
-                    INCOM_REQUEST_POSTS_EVENT
+                window.dispatchEvent(new CustomEvent<{ titleId?: `${number}`, episodeNo?: number}>(
+                    INCOM_REQUEST_POSTS_EVENT,
+                    {
+                        detail: {
+                            titleId: action.payload.series.titleId || undefined,
+                            episodeNo: action.payload.episode?.index || undefined
+                        }
+                    }
                 ));
             }
         },
-        loadPosts: (state, action: PayloadAction<Post[]|null>) => {
+        loadPosts: (state, action: PayloadAction<IPost[]|null>) => {
             console.log("loadPosts");
 
             if (action.payload === null) {
                 state.status = "failed";
             } else {
-                state.items = action.payload;
+                state.items = action.payload.map(p => new Post(p));
                 state.status = 'idle';
             }
         },

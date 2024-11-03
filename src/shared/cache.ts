@@ -1,4 +1,4 @@
-import { Post, type PostIdType } from "@shared/post";
+import { Post, type IPost, type PostIdType } from "@shared/post";
 
 export class Cache {
 	posts: Post[];
@@ -74,7 +74,7 @@ export class Cache {
 
 				if ("posts" in parsed) {
 					Array.prototype.forEach.call(parsed.posts, (post) =>
-						posts.push(Post.fromCached(post)),
+						posts.push(new Post(post)),
 					);
 				}
 

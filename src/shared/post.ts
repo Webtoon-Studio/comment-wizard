@@ -1,63 +1,104 @@
 import { getApiToken, getSessionFromCookie } from "@shared/global";
+import { convertUnicode } from "@shared/utils/stringHelper";
 import { webtoonFetch } from "@shared/webtoon";
 
 export type PageIdType = `${"w" | "c"}_${number}_${number}`;
 export type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;
+export type PageUrlType = `_${PageIdType}`;
+export type PostStatusType = "SERVICE" | "DELETE" | string;
+export type CreatedByStatusType = "SERVICE" | "END" | string;
+export type BodyFormatType = { 
+	type: string, // e.g. "PLAIN" // TODO: Specify more?
+	version: string // e.g. ""
+};
+export type SettingValueType = "ON" | "OFF"; // Guessing the type here. Revisit if error
+
+export interface GeneralPostSettings {
+	[key: string]: SettingValueType
+}
+
+export interface PostSettings extends GeneralPostSettings {
+	reply: SettingValueType;
+	reaction: SettingValueType;
+	spoilerFilter: SettingValueType;
+}
+
+export type SectionDataType = {
+	giphyId: string;
+	title: string;
+	rendering: {
+		url: string;
+		width: number;
+		height: number;
+	};
+	thumbnail: {
+		url: string;
+		width: number;
+		height: number;
+	}
+}
+
+export type SectionType = {
+	sectionId: string; // e.g. "1"
+	sectionType: string | "GIPHY";
+	priority: number;
+	data: SectionDataType;
+
+} 
+
+export type SectionGroupType = {
+	totalCount: number;
+	sections: any[]; // TODO: Specify type of the array?
+}
+
+export type EmotionType = {
+	emotionId: string; //e.g. "like" // TODO: Specify more?
+	count: number;
+	reacted: boolean;
+}
+
+export type ReactionType = {
+	reactionId: string; // e.g. "post_like" // TODO: Specify more?
+	contentId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
+	emotions: EmotionType[];
+}
+
+export type CreatedByType = {
+	publisherType: string; // e.g. "PAGE" // TODO: Specify more?
+	id: string; // e.g. "wbi2v3"
+	status: CreatedByStatusType; // e.g. "SERVICE" // TODO: Specify more?
+	cuid: string; // e.g. "2f586b40-5a1c-11eb-9de0-246e96398d40"
+	name: string; // e.g. "Gr33nEclipse"
+	profileUrl: string; // e.g. "_wbi2v3"
+	isCreator: boolean; // Poster is a creator
+	isPageOwner: boolean; // Poster is the creator of the series this post is in
+	maskedUserId: string; // e.g. "2f58****"
+	encUserId: string; // e.g. ""
+	profileImage: object; // TODO: Specify more. Currently, not sure of the shape of this object
+	extraList: any[]; // TODO: Specify type of the array?
+	restriction: {
+		isWritePostRestricted: boolean;
+		isBlindPostRestricted: boolean;
+	};
+}
 
 export interface IPost {
 	serviceTicketId: "epicom";
 	pageId: PageIdType; // e.g. "w_1320_276"
-	pageUrl: `_${PageIdType}`; // e.g. "_w_1320_276"
+	pageUrl: PageUrlType; // e.g. "_w_1320_276"
 	isOwner: boolean;
 	isPinned: boolean;
 	commentDepth: number;
 	depth: number;
 	creationType: string; // e.g. "BY_USER" // TODO: Specify more?
-	status: string; // e.g. "SERVICE" // TODO: Specify more?
+	status: PostStatusType; // e.g. "SERVICE" // TODO: Specify more?
 	body: string;
-	bodyFormat: {
-		type: string; // e.g. "PLAIN" // TODO: Specify more?
-		version: string; // e.g. ""
-	};
-	settings: {
-		reply: "ON" | "OFF"; // Guessing the type here. Revisit if error
-		reaction: "ON" | "OFF";
-		spoilerFilter: "ON" | "OFF";
-	};
-	sectionGroup: {
-		totalCount: number;
-		sections: any[]; // TODO: Specify type of the array?
-	};
-	reactions: [
-		{
-			reactionId: string; // e.g. "post_like" // TODO: Specify more?
-			contentId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
-			emotions: {
-				emotionId: string; //e.g. "like" // TODO: Specify more?
-				count: number;
-				reacted: boolean;
-			}[];
-		},
-	];
+	bodyFormat: BodyFormatType;
+	settings: PostSettings;
+	sectionGroup: SectionGroupType;
+	reactions: ReactionType[];
 	extraList: any[]; // TODO: Specify type of the array?
-	createdBy: {
-		publisherType: string; // e.g. "PAGE" // TODO: Specify more?
-		id: string; // e.g. "wbi2v3"
-		status: string; // e.g. "SERVICE" // TODO: Specify more?
-		cuid: string; // e.g. "2f586b40-5a1c-11eb-9de0-246e96398d40"
-		name: string; // e.g. "Gr33nEclipse"
-		profileUrl: string; // e.g. "_wbi2v3"
-		isCreator: boolean; // Poster is a creator
-		isPageOwner: boolean; // Poster is the creator of the series this post is in
-		maskedUserId: string; // e.g. "2f58****"
-		encUserId: string; // e.g. ""
-		profileImage: object; // TODO: Specify more. Currently, not sure of the shape of this object
-		extraList: any[]; // TODO: Specify type of the array?
-		restriction: {
-			isWritePostRestricted: boolean;
-			isBlindPostRestricted: boolean;
-		};
-	};
+	createdBy: CreatedByType;
 	createdAt: number; // e.g. 1712368102285
 	updatedAt: number; // e.g. 1712368102285
 	childPostCount: number;
@@ -66,6 +107,8 @@ export interface IPost {
 	activePageOwnerChildPostCount: number;
 	id: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
 	rootId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
+	
+	isNew?: boolean; // our internal property
 }
 
 interface IPostSuccessResponse {
@@ -92,34 +135,52 @@ interface IPostFailResponse {
 
 export type PostResponse = IPostSuccessResponse | IPostFailResponse;
 
-export class Post {
-	webtoonType?: "w" | "c";
-	webtoonId?: `${number}`;
-	episode?: number;
-	id?: PostIdType;
-	rootId?: PostIdType;
-	isTop?: boolean;
-	username?: string;
-	userId?: string;
-	userProfile?: string;
-	isCreator?: boolean;
-	isOwner?: boolean;
-	createdAt?: number;
-	replies?: number;
-	likes?: number;
-	hasLiked?: boolean;
-	hasDisliked?: boolean;
-	dislikes?: number;
-	body?: string;
+export class Post implements Object, IPost {
+	// IPost Properties - From Webtoons API response
+	// Definitely assigned (per Object.assign)
+	readonly id!: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
+	readonly rootId!: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
+	readonly pageId!: PageIdType; // e.g. "w_1320_276"
+	readonly pageUrl!: PageUrlType; // e.g. "_w_1320_276"
+	readonly isOwner!: boolean;
+	readonly isPinned!: boolean;
+	readonly serviceTicketId: "epicom" = "epicom";
+	readonly commentDepth!: number;
+	readonly depth!: number;
+	readonly creationType!: string; // e.g. "BY_USER" // TODO: Specify more?
+	readonly status!: PostStatusType; // e.g. "SERVICE" // TODO: Specify more?
+	readonly body!: string;
+	readonly bodyFormat!: BodyFormatType;
+	readonly settings!: PostSettings;
+	readonly sectionGroup!: SectionGroupType;
+	readonly reactions!: ReactionType[];
+	readonly extraList!: any[]; // TODO: Specify type of the array?
+	readonly createdBy!: CreatedByType;
+	readonly createdAt!: number; // e.g. 1712368102285
+	readonly updatedAt!: number; // e.g. 1712368102285
+	readonly childPostCount!: number;
+	readonly activeChildPostCount!: number;
+	readonly pageOwnerChildPostCount!: number;
+	readonly activePageOwnerChildPostCount!: number;
 
+	// Post specific Properties
+	readonly webtoonType: "w" | "c";
+	readonly webtoonId: `${number}`;
+	readonly episode: number;
+	
+	likes: number;
+	dislikes: number;
+	hasLiked: boolean;
+	hasDisliked: boolean;
 	isNew: boolean;
 
-	constructor(raw?: IPost) {
+	constructor(raw: Post | IPost) {
 		this.isNew = true; // Initialize the Post as new
 		
-		// For when manually constructing the object
-		if (raw === undefined) {
-			return;
+		Object.assign(this, raw);
+
+		if (this.pageId === undefined) {
+			throw new TypeError("Invalid Property: The property pageId is undefined!");
 		}
 
 		const splits = raw.pageId.split("_");
@@ -135,7 +196,7 @@ export class Post {
 			!/^\d+$/.exec(episode)
 		) {
 			throw new TypeError(
-				`The pageId (${raw.pageId}) is not in the expected format: w_\${number}_\${number}`,
+				`Invalid Property: The pageId (${raw.pageId}) is not in the expected format (w_\${number}_\${number})`,
 			);
 		}
 
@@ -165,21 +226,32 @@ export class Post {
 		this.webtoonType = webtoonType;
 		this.webtoonId = webtoonId as `${number}`;
 		this.episode = Number.parseInt(episode);
-		this.id = raw.id;
-		this.rootId = raw.rootId;
-		this.isTop = raw.isPinned;
-		this.username = raw.createdBy.name;
-		this.userId = raw.createdBy.cuid;
-		this.userProfile = raw.createdBy.profileUrl;
-		this.isCreator = raw.createdBy.isCreator;
-		this.isOwner = raw.createdBy.isPageOwner;
-		this.createdAt = raw.createdAt;
-		this.replies = raw.childPostCount;
 		this.likes = likes;
 		this.hasLiked = hasLiked;
 		this.hasDisliked = hasDisliked;
 		this.dislikes = dislikes;
-		this.body = raw.body;
+	}
+
+	get username() { return this.createdBy.name; }
+	get userId() { return this.createdBy.cuid; }
+	get userProfile() { return this.createdBy.profileUrl; }
+
+	// Signifies a creator of some webtoon
+	get isACreator() { return this.createdBy.isCreator; }
+	// Signifies the creator of this webtoon
+	get isPageOwner() { return this.createdBy.isPageOwner; }
+	get isAnonymous() { return this.createdBy.name === ""; }
+	get isDeleted() { return this.status === "DELETE"; }
+
+	get replies() { return this.childPostCount; }
+	get content() { return this.body; }
+
+	equals(other: Post): boolean {
+		return this.id === other.id;
+	}
+
+	isOutDatedThan(other: Post): boolean {
+		return this.updatedAt < other.updatedAt;
 	}
 
 	markAsNew() {
@@ -481,33 +553,6 @@ export class Post {
 		if (!response.ok) {
 			throw new Error(`Failed to block user ${this.username}`);
 		}
-	}
-
-	static fromCached(obj: Post): Post {
-		const post = new Post();
-
-		post.webtoonType = obj.webtoonType;
-		post.webtoonId = obj.webtoonId;
-		post.userProfile = obj.userProfile;
-		post.username = obj.username;
-		post.userId = obj.userId;
-		post.id = obj.id;
-		post.rootId = obj.rootId;
-		post.isCreator = obj.isCreator;
-		post.isOwner = obj.isOwner;
-		post.isTop = obj.isTop;
-		post.replies = obj.replies;
-		post.likes = obj.likes;
-		post.dislikes = obj.dislikes;
-		post.hasLiked = obj.hasLiked;
-		post.hasDisliked = obj.hasDisliked;
-		post.body = obj.body;
-		post.episode = obj.episode;
-		post.createdAt = obj.createdAt;
-		
-		post.isNew = obj.isNew;
-
-		return post;
 	}
 
 	// toJSON(): object {

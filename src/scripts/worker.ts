@@ -1,4 +1,4 @@
-import { Webtoon } from "@shared/webtoon";
+import { Webtoon, type TitleIdType } from "@shared/webtoon";
 import {
 	POSTS_REQUEST_EVENT_NAME,
 	STORAGE_NEWEST_NAME,
@@ -11,6 +11,7 @@ import {
 	type EpisodeNewestPost,
 	INCOM_REQUEST_POSTS_EVENT,
 } from "@shared/global";
+import type { Post } from "@shared/post";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -50,13 +51,20 @@ async function saveSeries(series: SeriesItem[]) {
 }
 // ================================================================================ //
 
-async function loadWebtoons(): Promise<Webtoon[]> {
+async function loadWebtoons(titleId?: TitleIdType): Promise<Webtoon[]> {
 	if (chrome.storage) {
 		return chrome.storage.local.get(STORAGE_WEBTOONS_NAME).then((items) => {
 			if (STORAGE_WEBTOONS_NAME in items) {
 				const value = items[STORAGE_WEBTOONS_NAME];
 				if (Array.isArray(value) && value.every((v) => "url" in v)) {
-					return value.map((v) => new Webtoon(v.url, v.errorQueue, v.postsArray));
+					if (titleId === undefined) {
+						return value.map((v) => new Webtoon(v.url, v.errorQueue, v.postsArray));
+					}
+					return value.map(
+						v => new Webtoon(v.url, v.errorQueue, v.postsArray)
+					).filter(
+						v => v.titleId === titleId
+					);
 				}
 			}
 			return [];
@@ -444,11 +452,30 @@ chrome.runtime.onMessage.addListener(
 		}
 		if (message.greeting === INCOM_REQUEST_POSTS_EVENT) {
 			console.log("runtime: Incom requests posts");
-			const titleId: `${number}` = message.titleId;
+			const titleId: `${number}` | undefined = message.titleId;
 			const episodeNo: number | undefined = message.episodeNo;
-			
-			sendReponse({posts: []}); // TODO
 
+			chrome.alarms.create(GETTING_NEW_POSTS_ALARM_NAME, {
+				delayInMinutes: 0,
+				periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
+			});
+
+			// Sending what's in the storage
+			loadWebtoons(titleId).then((wts) => {				
+				let posts: Post[] = [];
+				if (wts.length > 0) {
+					if (episodeNo) {
+						posts = wts[0].postsArray.find(p => p.episode === episodeNo)?.posts || [];
+					} else {
+						wts.forEach(wt => {
+							wt.postsArray.map(p => p.posts).forEach(ps => posts.push(...ps));
+						});
+					}
+				}
+
+				sendReponse({ posts });
+			});
+			
 			return true;
 		}
 		return false;

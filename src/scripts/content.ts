@@ -15,7 +15,7 @@ import {
 	STORAGE_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
 } from "../shared/global";
-import type { Post } from "@shared/post";
+import type { IPost, Post } from "@shared/post";
 
 const contentCssPath = "content.css";
 const incomScriptPath = "incom/index.js";
@@ -180,7 +180,7 @@ function attachEventListners() {
 			.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
 			.then((resp) => {
 				console.log(resp);
-				if ("series" in resp) {
+				if (resp && "series" in resp) {
 					window.dispatchEvent(
 						new CustomEvent<{ series: SeriesItem[] | null}>(
 							INCOM_RESPONSE_SERIES_ITEM_EVENT,
@@ -208,13 +208,24 @@ function attachEventListners() {
 			})
 			.then((resp) => {
 				console.log(resp);
-				if ("posts" in resp) {
+				if (resp && "posts" in resp) {
 					window.dispatchEvent(
-						new CustomEvent<{ posts: Post[] | null}>(
+						new CustomEvent<{ posts: IPost[] | null}>(
 							INCOM_RESPONSE_POSTS_EVENT,
 							{
 								detail: {
 									posts: resp.posts
+								}
+							}
+						)
+					);
+				} else {
+					window.dispatchEvent(
+						new CustomEvent<{ posts: IPost[] | null}>(
+							INCOM_RESPONSE_POSTS_EVENT,
+							{
+								detail: {
+									posts: null
 								}
 							}
 						)

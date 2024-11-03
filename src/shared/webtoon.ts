@@ -92,6 +92,8 @@ import {
 } from "@root/src/shared/post";
 import { Semaphore } from "./semaphore";
 
+export type TitleIdType = `${number}`;
+
 interface PostsQueryProp {
 	pageId: PageIdType;
 	prevSize?: number;
@@ -108,7 +110,7 @@ export class Webtoon {
 	readonly url: string;
 
 	readonly type: "c" | "w";
-	readonly titleId: `${number}`; // webtoon title id
+	readonly titleId: TitleIdType; // webtoon title id
 
 	status: "idle" | "fetching" | "error";
 
@@ -247,7 +249,7 @@ export class Webtoon {
 			const resultPosts = json.result.posts as IPost[];
 			const posts = resultPosts.map((p) => new Post(p));
 	
-			posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+			posts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 	
 			posts.forEach((p) => {
 				if (!newNewestPost && p.id) {
@@ -609,12 +611,8 @@ export class Webtoon {
 
 		// if there is an existing post & has not been modified, leave as-is
 		const posts: Post[] = newPosts.map(p => {
-			const ex = exPosts?.find(item => item.id === p.id);
-			if (ex && ex.body === p.body) {
-				return ex;
-			} else {
-				return p;
-			}
+			const ex = exPosts?.find(item => item.id === p.id && item.updatedAt < p.updatedAt);
+			return ex ? ex : p;
 		});
 
 		this.postsArray = [
