@@ -124,6 +124,9 @@ export default function Main() {
 					<div className="h-full border-r-2">
 						<EpisodeSidePanel />
 					</div>
+					<div className="flex-auto h-full">
+						<PostSidePanel />
+					</div>
 				</div>
 			</ClientContainer>
 		</div>
