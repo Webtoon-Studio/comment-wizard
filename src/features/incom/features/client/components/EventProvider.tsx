@@ -16,7 +16,6 @@ export default function EventProvider(props: EventProviderProps) {
     const dispatch = useAppDispatch();
 	const { series: {status: seriesStatus}, post: {status: postStatus}} = useAppSelector(state => state);
 	const [isSeriesLoading, setIsSeriesLoading] = useState(true);
-	const [isPostsLoading, setIsPostsLoading] = useState(true);
 
 	// OnMount
 	//     - Set up event listner to communicate with service worker
@@ -29,7 +28,6 @@ export default function EventProvider(props: EventProviderProps) {
 		}
 
 		const handlePostItemsResponse = (evt: CustomEvent<{ posts: Post[] | null }>) => {
-			if (isPostsLoading) setIsPostsLoading(false);
 			dispatch(loadPosts(evt.detail.posts));
 		}
 
@@ -63,22 +61,12 @@ export default function EventProvider(props: EventProviderProps) {
 		}
 	}, [isSeriesLoading]);
 
-	useEffect(() => {
-		if (isPostsLoading) {
-			(async () => new Promise(resolve => setTimeout(resolve, 300)))().then(() => {
-				dispatch(requestGetPosts());
-			});
-		}
-	}, [isPostsLoading]);
-
     return (
         <div>
-            {!isSeriesLoading && !isPostsLoading ? (
+            {!isSeriesLoading ? (
                 children
             ) : (
-                <div className="w-full h-full flex justify-center items-center pb-[10px]">
-					{isSeriesLoading ? "true" : "false"}
-					{isPostsLoading ? "true" : "false"}
+                <div className="w-full h-full min-h-[480px] flex justify-center items-center pb-[10px]">
                     <Loading />
                 </div>
             )}
