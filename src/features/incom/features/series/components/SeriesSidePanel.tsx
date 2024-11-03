@@ -1,4 +1,5 @@
 import { useAppDispatch, useAppSelector } from "@incom/common/hook";
+import { setCurrentEpisode } from "@incom/features/episode/slice";
 import SeriesMenu from "@incom/features/series/components/SeriesMenu";
 import SeriesPanelItem from "@incom/features/series/components/SeriesPanelItem";
 import { fetchSeries, setCurrentSeries } from "@incom/features/series/slice";
@@ -24,6 +25,7 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
         } else {
             dispatch(setCurrentSeries(item));
         }
+        dispatch(setCurrentEpisode(null));
     }
 
     return (
