@@ -44,7 +44,7 @@ export default function Button(props: ButtonProps) {
 	const sizeClassName = useMemo(() => {
 		switch (size) {
 			case "sm":
-				return "text-[10px] h-[18px] leading-[16px] px-[6px]";
+				return "text-[12px] h-[18px] leading-[16px] px-[6px]";
 			case "md":
 				return "text-[14px] h-[33px] leading-[21px] px-[9.5px]";
 			case "lg":
