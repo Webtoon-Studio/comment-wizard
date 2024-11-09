@@ -74,7 +74,7 @@ export function mockEpisodeItems(titleId: `${number}`, page: number): EpisodeIte
 }
 
 
-export function mockPostData(): IPost {
+export function mockPostData(parentId?: PostIdType): IPost {
 	if (!faker) {
 		const likeCount = 500 - Math.floor(Math.random() * 1000);
 		return {
@@ -152,6 +152,7 @@ export function mockPostData(): IPost {
 	const contentId = `GW-epicom:0-${pageId}-${faker.number
 		.int({ min: 1, max: 1000 })
 		.toString(36)}` as PostIdType;
+	const rootId = parentId ?? contentId;
 	const likeCount = faker.number.int({ min: 0, max: 200 });
 	const dislikeCount = faker.number.int({ min: 0, max: 200 });
 
@@ -159,6 +160,8 @@ export function mockPostData(): IPost {
 
 	const createdDate = faker.date.past();
 	const modifiedDate = faker.number.int() % 10 === 0 ? faker.date.between({from: createdDate, to:new Date()}) : createdDate;
+
+	const replyCount = parentId || faker.number.int({min: 0, max: 10}) < 7 ? 0 : faker.number.int({ min: 0, max: 40 });
 
 	return {
 		serviceTicketId: "epicom",
@@ -226,11 +229,11 @@ export function mockPostData(): IPost {
 		},
 		createdAt: createdDate.getTime(), // e.g. 1712368102285
 		updatedAt: modifiedDate.getTime(), // e.g. 1712368102285
-		childPostCount: faker.number.int({ min: 0, max: 200 }),
+		childPostCount: replyCount,
 		activeChildPostCount: faker.number.int({ min: 0, max: 200 }),
 		pageOwnerChildPostCount: faker.number.int({ min: 0, max: 200 }),
 		activePageOwnerChildPostCount: faker.number.int({ min: 0, max: 200 }),
 		id: contentId, // e.g. "GW-epicom:0-w_1320_276-ee"
-		rootId: contentId, // e.g. "GW-epicom:0-w_1320_276-ee"
+		rootId: rootId, // e.g. "GW-epicom:0-w_1320_276-ee"
 	} satisfies IPost;
 }
