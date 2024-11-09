@@ -1,6 +1,11 @@
+import { useAppDispatch } from "@incom/common/hook";
+import Button from "@incom/features/components/Button";
+import DislikeIcon from "@incom/features/components/DislikeIcon";
+import LikeIcon from "@incom/features/components/LikeIcon";
 import PostPanelItemMenu from "@incom/features/post/components/PostPanelItemMenu";
+import { setPostRead, setPostUnread, setReplyRead, setReplyUnread } from "@incom/features/post/slice";
 import type { Post } from "@shared/post";
-import { useState } from "react";
+import { useCallback, useRef, useState, type MouseEvent } from "react";
 
 const DotIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="0.875em" height="0.875em" viewBox="0 0 24 24">
@@ -19,6 +24,18 @@ const CreatorBadgeIcon = () => (
     </div>
 )
 
+const ReplyIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="-4 -4 16 16" x="1126" y="973">
+        <path d="M1 .5v7h7" stroke="#A6A6A6"/>
+    </svg>
+)
+
+const UpArrowIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="19" height="15" fill="none" viewBox="-4 -4 19 15" x="899" y="905">
+        <path d="M10.5 6.5l-5-5-5 5" stroke="#3C3C3C" stroke-width="1.2"/>
+    </svg>
+)
+
 const NewDotMark = () => (
     <div className="relative w-[1rem] h-[1rem]">
         <span className="absolute left-0 top-0">
@@ -31,31 +48,84 @@ const NewDotMark = () => (
 );
 
 interface PostPanelItemProps {
-    item: Post
+    item: Post;
+    isReply?: boolean;
 }
 
 export default function PostPanelItem(props: PostPanelItemProps) {
     const {
-        item
+        item,
+        isReply = false
     } = props;
-
-    const [replies, setReplies] = useState<Post[]>([]);
+    const dispatch = useAppDispatch();
+    const rootRef = useRef<HTMLDivElement>(null);
+    const [openReplies, setOpenReplies] = useState(false);
 
     const locale = navigator.languages ? navigator.languages[0] : navigator.language;
 
     const createdDateString = new Date(item.createdAt).toLocaleDateString(locale, {month: "short", day: "numeric", year:"numeric"});
 
+    const handleDoubleClick = useCallback(function(event: MouseEvent) {
+        if (isReply) {
+            event.stopPropagation();
+            if (item.isNew) {
+                dispatch(setReplyRead({postId: item.rootId, replyId: item.id}));
+            } else {
+                dispatch(setReplyUnread({postId: item.rootId, replyId: item.id}));
+            }
+        } else {
+            if (item.isNew) {
+                dispatch(setPostRead({postId: item.id}));
+            } else {
+                dispatch(setPostUnread({postId: item.id}));
+            }
+        }
+    }, [item.isNew]);
 
+    const handleRepliesClick = function(event: MouseEvent) {
+        if (openReplies) setOpenReplies(false);
+        else setOpenReplies(true);
+    }
+
+    const handleRepliesCollapse = function(event: MouseEvent) {
+        setOpenReplies(false);
+        rootRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest"
+        });
+    }
+
+    const handleMarkReadClick = function(event: MouseEvent) {
+        if (isReply) {
+            dispatch(setReplyRead({postId: item.rootId, replyId: item.id}));
+        } else {
+            dispatch(setPostRead({postId: item.id}));
+        }
+    }
+
+    const handleMarkUnreadClick = function(event: MouseEvent) {
+        if (isReply) {
+            dispatch(setReplyUnread({postId: item.rootId, replyId: item.id}));
+        } else {
+            dispatch(setPostUnread({postId: item.id}));
+        }
+    }
 
     return (
         <div
+            ref={rootRef}
             className={[
-                "w-full flex flex-col gap-2 px-4 py-2 select-none",
-                item.isNew ? "" : "opacity-50"
+                "w-full flex flex-col gap-2 py-2 select-none",
+                isReply ? "pl-4" : "",
             ].join(" ")}
+            onDoubleClick={handleDoubleClick}
         >
-            <div className="w-full flex items-center gap-2">
+            <div className="w-full px-4 flex items-center gap-2">
                 <div className="flex items-center gap-1">
+                    {isReply ? (
+                        <ReplyIcon />
+                    ): null}
                     {item.isAnonymous ? (
                         <span>anonymous</span>
                     ) : (
@@ -76,11 +146,13 @@ export default function PostPanelItem(props: PostPanelItemProps) {
                         <span className="ml-[1ch]">(edited)</span>
                     ): null}
                 </div>
-                <div className="flex-auto *:float-right">
-                    <NewDotMark />
-                </div>
+                {item.isNew ? (
+                    <div className="flex-auto *:float-right">
+                        <NewDotMark />
+                    </div>
+                ) : null}
             </div>
-            <div>
+            <div className="px-4">
                 {!item.isDeleted ? (
                     <p>
                         {item.content}
@@ -89,9 +161,64 @@ export default function PostPanelItem(props: PostPanelItemProps) {
                     <p className="text-gray-500">This comment has been deleted.</p>
                 )}
             </div>
-            <div className="w-full flex items-center gap-2">
-                <PostPanelItemMenu />
+            <div className="w-full px-4 flex justify-end items-center gap-2">
+                {item.replyCount > 0 ? (
+                    <div 
+                        className="px-2 py-1 flex justify-center items-center border-[1px] cursor-pointer"
+                        onClick={handleRepliesClick}
+                    >
+                        <span>{item.replyCount > 1 ? "Replies" : "Reply"} {item.replyCount}</span>
+                    </div>
+                ) : null}
+                <PostPanelItemMenu>
+                    {item.isNew ? (
+                        <Button size="sm" className="text-nowrap" onClick={handleMarkReadClick}>
+                            Mark as Read
+                        </Button>
+                    ) : (
+                        <Button size="sm" className="text-nowrap" onClick={handleMarkUnreadClick}>
+                            Mark as Unread
+                        </Button>
+                    )}
+                </PostPanelItemMenu>
+                <div className="px-2 py-1 flex justify-center items-center border-[1px]">
+                    <LikeIcon />
+                    <span className="text-sm">
+                        {item.likes}
+                    </span>
+                </div>
+                <div className="px-2 py-1 flex justify-center items-center border-[1px]">
+                    <DislikeIcon />
+                    <span className="text-sm">
+                        {item.dislikes}
+                    </span>
+                </div>
             </div>
+            {item.replyCount > 0 ? (
+                <div 
+                    className={[
+                        "w-full bg-gray-100 transition-[height] duration-300 overflow-clip",
+                        openReplies ? "h-auto" : "h-0"
+                    ].join(" ")}
+                >
+                    <ul>
+                        {item.replies.map((reply, i) => (
+                            <li key={i} className="border-b-[1px] snap-start">
+                                <PostPanelItem item={reply} isReply/>
+                            </li>
+                        ))}
+                        <li className="w-full">
+                            <div 
+                                className="w-full py-2 flex justify-center items-center gap-1 hover:bg-gray-200 cursor-pointer"
+                                onClick={handleRepliesCollapse}
+                            >
+                                <UpArrowIcon />
+                                <span>Collapse Replies</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            ) : null}
         </div>
     )
 }
