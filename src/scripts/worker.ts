@@ -338,6 +338,11 @@ async function getNewPosts(): Promise<boolean> {
 		const wt = exId === -1 ? new Webtoon(series.link) : webtoonsList[exId];
 
 		await wt.getAllPosts();
+		for (var item of wt.postsArray) {
+			for (var post of item.posts) {
+				await post.getReplies();
+			}
+		}
 
 		if (exId > -1) {
 			webtoonsList[exId] = wt;

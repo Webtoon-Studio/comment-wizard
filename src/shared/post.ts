@@ -109,6 +109,7 @@ export interface IPost {
 	rootId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
 	
 	isNew?: boolean; // our internal property
+	isGone?: boolean; // our internal property
 }
 
 interface IPostSuccessResponse {
@@ -173,10 +174,17 @@ export class Post implements Object, IPost {
 	hasLiked: boolean;
 	hasDisliked: boolean;
 	isNew: boolean;
+	isUpdated: boolean;
+	isGone: boolean;
+	
+	replies: Post[];
 
 	constructor(raw: Post | IPost) {
 		this.isNew = true; // Initialize the Post as new
-		
+		this.isUpdated = false;
+		this.isGone = false; // Initialize the Post as not gone
+		this.replies = [];
+
 		Object.assign(this, raw);
 
 		if (this.pageId === undefined) {
@@ -243,7 +251,7 @@ export class Post implements Object, IPost {
 	get isAnonymous() { return this.createdBy.name === ""; }
 	get isDeleted() { return this.status === "DELETE"; }
 
-	get replies() { return this.childPostCount; }
+	get replyCount() { return this.childPostCount; }
 	get content() { return this.body; }
 
 	equals(other: Post): boolean {
@@ -263,6 +271,18 @@ export class Post implements Object, IPost {
 	}
 
 	async getReplies(): Promise<Post[]> {
+		const appendReply = (reply: Post) => {
+			const exIndex = this.replies.findIndex(r => r.id === reply.id);
+			if (exIndex > -1) {
+				// Update existing reply
+				const combined = new Post(Object.assign(this.replies[exIndex], reply));
+				combined.isUpdated = true;
+				this.replies[exIndex] = combined;
+			} else {
+				this.replies.push(reply);
+			}
+		}
+
 		if (this.id === undefined) {
 			console.warn(
 				"Unable to get replies: undefined id field.\nDid you perhaps construct Post wrong?",
@@ -270,8 +290,11 @@ export class Post implements Object, IPost {
 			return [];
 		}
 
+		if (this.childPostCount === 0) {
+			return [];
+		}
+
 		const errorLog: string[] = [];
-		const replies = new Set<Post>();
 		const url = replyUrl(this.id);
 
 		const response = await webtoonFetch(url);
@@ -279,7 +302,7 @@ export class Post implements Object, IPost {
 
 		if (json.status === "success") {
 			for (const reply of json.result.posts) {
-				replies.add(new Post(reply));
+				appendReply(new Post(reply));
 			}
 
 			let next = json.result.pagination.next;
@@ -292,7 +315,7 @@ export class Post implements Object, IPost {
 
 				if (json.status === "success") {
 					for (const reply of json.result.posts) {
-						replies.add(new Post(reply));
+						appendReply(new Post(reply));
 					}
 
 					next = json.result.pagination.next;
@@ -309,7 +332,7 @@ export class Post implements Object, IPost {
 			console.error(`Failed to fetch replies:\n\t${errorLog.join("\n\t")}`);
 		}
 
-		return [...replies].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+		return this.replies.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 	}
 
 	async reply(message: string): Promise<Post[]> {

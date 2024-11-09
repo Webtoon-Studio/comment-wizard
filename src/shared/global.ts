@@ -21,6 +21,7 @@ const INCOM_REQUEST_SERIES_ITEM_EVENT = "incomSeriesRequest";
 const INCOM_RESPONSE_SERIES_ITEM_EVENT = "incomSeriesResponse";
 const INCOM_REQUEST_POSTS_EVENT = "incomPostsRequest";
 const INCOM_RESPONSE_POSTS_EVENT = "incomePostsResponse";
+const INCOM_PATCH_POST_EVENT = "incomPostPatch";
 
 
 const IS_DEV = (() => {
@@ -83,6 +84,11 @@ export async function getSessionFromCookie(): Promise<string | null> {
 
 export async function getCurrentUserSession(): Promise<string | null> {
 	try {
+		var chromeCookie = await getSessionFromCookie();
+		if (chromeCookie !== null) {
+			return chromeCookie;
+		} 
+
 		var cookie = document.cookie;
 		var cookies = cookie.split(";");
 
@@ -154,5 +160,6 @@ export {
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
-	INCOM_RESPONSE_POSTS_EVENT
+	INCOM_RESPONSE_POSTS_EVENT,
+	INCOM_PATCH_POST_EVENT
 };
