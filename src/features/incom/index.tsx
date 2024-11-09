@@ -18,8 +18,10 @@ if (rootElem || injectRootElem) {
 	// To mock webtoon page where the app is injected to
 	if (IS_DEV) {
 		document.body.style.backgroundColor = "black";
-		rootElem.style.width = "fit-content";
-		rootElem.style.backgroundColor = "white";
+		if (rootElem) {
+			rootElem.style.width = "fit-content";
+			rootElem.style.backgroundColor = "white";
+		}
 	}
 
 	root.render(
