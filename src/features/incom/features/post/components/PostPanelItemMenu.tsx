@@ -1,5 +1,5 @@
 import Button from "@incom/features/components/Button";
-import { useState, type ComponentProps, type MouseEvent } from "react";
+import { Children, useEffect, useRef, useState, type ComponentProps, type MouseEvent } from "react";
 
 const MenuIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16">
@@ -14,11 +14,32 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
         children
     } = props;
 
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
+
+    useEffect(() => {
+        const handleClickOutsideDropdown: EventListener = function(event) {
+            if (dropdownRef.current) {
+                if (!dropdownRef.current.contains(event.target as Node)) {
+                    setOpen(false);
+                }
+            }
+        };
+
+        document.addEventListener("click", handleClickOutsideDropdown, true);
+
+        return () => {
+            document.removeEventListener("click", handleClickOutsideDropdown, true);
+        }
+    }, [dropdownRef.current])
 
     const handleButtonClick = function(event: MouseEvent) {
         if (open) setOpen(false);
         else setOpen(true);
+    }
+
+    const handleListClick = function(event: MouseEvent) {
+        setOpen(false);
     }
 
     return (
@@ -27,17 +48,18 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
                 <MenuIcon />
             </Button>
             <div 
+                ref={dropdownRef}
                 className={[
-                    "absolute z-30 bg-white border-[1px] rounded shadow",
+                    "absolute z-30 bg-white border-[1px] rounded shadow-lg",
                     open ? "h-auto visible" : "h-0 invisible"
                 ].join(" ")}
             >
-                <ul>
-                    <li className="px-2 py-1 border-b-[1px]">
-                        <div className="text-nowrap">
-                            Mark as read
-                        </div>
-                    </li>
+                <ul onClick={handleListClick}>
+                    {Children.map(children, (child) => (
+                        <li className="px-2 py-1 border-b-[1px] last:border-b-0">
+                            {child}
+                        </li>
+                    ))}
                 </ul>
             </div>
         </div>
