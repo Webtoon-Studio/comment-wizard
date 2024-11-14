@@ -1,6 +1,7 @@
 import { useAppDispatch, useAppSelector } from "@incom/common/hook";
 import { getPageEpisodes } from "@incom/features/episode/slice";
 import PostPanelItem from "@incom/features/post/components/PostPanelItem";
+import PostPanelItemSkeleton from "@incom/features/post/components/PostPanelItemSkeleton";
 import { requestGetPosts } from "@incom/features/post/slice";
 import { useEffect, useMemo, type ComponentProps } from "react";
 
@@ -41,7 +42,7 @@ export default function PostSidePanel(props: PostSidePanelProps) {
                     </li>
                 )) : (
                     <li>
-                        loading
+                        <PostPanelItemSkeleton />
                     </li>
                 )}
             </ul>
