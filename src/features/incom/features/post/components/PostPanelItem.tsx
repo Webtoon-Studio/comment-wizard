@@ -1,17 +1,12 @@
 import { useAppDispatch } from "@incom/common/hook";
 import Button from "@incom/features/components/Button";
 import DislikeIcon from "@incom/features/components/DislikeIcon";
+import DotIcon from "@incom/features/components/DotIcon";
 import LikeIcon from "@incom/features/components/LikeIcon";
 import PostPanelItemMenu from "@incom/features/post/components/PostPanelItemMenu";
 import { setPostRead, setPostUnread, setReplyRead, setReplyUnread } from "@incom/features/post/slice";
 import type { Post } from "@shared/post";
 import { useCallback, useRef, useState, type MouseEvent } from "react";
-
-const DotIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="0.875em" height="0.875em" viewBox="0 0 24 24">
-	    <circle fill="rgba(0,0,0,0.4)" r="6" cx="12" cy="12" />
-    </svg>
-);
 
 const CreatorBadgeIcon = () => (
     <div className="relative inline-block w-[0.875rem] h-[0.875rem]">
@@ -137,7 +132,7 @@ export default function PostPanelItem(props: PostPanelItemProps) {
                         </>
                     )}
                 </div>
-                <DotIcon />
+                <DotIcon className="text-gray-400"/>
                 <div className="text-gray-500">
                     <span>
                         {createdDateString}
