@@ -88,9 +88,12 @@ import {
 	Post,
 	type PostIdType,
 	type PostResponse,
-	IPost,
+	type IWebtoonPost,
+	type PostCountType,
+	type EpisodeCountType,
 } from "@root/src/shared/post";
 import { Semaphore } from "./semaphore";
+import type { Title } from "@shared/title";
 
 export type TitleIdType = `${number}`;
 
@@ -106,6 +109,11 @@ type GetPostsRepsonse = {
 	newestPost?: PostIdType;
 };
 
+export interface StoredWebtoonData {
+	titleId: string;
+	posts: Post[];
+}
+
 export class Webtoon {
 	readonly url: string;
 
@@ -113,57 +121,63 @@ export class Webtoon {
 	readonly titleId: TitleIdType; // webtoon title id
 
 	status: "idle" | "fetching" | "error";
-
 	lastError?: { timestamp: number; episode: number };
-	postsArray: { episode: number; posts: Post[] }[];
+	episodeCount: number = -1;
+	posts: Map<number, Post[]>;
 
 	constructor(
-		url: string, 
-		lastError?: { timestamp: number; episode: number },
-		postsArray?: { episode: number; posts: Post[] }[]
+		title: Title,
 	) {
-		this.url = url;
-		const regex = /https\:\/\/www\.webtoons\.com\/(?<locale>\w{2})\/(?<type>\w+)\/(?<title>.+)\/list\?title_no=(?<titleId>\d+)/i;
+		this.url = "https://www.webtoons.com/" + title.extra.episodeListPath;
+		this.titleId = title.id;
+		this.type = title.grade === "CHALLENGE" ? "c" : "w";
 
-		const result = regex.exec(url);
-		if (result && result.groups) {
-			this.type = result.groups.type === 'canvas' ? 'c' : 'w';
-			this.titleId = result.groups.titleId as `${number}`;
+		this.status = "idle";
+		this.posts = new Map<number, Post[]>();
 
-		} else {
-			const msg = `Provided URL ${url} did not follow specification of https://webtoons.com/../(canvas|genre)/.../list?title_no=(NUMBER)`;
-			throw new Error(msg);
-
-		}
-
-		this.status = lastError ? "error" : "idle";
-		this.lastError = lastError;
-		this.postsArray = postsArray || [];
+		this.getEpisodeCount();
 	}
 
-	async _getEpisodeCount() {
+	async getEpisodeCount() {
+		const isDomAvail = globalThis.hasOwnProperty("DOMParser");
 		const response = await fetch(this.url, {
 			credentials: "include",
 		});
 
 		const html = await response.text();
 
-		const container = document.createElement("div");
-		container.innerHTML = html;
-
-		const item = container.querySelector("li._episodeItem");
-
-		if (item) {
-			const episode = item.getAttribute("data-episode-no");
-			if (episode) {
-				// this.episodes = Number.parseInt(episode, 10);
+		if (isDomAvail) {
+			const dom = new DOMParser();
+			const doc = dom.parseFromString(html, "text/html");
+			const item = doc.querySelector("li._episodeItem");
+	
+			if (item) {
+				const episode = item.getAttribute("data-episode-no");
+				if (episode) {
+					this.episodeCount = Number.parseInt(episode, 10);
+				} else {
+					throw new Error(
+						`Failed to find "data-episode-no" from the item: ${item}`,
+					);
+				}
 			} else {
-				throw new Error(
-					`Failed to find "data-episode-no" from the item: ${item}`,
-				);
+				throw new Error(`Failed to find episodes from page of ${this.url}`);
 			}
 		} else {
-			throw new Error(`Failed to find episodes from page of ${this.url}`);
+			const re = /\<li class=\"_episodeItem\"[^\>]*data-episode-no=\"(?<episodeNo>\d+)\"/i
+			const match = re.exec(html);
+			if (match && match.groups) {
+				const episode = match.groups["episodeNo"];
+				if (episode.trim()) {
+					this.episodeCount = Number.parseInt(episode, 10);
+				} else {
+					throw new Error(
+						`"data-episode-no" value is empty`
+					);
+				}
+			} else {
+				throw new Error(`Failed to find episode from the page of ${this.url}`);
+			}
 		}
 	}
 
@@ -246,7 +260,7 @@ export class Webtoon {
 			// await some time
             await new Promise(resolve => setTimeout(resolve, 300));
 
-			const resultPosts = json.result.posts as IPost[];
+			const resultPosts = json.result.posts as IWebtoonPost[];
 			const posts = resultPosts.map((p) => new Post(p));
 	
 			posts.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
@@ -284,6 +298,7 @@ export class Webtoon {
 
 	async getAllPosts(start: number = 1) {
 		if (this.status === 'fetching') {
+			console.warn("Busy: 'getAllPosts' aborted");
 			return;
 		}
 
@@ -295,118 +310,66 @@ export class Webtoon {
 			}
 		}
 		
-		// episode is a one-based numbering
-		// const lastEpisodeNum = Math.max(...this.postsArray.map(p => p.episode));
-		let episodeNum = start;
-		
 		this.status = 'fetching';
+
 		// service worker terminates when a single request takes >5m
 		const startTime = new Date().getTime();
 		let endTime = new Date().getTime();
-		main: while (endTime - startTime < (30 * 60 * 1000)) {
-			const result = await this.getPosts(episodeNum);
-			
-			switch (result.status) {
-				case 'fail':
+
+		if (this.episodeCount > 0) {
+			for (let episodeNum = start; episodeNum <= this.episodeCount; episodeNum++) {
+				const result = await this.getPosts(episodeNum);
+
+				if (result.status === "fail") {
 					this.status = 'error';
 					this.lastError = {
 						timestamp: new Date().getTime(),
 						episode: episodeNum
 					};
-					break main;
-				case 'done':
-					break main;
+					continue;
+				}
+	
+				endTime = new Date().getTime();
+				if (endTime - startTime > (4 * 60 * 1000)) {
+					this.status = 'error';
+					this.lastError = {
+						timestamp: new Date().getTime(),
+						episode: episodeNum
+					};
+					break;
+				}
 			}
-
-			episodeNum++;
-
-			endTime = new Date().getTime();
-			if (endTime - startTime > (4 * 60 * 1000)) {
-				this.status = 'error';
-				this.lastError = {
-					timestamp: new Date().getTime(),
-					episode: episodeNum
-				};
-				break;
+		} else {
+			let episodeNum = start;
+			main: while (endTime - startTime < (30 * 60 * 1000)) {
+				const result = await this.getPosts(episodeNum);
+				
+				switch (result.status) {
+					case 'fail':
+						this.status = 'error';
+						this.lastError = {
+							timestamp: new Date().getTime(),
+							episode: episodeNum
+						};
+						break main;
+					case 'done':
+						this.episodeCount = episodeNum;
+						break main;
+				}
+	
+				episodeNum++;
+	
+				endTime = new Date().getTime();
+				if (endTime - startTime > (4 * 60 * 1000)) {
+					this.status = 'error';
+					this.lastError = {
+						timestamp: new Date().getTime(),
+						episode: episodeNum
+					};
+					break;
+				}
 			}
 		}
-	}
-
-	async _getPosts() {
-		const posts = new Set<Post>();
-
-		let episode = 1;
-
-		// One episode at a time.
-		const episode_semaphore = new Semaphore(1);
-
-		episodes: while (true) {
-			await episode_semaphore.acquire();
-
-			const url = generatePostsQueryUrl({pageId: `${this.type}_${this.titleId}_${episode}`});
-
-			const response = await webtoonFetch(url);
-
-			// NOTE: If an episode doesnt exist, then it will return a 404.
-			// This signifies that all available episodes have been gone through.
-			if (response.status === 404) {
-				break;
-			}
-
-			const json = (await response.json()) as PostResponse;
-
-			if (json.status === "fail") {
-				console.log(json);
-				throw new Error(`Failed to get posts from api: ${json.error}`);
-			}
-
-			for (const post of json.result.posts) {
-				posts.add(new Post(post));
-			}
-
-			let next = json.result.pagination.next;
-
-			// 10 "pages" at a time
-			const semaphore = new Semaphore(10);
-
-			while (next !== undefined) {
-				await semaphore.acquire();
-
-				const url = generatePostsQueryUrl({
-					pageId: `${this.type}_${this.titleId}_${episode}`,
-					cursor: next
-				});
-
-				const response = await webtoonFetch(url);
-
-				// NOTE: If an episode doesnt exist, then it will return a 404.
-				// This signifies that all available episodes have been gone through.
-				if (response.status === 404) {
-					break episodes;
-				}
-
-				const json = (await response.json()) as PostResponse;
-
-				if (json.status === "success") {
-					for (const post of json.result.posts) {
-						posts.add(new Post(post));
-					}
-
-					next = json.result.pagination.next;
-				} else {
-					console.error(`Unable to fetch the next pagination with: ${next}`);
-					next = undefined;
-				}
-
-				semaphore.release();
-			}
-
-			episode += 1;
-
-			episode_semaphore.release();
-		}
-
-		return [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 	}
 
 	async _getTodaysOrNewestPosts() {
@@ -606,21 +569,63 @@ export class Webtoon {
 		return posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
 	}
 
+	assignPosts(posts: Post[]) {
+		posts.forEach(p => {
+			const ex = this.posts.get(p.episode)
+			if (ex) {
+				this.posts.set(p.episode, [...ex, p]);
+			} else {
+				this.posts.set(p.episode, [p]);
+			}
+		});
+	}
+
 	appendPosts(episodeNum: number, newPosts: Post[]) {
-		const exPosts = this.postsArray.find(item => item.episode === episodeNum)?.posts;
+		const curr = this.posts.get(episodeNum);
 
 		// if there is an existing post & has not been modified, leave as-is
 		const posts: Post[] = newPosts.map(p => {
-			const ex = exPosts?.find(item => item.id === p.id && item.updatedAt < p.updatedAt);
+			const ex = curr?.find(item => item.id === p.id && item.updatedAt < p.updatedAt);
 			return ex ? ex : p;
 		});
 
-		this.postsArray = [
-			...this.postsArray.filter(item => item.episode !== episodeNum), 
-			{episode: episodeNum, posts}
-		];
+		this.posts.set(episodeNum, posts);
+	}
 
-		this.postsArray.sort((a, b) => b.episode - a.episode);
+	getSaveData() {
+		const posts: Post[] = [];
+		for (let p of this.posts.values()) {
+			posts.push(...p);
+		}
+		return {
+			titleId: this.titleId,
+			posts
+		} satisfies StoredWebtoonData;
+	}
+
+	getCounts() {
+		let totalCount = 0;
+		let totalNewCount = 0;
+		const episodes: EpisodeCountType[] = [];
+		this.posts.forEach((p, n) => {
+			const cnt = p.length;
+			const newCnt = p.filter(v => v.isNew).length;
+			
+			totalCount += cnt;
+			totalNewCount += newCnt;
+
+			episodes.push({
+				number: n,
+				count: cnt,
+				newCount: newCnt
+			} satisfies EpisodeCountType);
+		});
+		return {
+			id: this.titleId,
+			totalCount,
+			totalNewCount,
+			episodes
+		} satisfies PostCountType;
 	}
 }
 

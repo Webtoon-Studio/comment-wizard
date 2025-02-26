@@ -8,8 +8,9 @@ function generateRandomString(): string {
 }
 
 const STORAGE_SETTING_NAME = "cs-settings";
-const STORAGE_SERIES_NAME = "cs-series-items";
+const STORAGE_TITLES_NAME = "cs-title-items";
 const STORAGE_NEWEST_NAME = "cs-newest-posts";
+const STROAGE_COUNT_NAME = "cs-post-counts";
 const STORAGE_POSTS_NAME = "cs-all-posts";
 const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 
@@ -150,8 +151,9 @@ export async function getApiToken(): Promise<string | undefined> {
 export {
 	IS_DEV,
 	STORAGE_SETTING_NAME,
-	STORAGE_SERIES_NAME,
+	STORAGE_TITLES_NAME,
 	STORAGE_NEWEST_NAME,
+	STROAGE_COUNT_NAME,
 	STORAGE_POSTS_NAME,
 	STORAGE_WEBTOONS_NAME,
 	POSTS_REQUEST_EVENT_NAME,

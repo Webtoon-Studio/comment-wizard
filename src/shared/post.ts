@@ -1,6 +1,18 @@
 import { getApiToken, getSessionFromCookie } from "@shared/global";
 import { convertUnicode } from "@shared/utils/stringHelper";
-import { webtoonFetch } from "@shared/webtoon";
+import { webtoonFetch, type TitleIdType } from "@shared/webtoon";
+
+export type EpisodeCountType = {
+	number: number, 
+	count: number, 
+	newCount: number
+};
+export type PostCountType = {
+	id: `${number}`,
+	totalCount: number,
+	totalNewCount: number,
+	episodes: EpisodeCountType[]
+};
 
 export type PageIdType = `${"w" | "c"}_${number}_${number}`;
 export type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;
@@ -82,7 +94,7 @@ export type CreatedByType = {
 	};
 }
 
-export interface IPost {
+export interface IWebtoonPost {
 	serviceTicketId: "epicom";
 	pageId: PageIdType; // e.g. "w_1320_276"
 	pageUrl: PageUrlType; // e.g. "_w_1320_276"
@@ -108,14 +120,26 @@ export interface IPost {
 	id: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
 	rootId: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
 	
-	isNew?: boolean; // our internal property
-	isGone?: boolean; // our internal property
 }
 
-interface IPostSuccessResponse {
+export interface IWizardPost {
+	titleId: TitleIdType;
+	titleType: "w" | "c";
+	episode: number;
+	isNew: boolean;
+	isUpdated: boolean;
+	isGone: boolean;
+	likes: number;
+	dislikes: number;
+	hasLiked: boolean;
+	hasDisliked: boolean;
+}
+
+
+interface PostSuccessResponse {
 	status: "success";
 	result: {
-		posts: IPost[];
+		posts: IWebtoonPost[];
 		pagination: {
 			next?: PostIdType;
 			prev?: PostIdType;
@@ -126,7 +150,7 @@ interface IPostSuccessResponse {
 	};
 }
 
-interface IPostFailResponse {
+interface PostFailResponse {
 	status: "fail";
 	error: {
 		code: string;
@@ -134,52 +158,13 @@ interface IPostFailResponse {
 	};
 }
 
-export type PostResponse = IPostSuccessResponse | IPostFailResponse;
+export type PostResponse = PostSuccessResponse | PostFailResponse;
 
-export class Post implements Object, IPost {
-	// IPost Properties - From Webtoons API response
-	// Definitely assigned (per Object.assign)
-	readonly id!: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
-	readonly rootId!: PostIdType; // e.g. "GW-epicom:0-w_1320_276-ee"
-	readonly pageId!: PageIdType; // e.g. "w_1320_276"
-	readonly pageUrl!: PageUrlType; // e.g. "_w_1320_276"
-	readonly isOwner!: boolean;
-	readonly isPinned!: boolean;
-	readonly serviceTicketId: "epicom" = "epicom";
-	readonly commentDepth!: number;
-	readonly depth!: number;
-	readonly creationType!: string; // e.g. "BY_USER" // TODO: Specify more?
-	readonly status!: PostStatusType; // e.g. "SERVICE" // TODO: Specify more?
-	readonly body!: string;
-	readonly bodyFormat!: BodyFormatType;
-	readonly settings!: PostSettings;
-	readonly sectionGroup!: SectionGroupType;
-	readonly reactions!: ReactionType[];
-	readonly extraList!: any[]; // TODO: Specify type of the array?
-	readonly createdBy!: CreatedByType;
-	readonly createdAt!: number; // e.g. 1712368102285
-	readonly updatedAt!: number; // e.g. 1712368102285
-	readonly childPostCount!: number;
-	readonly activeChildPostCount!: number;
-	readonly pageOwnerChildPostCount!: number;
-	readonly activePageOwnerChildPostCount!: number;
-
-	// Post specific Properties
-	readonly webtoonType: "w" | "c";
-	readonly webtoonId: `${number}`;
-	readonly episode: number;
-	
-	likes: number;
-	dislikes: number;
-	hasLiked: boolean;
-	hasDisliked: boolean;
-	isNew: boolean;
-	isUpdated: boolean;
-	isGone: boolean;
-	
+export interface Post extends Object, IWebtoonPost, IWizardPost {}
+export class Post {
 	replies: Post[];
 
-	constructor(raw: Post | IPost) {
+	constructor(raw: Post | IWebtoonPost) {
 		this.isNew = true; // Initialize the Post as new
 		this.isUpdated = false;
 		this.isGone = false; // Initialize the Post as not gone
@@ -193,14 +178,14 @@ export class Post implements Object, IPost {
 
 		const splits = raw.pageId.split("_");
 
-		const webtoonType = splits[0];
-		const webtoonId = splits[1];
+		const titleType = splits[0];
+		const titleId = splits[1];
 		const episode = splits[2];
 
 		// Type check
 		if (
-			(webtoonType !== "w" && webtoonType !== "c") ||
-			!/^\d+$/.exec(webtoonId) ||
+			(titleType !== "w" && titleType !== "c") ||
+			!/^\d+$/.exec(titleId) ||
 			!/^\d+$/.exec(episode)
 		) {
 			throw new TypeError(
@@ -231,9 +216,10 @@ export class Post implements Object, IPost {
 			}
 		}
 
-		this.webtoonType = webtoonType;
-		this.webtoonId = webtoonId as `${number}`;
+		this.titleType = titleType;
+		this.titleId = titleId as `${number}`;
 		this.episode = Number.parseInt(episode);
+
 		this.likes = likes;
 		this.hasLiked = hasLiked;
 		this.hasDisliked = hasDisliked;
@@ -337,17 +323,17 @@ export class Post implements Object, IPost {
 
 	async reply(message: string): Promise<Post[]> {
 		if (
-			this.webtoonType === undefined ||
-			this.webtoonId === undefined ||
+			this.titleType === undefined ||
+			this.titleId === undefined ||
 			this.episode === undefined
 		) {
 			console.warn(
-				"Unable to reply: undefined webtoonType, webtoonId, and/or episode field(s)",
+				"Unable to reply: undefined titleType, titleId, and/or episode field(s)",
 			);
 			return [];
 		}
 
-		const pageId = `${this.webtoonType}_${this.webtoonId}_${this.episode}`;
+		const pageId = `${this.titleType}_${this.titleId}_${this.episode}`;
 
 		const url = "https://www.webtoons.com/p/api/community/v2/post";
 
@@ -395,14 +381,14 @@ export class Post implements Object, IPost {
 
 	// NOTE: If you have already liked a post, then you cannot dislike it until you have unliked the post.
 	async like(): Promise<{ likes: number; hasLiked: boolean } | null> {
-		if (!this.id || !this.webtoonType || !this.webtoonId || !this.episode) {
+		if (!this.id || !this.titleType || !this.titleId || !this.episode) {
 			console.warn(
-				"Unable to like: undefined webtoonType, webtoonId, and/or episode field(s)",
+				"Unable to like: undefined titleType, titleId, and/or episode field(s)",
 			);
 			return null;
 		}
 
-		const pageId: PageIdType = `${this.webtoonType}_${this.webtoonId}_${this.episode}`;
+		const pageId: PageIdType = `${this.titleType}_${this.titleId}_${this.episode}`;
 
 		const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${this.id}/emotion/like`;
 
@@ -443,8 +429,8 @@ export class Post implements Object, IPost {
 
 		const countInfo = await getCountInfo(
 			this.id,
-			this.webtoonType,
-			this.webtoonId,
+			this.titleType,
+			this.titleId,
 			this.episode,
 			apiToken,
 		);
@@ -457,13 +443,13 @@ export class Post implements Object, IPost {
 
 	// NOTE: If you have already disliked a post, then you cannot like it until you have undisliked the post.
 	async dislike() {
-		if (!this.id || !this.webtoonType || !this.webtoonId || !this.episode) {
+		if (!this.id || !this.titleType || !this.titleId || !this.episode) {
 			console.error(
-				"Unable to dislike: undefined id, webtoonType, webtoonId, and/or episode field(s)",
+				"Unable to dislike: undefined id, titleType, titleId, and/or episode field(s)",
 			);
 			return;
 		}
-		const pageId = `${this.webtoonType}_${this.webtoonId}_${this.episode}`;
+		const pageId = `${this.titleType}_${this.titleId}_${this.episode}`;
 
 		const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${this.id}/emotion/dislike`;
 
@@ -501,8 +487,8 @@ export class Post implements Object, IPost {
 
 		const countInfo = await getCountInfo(
 			this.id,
-			this.webtoonType,
-			this.webtoonId,
+			this.titleType,
+			this.titleId,
 			this.episode,
 			apiToken,
 		);
@@ -547,7 +533,7 @@ export class Post implements Object, IPost {
 	}
 
 	async block() {
-		const url = `https://www.webtoons.com/p/api/community/v1/restriction/type/write-post/page/${this.webtoonType}_${this.webtoonId}_${this.episode}/target/${this.userId}`;
+		const url = `https://www.webtoons.com/p/api/community/v1/restriction/type/write-post/page/${this.titleType}_${this.titleId}_${this.episode}/target/${this.userId}`;
 
 		const session = await getSessionFromCookie();
 
@@ -599,12 +585,12 @@ function replyUrl(id: PostIdType, cursor?: PostIdType) {
 
 async function getCountInfo(
 	postId: PostIdType,
-	webtoonType: "w" | "c",
-	webtoonId: `${number}`,
+	titleType: "w" | "c",
+	titleId: `${number}`,
 	episode: number,
 	apiToken: string,
 ) {
-	const pageId: PageIdType = `${webtoonType}_${webtoonId}_${episode}`;
+	const pageId: PageIdType = `${titleType}_${titleId}_${episode}`;
 
 	const url = `https://www.webtoons.com/p/api/community/v2/reaction/post_like/channel/${pageId}/content/${postId}/emotion/count`;
 

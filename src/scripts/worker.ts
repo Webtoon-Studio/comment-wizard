@@ -1,17 +1,19 @@
-import { Webtoon, type TitleIdType } from "@shared/webtoon";
+import { Webtoon, type StoredWebtoonData, type TitleIdType } from "@shared/webtoon";
 import {
 	POSTS_REQUEST_EVENT_NAME,
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
-	STORAGE_SERIES_NAME,
+	STORAGE_TITLES_NAME,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
-	type SeriesItem,
 	type EpisodeNewestPost,
 	INCOM_REQUEST_POSTS_EVENT,
+	STROAGE_COUNT_NAME,
 } from "@shared/global";
-import type { Post } from "@shared/post";
+import type { Post, PostCountType } from "@shared/post";
+import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
+import { fetchWebtoonTitles, Title } from "@shared/title";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -23,17 +25,17 @@ let IS_GETTING_NEW_POSTS = false;
 let IS_STORING_POSTS = false;
 // ================================================================================ //
 
-// ============================== SERIES LOAD / SAVE ============================== //
-async function loadSeries(): Promise<SeriesItem[] | null> {
+// ============================== TITLES LOAD / SAVE ============================== //
+async function loadTitles(): Promise<Title[] | null> {
 	if (chrome.storage) {
-		return chrome.storage.sync.get(STORAGE_SERIES_NAME).then((items) => {
-			if (STORAGE_SERIES_NAME in items) {
-				const value = items[STORAGE_SERIES_NAME];
+		return chrome.storage.sync.get(STORAGE_TITLES_NAME).then((items) => {
+			if (STORAGE_TITLES_NAME in items) {
+				const value = items[STORAGE_TITLES_NAME];
 				if (
 					Array.isArray(value) &&
-					value.every((v) => "_type" in v && v._type === "seriesItem")
+					value.every((v) => Title.isTitle(v))
 				) {
-					return value as SeriesItem[];
+					return value.map(v => new Title(v));
 				}
 			}
 			return null;
@@ -42,29 +44,87 @@ async function loadSeries(): Promise<SeriesItem[] | null> {
 	return null;
 }
 
-async function saveSeries(series: SeriesItem[]) {
+async function saveTitles(titles: Title[]) {
 	if (chrome.storage) {
 		return chrome.storage.sync.set({
-			[STORAGE_SERIES_NAME]: series,
+			[STORAGE_TITLES_NAME]: titles,
+		});
+	}
+}
+
+async function cleanTitles(): Promise<boolean> {
+	if (chrome.storage) {
+		chrome.storage.sync.get(STORAGE_TITLES_NAME).then((items) => {
+			if (STORAGE_TITLES_NAME in items) {
+				const value = items[STORAGE_TITLES_NAME];
+				if (Array.isArray(value)) {
+					if (value.every(v => Title.isTitle(v))) {
+						return false;
+					}
+					const cleaned = value.filter(v => Title.isTitle(v));
+					if (cleaned.length > 0) {
+						chrome.storage.sync.set({
+							[STORAGE_TITLES_NAME]: cleaned
+						});
+						return true;
+					}
+				}
+				chrome.storage.sync.remove(STORAGE_TITLES_NAME);
+				return true;
+			}
+		});
+	}
+	return false;
+}
+// ================================================================================ //
+
+// ============================ POSTCOUNTS LOAD / SAVE ============================ //
+async function loadPostCounts(): Promise<PostCountType[] | null> {
+	if (chrome.storage) {
+		return chrome.storage.sync.get(STROAGE_COUNT_NAME).then((items) => {
+			if (STROAGE_COUNT_NAME in items) {
+				const value = items[STROAGE_COUNT_NAME];
+				if (
+					Array.isArray(value) // Need a better validation
+				) {
+					return value as PostCountType[];
+				}
+			}
+			return null;
+		});
+	}
+	return null;
+}
+
+async function savePostCounts(postCounts: PostCountType[]) {
+	if (chrome.storage) {
+		return chrome.storage.sync.set({
+			[STROAGE_COUNT_NAME]: postCounts,
 		});
 	}
 }
 // ================================================================================ //
 
-async function loadWebtoons(titleId?: TitleIdType): Promise<Webtoon[]> {
+// ================================================================================ //
+async function loadWebtoons(titleId?: TitleIdType): Promise<StoredWebtoonData[]> {
 	if (chrome.storage) {
 		return chrome.storage.local.get(STORAGE_WEBTOONS_NAME).then((items) => {
 			if (STORAGE_WEBTOONS_NAME in items) {
 				const value = items[STORAGE_WEBTOONS_NAME];
-				if (Array.isArray(value) && value.every((v) => "url" in v)) {
+				if (
+					Array.isArray(value) && 
+					value.every((v) => 
+						"titleId" in v && 
+						"posts" in v &&
+						Array.isArray(v.posts)
+					)
+				) {
 					if (titleId === undefined) {
-						return value.map((v) => new Webtoon(v.url, v.errorQueue, v.postsArray));
+						return value as StoredWebtoonData[];
 					}
-					return value.map(
-						v => new Webtoon(v.url, v.errorQueue, v.postsArray)
-					).filter(
+					return value.filter(
 						v => v.titleId === titleId
-					);
+					) as StoredWebtoonData[];
 				}
 			}
 			return [];
@@ -73,98 +133,14 @@ async function loadWebtoons(titleId?: TitleIdType): Promise<Webtoon[]> {
 	return [];
 }
 
-async function saveWebtoons(webtoons: Webtoon[]) {
+async function saveWebtoons(data: StoredWebtoonData[]) {
 	if (chrome.storage) {
 		await chrome.storage.local.set({
-			[STORAGE_WEBTOONS_NAME]: webtoons.map((wt) => ({
-				url: wt.url,
-				errorQueue: wt.lastError,
-				postsArray: wt.postsArray
-			}))
+			[STORAGE_WEBTOONS_NAME]: data
 		});
 	}
 }
-
-async function getWebtoonById(titleId: `${number}`): Promise<Webtoon | null> {
-	return loadWebtoons().then((wts) => {
-		return wts?.find(wt => wt.titleId === titleId) || null;
-	});
-}
-
-async function pushWebtoon(webtoon: Webtoon) {
-	await loadWebtoons().then((wts) => {
-		return [...wts.filter(wt => wt.titleId !== webtoon.titleId), webtoon];
-	}).then((wts) => {
-		saveWebtoons(wts);
-	});
-}
-
-// async function appendPostsToStorage(posts: Post[]) {
-// 	if (!IS_STORING_POSTS) {
-// 		// Store posts & queue
-// 		console.log("Storing Posts");
-// 		IS_STORING_POSTS = true;
-
-// 		// First get queue
-// 		const queue: Post[] = POSTS_QUEUE.slice();
-
-// 		chrome.storage.local.get(STORAGE_POSTS_NAME).then((items) => {
-// 			const allPosts = [...posts, ...queue];
-// 			if (STORAGE_POSTS_NAME in items) {
-// 				const exPosts = items[STORAGE_POSTS_NAME] as Post[];
-// 				allPosts.push(...exPosts);
-// 			}
-// 			const postsToStore: Post[] = [];
-
-// 			// Remove duplicates
-// 			allPosts.forEach((post) => {
-// 				if (!postsToStore.find((p) => p.id === post.id)) {
-// 					postsToStore.push(post);
-// 				}
-// 			});
-
-// 			postsToStore.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-// 			chrome.storage.local
-// 				.set({
-// 					[STORAGE_POSTS_NAME]: postsToStore,
-// 				})
-// 				.then(() => {
-// 					console.log("Posts stored!");
-
-// 					POSTS_QUEUE.splice(0, queue.length);
-// 					IS_STORING_POSTS = false;
-// 				});
-// 		});
-// 	} else {
-// 		// currently storing, add to queue and try again
-// 		console.log("Storage is busy. Queueing the posts");
-// 		POSTS_QUEUE.push(...posts);
-// 		setTimeout(() => appendPostsToStorage([]), 500);
-// 	}
-// }
-
-// async function getNewestPostsFromStorage(): Promise<
-// 	EpisodeNewestPost[] | null
-// > {
-// 	return chrome.storage.local.get(STORAGE_NEWEST_NAME).then((items) => {
-// 		if (STORAGE_NEWEST_NAME in items) {
-// 			const value = items[STORAGE_NEWEST_NAME];
-// 			if (
-// 				Array.isArray(value) &&
-// 				value.every((v) => "_type" in v && v._type === "episodeNewestPost")
-// 			) {
-// 				return value as EpisodeNewestPost[];
-// 			}
-// 		}
-// 		return null;
-// 	});
-// }
-
-// async function updateNewestPostsToStorage(newest: EpisodeNewestPost[]) {
-// 	chrome.storage.local.set({
-// 		[STORAGE_NEWEST_NAME]: newest,
-// 	});
-// }
+// ================================================================================ //
 
 // This is a wrapper for getSeriesFromMyPost
 // Always use this since this will check & create alarm for reducing spamming
@@ -172,7 +148,7 @@ function getSeries(force = false) {
 	// Refactor this out due to 'force' param
 	const executeGetSeries = () => {
 		console.log("Process Start: getSeriesFromMyPost");
-		getSeriesFromMyPost().then((ret) => {
+		scrapeTitlesFromProfile().then((ret) => {
 			console.log("Process Done: getSeriesFromMyPost");
 			console.log(
 				`Process Result: ${
@@ -197,125 +173,64 @@ function getSeries(force = false) {
 	}
 };
 
-async function getSeriesFromMyPost(): Promise<boolean | null> {
+async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 	// Returns:
 	//     - `true` : webtoons are parsed & saved
 	//     - `false`: webtoons are parsed & not saved
 	//     - `null` : webtoons are not parsed
-
-	const url = "https://www.webtoons.com/en/mypost";
 	const session = await getSessionFromCookie();
 	if (!session) {
 		console.error("Unable to get session from cookie");
 		return null;
 	}
-	const headers = new Headers([["Cookie", session]]);
-	const options: RequestInit = {
-		credentials: "include",
-		headers,
-	};
-	const resp = await fetch(url, options);
+	const profileUrl = await fetchProfileUrlFromUserInfo(session);
 
-	if (!resp.ok) {
-		console.error("Failed to fetch `mypost`");
+	if (profileUrl === null) {
+		console.error("Failed to get profile page URL");
+		return null;
+	}
+	const cid = await parseAuthorIdFromProfilePage(profileUrl, session);
+
+	if (cid === null) {
+		console.error("Failed to get Author ID");
 		return null;
 	}
 
-	const html = await resp.text();
-
-	// Using Regex since no DOM in service worker
-	const webtoons: SeriesItem[] = [];
-
-	const reItem = /<li[^<>]*class="item"[^<>]*>(?<series>.+?)(?=<\/li>)/gs;
-	const reLink = /<a[^<>]*href=\"(.+?)(?=\")/i;
-	const reTitle = /<p[^<>]*class="subj"[^<>]*>(.+?)(?=<\/p>)/i;
-	const reDetail =
-		/.*webtoons\.com\/\w{2,4}\/(?<type>.+?)(?=\/).+title_no=(?<titleId>\d+)/i;
-
-	const matchIter = html.matchAll(reItem);
-	let match = matchIter.next();
-	if (match === undefined) {
-		// there should be a match??
-		console.error("Unable to match series items");
+	const fetchedTitles = await fetchWebtoonTitles(cid, session);
+	if (fetchedTitles === null) {
+		console.error("Failed to fetch titles");
 		return null;
-	}
-	while (match.done !== true) {
-		const groups = match.value.groups;
-		if (groups && "series" in groups) {
-			const item = groups.series;
-			const linkMatch = item.match(reLink);
-			const titleMatch = item.match(reTitle);
-			if (
-				linkMatch &&
-				linkMatch.length >= 2 &&
-				titleMatch &&
-				titleMatch.length >= 2
-			) {
-				const title = titleMatch[1];
-				const link = linkMatch[1];
-				const detailMatch = link.match(reDetail);
-				if (
-					detailMatch &&
-					detailMatch.groups &&
-					"titleId" in detailMatch.groups &&
-					"type" in detailMatch.groups
-				) {
-					const titleId = detailMatch.groups.titleId as `${number}`;
-					const isCanvas = detailMatch.groups.type.toLowerCase() === "canvas";
-					webtoons.push({
-						_type: "seriesItem",
-						title,
-						link,
-						titleId,
-						isCanvas,
-					});
-				} else {
-					// Something went wrong?
-					console.error("Unable to parse series details from:\n\n", link);
-					return null;
-				}
-			} else {
-				// Something went wrong?
-				console.error("Unable to parse webtoon information from:\n\n", item);
-				return null;
-			}
-		}
-		match = matchIter.next();
 	}
 
 	// Check storage and store if different
-	const stored = await loadSeries();
-	let isDifferent = stored === null || stored.length !== webtoons.length;
-	let series: SeriesItem[] = [];
+	const stored = await loadTitles();
+	let isDifferent = stored === null || stored.length !== fetchedTitles.length;
+	let titles: Title[] = [];
 	if (stored === null) {
-		series = webtoons;
+		titles = fetchedTitles;
 	} else {
-		series = webtoons.map((wt) => {
-			const exSeries = stored.find((v) => v.title === wt.title);
-			if (exSeries) {
-				if (
-					wt.link !== exSeries.link ||
-					wt.isCanvas !== exSeries.isCanvas ||
-					wt.titleId !== exSeries.titleId
-				) {
+		titles = fetchedTitles.map((t) => {
+			const exTitle = stored.find((v) => v.id === t.id);
+			if (exTitle) {
+				if (t !== exTitle) {
 					// Unexpected changes
 					// Unless there's been a structure change
 					isDifferent = true;
 					// Object assign to keep the newCount data
-					return Object.assign({}, exSeries, wt);
+					return new Title(Object.assign({}, exTitle, t));
 				} else {
-					return exSeries;
+					return exTitle;
 				}
 			} else {
 				// New Webtoon series
 				isDifferent = true;
-				return wt;
+				return t;
 			}
 		});
 	}
 
 	if (isDifferent) {
-		saveSeries(series);
+		saveTitles(titles);
 		return true;
 	}
 
@@ -323,40 +238,41 @@ async function getSeriesFromMyPost(): Promise<boolean | null> {
 }
 
 async function getNewPosts(): Promise<boolean> {
-	const seriesList = await loadSeries();
+	const titleList = await loadTitles();
 
-	if (!seriesList || seriesList.length === 0) {
+	if (!titleList || titleList.length === 0) {
 		getSeries(true);
 		return false;
 	}
 
 	let result: boolean = true;
-	let webtoonsList = await loadWebtoons();
+	const stored = await loadWebtoons();
+	const saveData: StoredWebtoonData[] = [];
 
-	for (let series of seriesList) {
-		const exId = webtoonsList.findIndex((wt) => wt.titleId === series.titleId);
-		const wt = exId === -1 ? new Webtoon(series.link) : webtoonsList[exId];
+	for (let title of titleList) {
+		const wt = new Webtoon(title);
 
-		await wt.getAllPosts();
-		for (var item of wt.postsArray) {
-			for (var post of item.posts) {
-				await post.getReplies();
-			}
+		const found = stored.find(d => d.titleId === title.id);
+		if (found) {
+			wt.assignPosts(found.posts);
 		}
 
-		if (exId > -1) {
-			webtoonsList[exId] = wt;
-		} else {
-			webtoonsList.push(wt);
+		await wt.getAllPosts();
+
+		for (var posts of wt.posts.values()) {
+			for (var post of posts) {
+				await post.getReplies();
+			}
 		}
 
 		if (result && wt.status === 'error') {
 			result = false;
 		}
+
+		saveData.push(wt.getSaveData())
 	}
 
-	await saveWebtoons(webtoonsList);
-
+	await saveWebtoons(saveData);
 	return result;
 }
 
@@ -439,9 +355,9 @@ chrome.runtime.onMessage.addListener(
 		}
 		if (message.greeting === INCOM_REQUEST_SERIES_ITEM_EVENT) {
 			console.log("runtime: Incom requests series items");
-			getSeriesFromMyPost().then(result => {
+			scrapeTitlesFromProfile().then(result => {
 				if (result !== null) {
-					loadSeries().then((loaded) => {
+					loadTitles().then((loaded) => {
 						console.log("runtime: Send response to Series Items Request");
 						sendReponse({
 							series: loaded
@@ -466,18 +382,8 @@ chrome.runtime.onMessage.addListener(
 			});
 
 			// Sending what's in the storage
-			loadWebtoons(titleId).then((wts) => {				
-				let posts: Post[] = [];
-				if (wts.length > 0) {
-					if (episodeNo) {
-						posts = wts[0].postsArray.find(p => p.episode === episodeNo)?.posts || [];
-					} else {
-						wts.forEach(wt => {
-							wt.postsArray.map(p => p.posts).forEach(ps => posts.push(...ps));
-						});
-					}
-				}
-
+			loadWebtoons(titleId).then((data) => {
+				const posts = data.map(d => d.posts).reduce((p, v) => [...p.concat(v)], []);
 				sendReponse({ posts });
 			});
 			
@@ -487,7 +393,7 @@ chrome.runtime.onMessage.addListener(
 	},
 );
 
-chrome.runtime.onInstalled.addListener((installDetails) => {
+chrome.runtime.onInstalled.addListener(async (installDetails) => {
 	switch (installDetails.reason) {
 		case "install":
 		case "update":
@@ -497,6 +403,7 @@ chrome.runtime.onInstalled.addListener((installDetails) => {
 					installDetails.reason.substring(1).toLowerCase()
 				}`,
 			);
+			await cleanTitles();
 			// Force getSeries in case of new changes and/or existing alarm in the way
 			getSeries(true);
 
