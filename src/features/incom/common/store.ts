@@ -1,11 +1,11 @@
 import { combineReducers, configureStore, type Action, type ThunkAction } from "@reduxjs/toolkit";
-import seriesReducer from "@incom/features/series/slice";
+import titleReducer from "@incom/features/title/slice";
 import episodeReducer from "@incom/features/episode/slice";
 import postReducer from "@incom/features/post/slice";
 
 export const store = configureStore({
     reducer: combineReducers({
-        series: seriesReducer,
+        title: titleReducer,
         episode: episodeReducer,
         post: postReducer
     }),

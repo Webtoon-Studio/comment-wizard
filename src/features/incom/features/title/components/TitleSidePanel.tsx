@@ -1,29 +1,30 @@
 import { useAppDispatch, useAppSelector } from "@incom/common/hook";
 import { setCurrentEpisode } from "@incom/features/episode/slice";
-import SeriesMenu from "@incom/features/series/components/SeriesMenu";
-import SeriesPanelItem from "@incom/features/series/components/SeriesPanelItem";
-import { fetchSeries, setCurrentSeries } from "@incom/features/series/slice";
+import TitleMenu from "@incom/features/title/components/TitleMenu";
+import TitlePanelItem from "@incom/features/title/components/TitlePanelItem";
+import { fetchTitles, setCurrentTitle } from "@incom/features/title/slice";
 import type { SeriesItem } from "@shared/global";
+import type { Title } from "@shared/title";
 import { useEffect, useState, type ComponentProps } from "react";
 
-interface SeriesSidePanelProps extends ComponentProps<"div"> {}
+interface TitleSidePanelProps extends ComponentProps<"div"> {}
 
-export default function SeriesSidePanel(props: SeriesSidePanelProps) {
+export default function TitleSidePanel(props: TitleSidePanelProps) {
     const {
 
     } = props;
     const dispatch = useAppDispatch();
-    const { status, items: series, current } = useAppSelector(state => state.series);
+    const { status, items: titles, current } = useAppSelector(state => state.title);
 
     useEffect(() => {
-        dispatch(fetchSeries());
+        dispatch(fetchTitles());
     }, [])
 
-    const handleSelect = function(item: SeriesItem) {
+    const handleSelect = function(item: Title) {
         if (item === current) {
-            dispatch(setCurrentSeries(null));
+            dispatch(setCurrentTitle(null));
         } else {
-            dispatch(setCurrentSeries(item));
+            dispatch(setCurrentTitle(item));
         }
         dispatch(setCurrentEpisode(null));
     }
@@ -31,20 +32,20 @@ export default function SeriesSidePanel(props: SeriesSidePanelProps) {
     return (
         <div className="h-full bg-gray-100">
             <div className="border-b-2">
-                <SeriesMenu />
+                <TitleMenu />
             </div>
             <ul className="w-[200px]">
-                {status === 'idle' ? series.map((s, i) => (
+                {status === 'idle' ? titles.map((s, i) => (
                     <li key={i} className="p-2">
-                        <SeriesPanelItem 
+                        <TitlePanelItem 
                             item={s}
-                            selected={s.titleId === current?.titleId}
+                            selected={s.id === current?.id}
                             onClick={() => handleSelect(s)}
                         />
                     </li>
                 )) : (
                     <li>
-                        <SeriesPanelItem />
+                        <TitlePanelItem />
                     </li>
                 )}
             </ul>

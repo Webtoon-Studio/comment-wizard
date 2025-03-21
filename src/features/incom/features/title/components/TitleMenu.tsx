@@ -1,7 +1,7 @@
 import { useAppDispatch } from "@incom/common/hook";
 import Button from "@incom/features/components/Button";
 import SyncIcon from "@incom/features/components/SyncIcon";
-import { fetchSeries } from "@incom/features/series/slice";
+import { fetchTitles } from "@incom/features/title/slice";
 import type { ComponentProps } from "react";
 
 interface SyncButtonProps extends ComponentProps<"button"> {}
@@ -32,11 +32,11 @@ function SyncButton(props: SyncButtonProps) {
     )
 }
 
-export default function SeriesMenu() {
+export default function TitleMenu() {
     const dispatch = useAppDispatch();
 
     const handleSync = function() {
-        dispatch(fetchSeries());
+        dispatch(fetchTitles());
     }
 
     return (

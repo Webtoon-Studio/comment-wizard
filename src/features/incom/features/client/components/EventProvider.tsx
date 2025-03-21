@@ -1,9 +1,10 @@
 import { useAppDispatch, useAppSelector } from "@incom/common/hook";
 import { loadPosts, requestGetPosts } from "@incom/features/post/slice";
-import { fetchSeries, hydrateSeries } from "@incom/features/series/slice";
+import { fetchTitles, hydrateTitles } from "@incom/features/title/slice";
 import Loading from "@shared/components/Loading";
 import { INCOM_RESPONSE_POSTS_EVENT, INCOM_RESPONSE_SERIES_ITEM_EVENT, IS_DEV, type SeriesItem } from "@shared/global";
 import type { Post } from "@shared/post";
+import { Title } from "@shared/title";
 import { useEffect, useState, type ComponentProps } from "react";
 
 interface EventProviderProps extends ComponentProps<"div"> {
@@ -14,17 +15,17 @@ export default function EventProvider(props: EventProviderProps) {
         children
     } = props;
     const dispatch = useAppDispatch();
-	const { series: {status: seriesStatus}, post: {status: postStatus}} = useAppSelector(state => state);
-	const [isSeriesLoading, setIsSeriesLoading] = useState(true);
+	const { title: {status: seriesStatus}, post: {status: postStatus}} = useAppSelector(state => state);
+	const [isTitlesLoading, setIsTitlesLoading] = useState(true);
 
 	// OnMount
 	//     - Set up event listner to communicate with service worker
 	useEffect(() => {
 		console.log("Is Dev?", IS_DEV);
 
-		const handleSeriesItemResponse = (evt: CustomEvent<{ series: SeriesItem[] | null }>) => {
-			if (isSeriesLoading) setIsSeriesLoading(false);
-			dispatch(hydrateSeries(evt.detail.series));
+		const handleTitleItemResponse = (evt: CustomEvent<{ titles: Title[] | null }>) => {
+			if (isTitlesLoading) setIsTitlesLoading(false);
+			dispatch(hydrateTitles(evt.detail.titles?.map(t => new Title(t)) || null));
 		}
 
 		const handlePostItemsResponse = (evt: CustomEvent<{ posts: Post[] | null }>) => {
@@ -33,7 +34,7 @@ export default function EventProvider(props: EventProviderProps) {
 
 		window.addEventListener(
 			INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-			handleSeriesItemResponse as EventListener
+			handleTitleItemResponse as EventListener
 		);
 
 		window.addEventListener(
@@ -44,26 +45,26 @@ export default function EventProvider(props: EventProviderProps) {
 		return () => {
 			window.removeEventListener(
 				INCOM_RESPONSE_SERIES_ITEM_EVENT, 
-				handleSeriesItemResponse as EventListener
+				handleTitleItemResponse as EventListener
 			);
 			window.removeEventListener(
 				INCOM_RESPONSE_POSTS_EVENT, 
-				handleSeriesItemResponse as EventListener
+				handleTitleItemResponse as EventListener
 			);
 		}
 	}, []);
 
 	useEffect(() => {
-		if (isSeriesLoading) {
+		if (isTitlesLoading) {
 			(async () => new Promise(resolve => setTimeout(resolve, 300)))().then(() => {
-				dispatch(fetchSeries());
+				dispatch(fetchTitles());
 			});
 		}
-	}, [isSeriesLoading]);
+	}, [isTitlesLoading]);
 
     return (
         <div>
-            {!isSeriesLoading ? (
+            {!isTitlesLoading ? (
                 children
             ) : (
                 <div className="w-full h-full min-h-[480px] flex justify-center items-center pb-[10px]">

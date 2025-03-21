@@ -1,5 +1,5 @@
 import Loading from "@shared/components/Loading";
-import { mockPostData, mockSeriesItem } from "@root/src/mock";
+import { mockPostData, mockTitles } from "@root/src/mock";
 import type { Post } from "@shared/post";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -15,8 +15,8 @@ import {
 import PostItem from "@incom/features/components/PostItem";
 import ClientContainer from "@incom/features/client/components/ClientContainer";
 import { useAppDispatch } from "@incom/common/hook";
-import { hydrateSeries } from "@incom/features/series/slice";
-import SeriesSidePanel from "@incom/features/series/components/SeriesSidePanel";
+import { hydrateTitles } from "@incom/features/title/slice";
+import TitleSidePanel from "@incom/features/title/components/TitleSidePanel";
 import PostSidePanel from "@incom/features/post/components/PostSidePanel";
 import EpisodeSidePanel from "@incom/features/episode/components/EpisodeSidePanel";
 
@@ -119,7 +119,7 @@ export default function Main() {
 			<ClientContainer>
 				<div className="w-full h-full flex ">
 					<div className="h-full border-r-2">
-						<SeriesSidePanel />
+						<TitleSidePanel />
 					</div>
 					<div className="h-full border-r-2">
 						<EpisodeSidePanel />

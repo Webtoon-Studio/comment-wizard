@@ -1,24 +1,25 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { INCOM_REQUEST_SERIES_ITEM_EVENT, INCOM_RESPONSE_SERIES_ITEM_EVENT, IS_DEV, type SeriesItem } from "@shared/global";
-import { mockSeriesItem } from "@src/mock";
+import type { Title } from "@shared/title";
+import { mockTitles } from "@src/mock";
 
-export interface SeriesState {
+export interface TitleState {
     status: 'idle' | 'loading' | 'hydrating' | 'failed';
-    items: SeriesItem[];
-    current: SeriesItem | null;
+    items: Title[];
+    current: Title | null;
 }
 
-const initialState: SeriesState = {
+const initialState: TitleState = {
     status: 'idle',
     items: [],
     current: null
 };
 
-export const seriesSlice = createSlice({
-    name: 'series',
+export const titleSlice = createSlice({
+    name: 'title',
     initialState: initialState,
     reducers: {
-        fetchSeries: (state) => {
+        fetchTitles: (state) => {
             console.log("fetchSeries");
 
             if (state.status === 'loading') return;
@@ -26,13 +27,13 @@ export const seriesSlice = createSlice({
             state.status = "loading";
 
             if (IS_DEV) {
-				const mockSeries = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockSeriesItem());
+				const mockTitleItems = Array.from(new Array(1 + Math.ceil(Math.random() * 5))).map(() => mockTitles());
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent<{ series: SeriesItem[] | null }>(
+                    window.dispatchEvent(new CustomEvent<{ titles: Title[] | null }>(
                         INCOM_RESPONSE_SERIES_ITEM_EVENT,
                         {
                             detail: {
-                                series: mockSeries
+                                titles: mockTitleItems
                             }
                         }
                     )); 
@@ -43,7 +44,7 @@ export const seriesSlice = createSlice({
                 ));
             }
         },
-        hydrateSeries: (state, action: PayloadAction<SeriesItem[]|null>) => {
+        hydrateTitles: (state, action: PayloadAction<Title[]|null>) => {
             console.log("hydrateSeries");
 
             if (action.payload === null) {
@@ -53,7 +54,7 @@ export const seriesSlice = createSlice({
                 state.status = 'idle';
             }
         },
-        setCurrentSeries: (state, action: PayloadAction<SeriesItem|null>) => {
+        setCurrentTitle: (state, action: PayloadAction<Title|null>) => {
             state.current = action.payload;
         },
     },
@@ -63,10 +64,10 @@ export const seriesSlice = createSlice({
 });
 
 export const { 
-    fetchSeries, hydrateSeries, setCurrentSeries
-} = seriesSlice.actions;
+    fetchTitles, hydrateTitles, setCurrentTitle
+} = titleSlice.actions;
 
 export const {
-} = seriesSlice.selectors;
+} = titleSlice.selectors;
 
-export default seriesSlice.reducer;
+export default titleSlice.reducer;

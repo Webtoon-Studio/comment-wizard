@@ -2,7 +2,7 @@ import { createAppSlice } from "@incom/common/hook";
 import type { RootState } from "@incom/common/store";
 import { createAsyncThunk, createSelector, createSlice, type PayloadAction } from "@reduxjs/toolkit";
 import { IS_DEV, type EpisodeItem } from "@shared/global";
-import { mockEnd, mockEpisodeItems, mockSeriesItem } from "@src/mock";
+import { mockEnd, mockEpisodeItems, mockTitles } from "@src/mock";
 
 type FetchResult = { items: EpisodeItem[], newPagination: SeriesPaginationType };
 

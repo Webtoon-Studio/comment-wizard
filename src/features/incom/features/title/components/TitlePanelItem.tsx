@@ -1,14 +1,14 @@
 import RefreshIcon from "@incom/features/components/RefreshIcon";
-import type { SeriesItem } from "@shared/global";
+import type { Title } from "@shared/title";
 import type { ComponentProps, MouseEvent } from "react";
 
-interface SeriesPanelItemProps extends ComponentProps<"div"> {
-    item?: SeriesItem;
+interface TitlePanelItemProps extends ComponentProps<"div"> {
+    item?: Title;
     selected?: boolean;
     isLoading?: boolean;
 }
 
-export default function SeriesPanelItem(props: SeriesPanelItemProps) {
+export default function TitlePanelItem(props: TitlePanelItemProps) {
     const {
         item,
         selected = false,
@@ -41,14 +41,14 @@ export default function SeriesPanelItem(props: SeriesPanelItemProps) {
                 >
                     {item ? (
                         <span>
-                            {item.title}
+                            {item.subject}
                         </span>
                     ) : (
                         <div className="inline-block h-4 w-[16ch] bg-gray-400 animate-pulse"/>
                     )}
                 </div>
                 <div className="text-xs text-gray-400">
-                    {item?.titleId}
+                    {item?.id}
                 </div>
             </div>
         </div>

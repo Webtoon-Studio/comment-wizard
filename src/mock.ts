@@ -1,19 +1,32 @@
 import { faker } from "@faker-js/faker";
 import type { EpisodeItem, SeriesItem } from "@shared/global";
-import { type IPost, type PageIdType, Post, type PostIdType } from "@shared/post";
+import { type IWebtoonPost, type PageIdType, Post, type PostIdType } from "@shared/post";
+import {Title} from "@shared/title";
 
-export function mockSeriesItem(): SeriesItem {
+export function mockTitles(): Title {
 	if (!faker) {
-		return {
-			_type: "seriesItem",
-			title: "Mock Test Title",
-			link: "",
-			titleId: "0",
-			isCanvas: true,
-			newCount: 0
-		} as SeriesItem;
+		return new Title({
+			author: [{
+				nickname: "mock_author"
+			}],
+			extra: {
+				episodeListPath: "some/path/to/titleId",
+				restTerminationStatus: "SERIES",
+				unsuitableForChildren: false
+			},
+			genres: ["DRAMA"],
+			grade: "CHALLENGE",
+			id: "0",
+			recentEpisodeRegisteredAt: 0,
+			representGenre: "DRAMA",
+			shareThumbnailUrl: "",
+			subject: "Mock Title",
+			thumbnailUrl: "",
+			titleRegisteredAt: 0
+		});
 	}
 
+	const nickname = faker.internet.displayName();
 	const title = faker.music.songName();
 	const link = "";
 	const titleId = faker.string.numeric({
@@ -22,15 +35,28 @@ export function mockSeriesItem(): SeriesItem {
 	});
 	const isCanvas = true;
 	const newCount = faker.number.int({min: 0, max: 200});
+	const registerDate = faker.date.past({ years: 10 });
+	const recentDate = faker.date.recent({ days: 10 });
 
-	return {
-		_type: "seriesItem",
-		title,
-		link,
-		titleId,
-		isCanvas,
-		newCount
-	} as SeriesItem;
+	return new Title({
+		author: [{
+			nickname
+		}],
+		extra: {
+			episodeListPath: "some/path/to/titleId",
+			restTerminationStatus: "SERIES",
+			unsuitableForChildren: false
+		},
+		genres: ["DRAMA"],
+		grade: "CHALLENGE",
+		id: titleId,
+		recentEpisodeRegisteredAt: recentDate.getTime(),
+		representGenre: "DRAMA",
+		shareThumbnailUrl: "",
+		subject: title,
+		thumbnailUrl: "",
+		titleRegisteredAt: registerDate.getTime()
+	})
 }
 
 export function mockEnd(page: number): boolean {
@@ -74,7 +100,7 @@ export function mockEpisodeItems(titleId: `${number}`, page: number): EpisodeIte
 }
 
 
-export function mockPostData(parentId?: PostIdType): IPost {
+export function mockPostData(parentId?: PostIdType): IWebtoonPost {
 	if (!faker) {
 		const likeCount = 500 - Math.floor(Math.random() * 1000);
 		return {
@@ -146,7 +172,7 @@ export function mockPostData(parentId?: PostIdType): IPost {
 			activePageOwnerChildPostCount: Math.floor(Math.random() * 10),
 			id: "GW-epicom:0-w_1320_276-ee", // e.g. "GW-epicom:0-w_1320_276-ee"
 			rootId: "GW-epicom:0-w_1320_276-ee", // e.g. "GW-epicom:0-w_1320_276-ee"
-		} satisfies IPost;
+		} satisfies IWebtoonPost;
 	}
 	const pageId = `c_109098_${faker.number.int({ min: 1, max: 200 })}`;
 	const contentId = `GW-epicom:0-${pageId}-${faker.number
@@ -235,5 +261,5 @@ export function mockPostData(parentId?: PostIdType): IPost {
 		activePageOwnerChildPostCount: faker.number.int({ min: 0, max: 200 }),
 		id: contentId, // e.g. "GW-epicom:0-w_1320_276-ee"
 		rootId: rootId, // e.g. "GW-epicom:0-w_1320_276-ee"
-	} satisfies IPost;
+	} satisfies IWebtoonPost;
 }

@@ -1,17 +1,14 @@
 import { Webtoon, type StoredWebtoonData, type TitleIdType } from "@shared/webtoon";
 import {
 	POSTS_REQUEST_EVENT_NAME,
-	STORAGE_NEWEST_NAME,
-	STORAGE_POSTS_NAME,
 	STORAGE_TITLES_NAME,
 	getSessionFromCookie,
 	STORAGE_WEBTOONS_NAME,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
-	type EpisodeNewestPost,
 	INCOM_REQUEST_POSTS_EVENT,
 	STROAGE_COUNT_NAME,
 } from "@shared/global";
-import type { Post, PostCountType } from "@shared/post";
+import type { PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";
 
@@ -360,12 +357,12 @@ chrome.runtime.onMessage.addListener(
 					loadTitles().then((loaded) => {
 						console.log("runtime: Send response to Series Items Request");
 						sendReponse({
-							series: loaded
+							titles: loaded
 						});
 					});
 				} else {
 					sendReponse({
-						series: null
+						titles: null
 					});
 				}
 			});

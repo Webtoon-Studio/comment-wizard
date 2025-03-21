@@ -1,5 +1,4 @@
 import { getApiToken, getSessionFromCookie } from "@shared/global";
-import { convertUnicode } from "@shared/utils/stringHelper";
 import { webtoonFetch, type TitleIdType } from "@shared/webtoon";
 
 export type EpisodeCountType = {

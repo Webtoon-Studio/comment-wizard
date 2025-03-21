@@ -87,7 +87,6 @@ import {
 	type PageIdType,
 	Post,
 	type PostIdType,
-	type PostResponse,
 	type IWebtoonPost,
 	type PostCountType,
 	type EpisodeCountType,

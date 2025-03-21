@@ -15,7 +15,8 @@ import {
 	STORAGE_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
 } from "../shared/global";
-import type { IPost, Post } from "@shared/post";
+import type { IWebtoonPost, Post } from "@shared/post";
+import type { Title } from "@shared/title";
 
 const contentCssPath = "content.css";
 const incomScriptPath = "incom/index.js";
@@ -180,13 +181,13 @@ function attachEventListners() {
 			.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
 			.then((resp) => {
 				console.log(resp);
-				if (resp && "series" in resp) {
+				if (resp && "titles" in resp) {
 					window.dispatchEvent(
-						new CustomEvent<{ series: SeriesItem[] | null}>(
+						new CustomEvent<{ titles: Title[] | null}>(
 							INCOM_RESPONSE_SERIES_ITEM_EVENT,
 							{
 								detail: {
-									series: resp.series
+									titles: resp.titles
 								}
 							}
 						)
@@ -210,7 +211,7 @@ function attachEventListners() {
 				console.log(resp);
 				if (resp && "posts" in resp) {
 					window.dispatchEvent(
-						new CustomEvent<{ posts: IPost[] | null}>(
+						new CustomEvent<{ posts: IWebtoonPost[] | null}>(
 							INCOM_RESPONSE_POSTS_EVENT,
 							{
 								detail: {
@@ -221,7 +222,7 @@ function attachEventListners() {
 					);
 				} else {
 					window.dispatchEvent(
-						new CustomEvent<{ posts: IPost[] | null}>(
+						new CustomEvent<{ posts: IWebtoonPost[] | null}>(
 							INCOM_RESPONSE_POSTS_EVENT,
 							{
 								detail: {
