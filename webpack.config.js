@@ -2,12 +2,12 @@ import { resolve } from "path";
 import CopyPlugin from "copy-webpack-plugin";
 import MiniCssExtractPlugion from "mini-css-extract-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
-import pjson from "./package.json" assert {type: "json"};
+import pjson from "./package.json" with {type: "json"};
 import webpack from 'webpack';
 
 const __dirname = resolve(import.meta.dirname);
 
-const htmlPlugins = (_mode) => {
+const htmlPlugins = () => {
   const plugins = [
     new HtmlWebpackPlugin({
       template: resolve(__dirname, "src/template.html"),
@@ -27,7 +27,7 @@ const htmlPlugins = (_mode) => {
   return plugins;
 }
 
-const transform = (content, absoluteFrom) => {
+const transform = (content) => {
   var manifest = JSON.parse(content.toString());
   manifest.version = pjson.version; // version control from one source
   var transformed = JSON.stringify(manifest, null, 2);
@@ -46,11 +46,6 @@ const config = function (env, argv) {
       "popup/index": "./src/features/popup/index.tsx",
     },
     devtool: "inline-source-map",
-    output: {
-        filename: '[name].js',
-        path: resolve(__dirname, 'build/src'),
-        clean: true
-    },
     module: {
       rules: [
         {
