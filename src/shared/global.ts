@@ -2,10 +2,11 @@ import type { PostIdType } from "@shared/post";
 
 function generateRandomString(): string {
 	const dec2hex = (dec: number) => dec.toString(16).padStart(2, "0");
-	var arr = new Uint8Array(4);
+	const arr = new Uint8Array(4);
 	crypto.getRandomValues(arr);
 	return Array.from(arr, dec2hex).join('');
 }
+
 
 const STORAGE_SETTING_NAME = "cs-settings";
 const STORAGE_TITLES_NAME = "cs-title-items";
@@ -85,16 +86,16 @@ export async function getSessionFromCookie(): Promise<string | null> {
 
 export async function getCurrentUserSession(): Promise<string | null> {
 	try {
-		var chromeCookie = await getSessionFromCookie();
+		const chromeCookie = await getSessionFromCookie();
 		if (chromeCookie !== null) {
 			return chromeCookie;
 		} 
 
-		var cookie = document.cookie;
-		var cookies = cookie.split(";");
+		const cookie = document.cookie;
+		const cookies = cookie.split(";");
 
-		for (var i = 0; i < cookies.length; i++) {
-			var cookieItem = cookies[i].trim();
+		for (let i = 0; i < cookies.length; i++) {
+			const cookieItem = cookies[i].trim();
 			if (cookieItem.startsWith("NEO_SES=")) {
 				return cookieItem.substring("NEO_SES=".length, cookieItem.length);
 			}
