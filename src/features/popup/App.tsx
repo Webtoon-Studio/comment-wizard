@@ -38,8 +38,8 @@ export default function App() {
 				<ThemeSwitch />
 				<SettingButton onClick={handleSettingClick} />
 			</div>
-			<div className="h-[300px] w-full flex justify-center items-start overflow-y-auto">
-				<ul className="px-4 grid grid-cols-3 gap-2">
+			<div className="w-full h-[300px] px-4 py-1 flex justify-center items-start overflow-y-auto">
+				<ul className="w-full flex flex-col items-stretch gap-2">
 					{titles.map((title, index) => (
 						<li key={index}>
 							<TitleItem title={title} />
