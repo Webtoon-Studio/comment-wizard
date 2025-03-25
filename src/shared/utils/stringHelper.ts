@@ -3,3 +3,9 @@ export function convertUnicode(text: string): string {
         String.fromCharCode(parseInt(b, 16))
     );
 }
+
+export function shorthandNumber(n: number): string {
+    if (n < 1000) return n.toString();
+    if (n < 10000) return (n / 1000).toFixed(1) + "K";
+    return (n / 1000).toFixed(0) + "K";
+}

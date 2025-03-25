@@ -5,7 +5,7 @@ import type { IComponentColor } from "@popup/interface";
 import { useContext, useMemo } from "react";
 import { FaSun } from "react-icons/fa6";
 import { FaMoon } from "react-icons/fa6";
-import { Rgb, twColor } from "../../../../shared/utils/colorHelper";
+import { Rgb, twColor } from "../../../shared/utils/colorHelper";
 
 interface ThemeSwitchProps extends ButtonProps {}
 
@@ -21,14 +21,14 @@ export default function ThemeSwitch(props: ThemeSwitchProps) {
 		iType: "componentColor",
 		default: mainLightColor.toHex(),
 		hover: mainLightColor.dark().toHex(),
-		text: new Rgb(250, 230, 100).getContrastText().toHex(),
+		text: twColor.amber[400],
 	};
 
 	const darkColor: IComponentColor = {
 		iType: "componentColor",
 		default: mainDarkColor.toHex(),
 		hover: mainDarkColor.light().toHex(),
-		text: new Rgb(250, 230, 100).getContrastText().toHex(),
+		text: twColor.gray[100],
 	};
 
 	const handleClick = () => {
@@ -37,9 +37,9 @@ export default function ThemeSwitch(props: ThemeSwitchProps) {
 
 	const iconComponent = useMemo(() => {
 		return mode === "dark" ? (
-			<FaMoon color={mainLightColor.toHex()} />
+			<FaMoon color={darkColor.text} />
 		) : (
-			<FaSun color={mainDarkColor.toHex()} />
+			<FaSun color={lightColor.text} />
 		);
 	}, [mode]);
 

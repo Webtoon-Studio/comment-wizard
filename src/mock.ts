@@ -6,7 +6,7 @@ import {Title} from "@shared/title";
 export function mockTitles(): Title {
 	if (!faker) {
 		return new Title({
-			author: [{
+			authors: [{
 				nickname: "mock_author"
 			}],
 			extra: {
@@ -32,14 +32,15 @@ export function mockTitles(): Title {
 	const titleId = faker.string.numeric({
 		length: {min: 5, max: 6}, 
 		allowLeadingZeros: false
-	});
+	}) as `${number}`;
 	const isCanvas = true;
 	const newCount = faker.number.int({min: 0, max: 200});
 	const registerDate = faker.date.past({ years: 10 });
 	const recentDate = faker.date.recent({ days: 10 });
+	const thumbnailUrl = faker.image.url();
 
 	return new Title({
-		author: [{
+		authors: [{
 			nickname
 		}],
 		extra: {
@@ -52,9 +53,9 @@ export function mockTitles(): Title {
 		id: titleId,
 		recentEpisodeRegisteredAt: recentDate.getTime(),
 		representGenre: "DRAMA",
-		shareThumbnailUrl: "",
+		shareThumbnailUrl: thumbnailUrl,
 		subject: title,
-		thumbnailUrl: "",
+		thumbnailUrl: thumbnailUrl,
 		titleRegisteredAt: registerDate.getTime()
 	})
 }

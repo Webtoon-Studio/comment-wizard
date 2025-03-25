@@ -8,7 +8,7 @@ interface TitleExtra {
     episodeListPath: string;
     restTerminationStatus: string; // e.g. SERIES
     unsuitableForChildren: boolean;
-};
+}
 
 export interface ITitle {
     authors: TitleAuthor[];
@@ -22,7 +22,7 @@ export interface ITitle {
     subject: string;
     thumbnailUrl: string;
     titleRegisteredAt: number;
-};
+}
 
 type TitleResponseType = {
     status: string, // e.g. success
@@ -32,28 +32,47 @@ type TitleResponseType = {
     }
 };
 
-export interface Title extends Object, ITitle { [index: string]: any }
-export class Title {
-    constructor(o: any) {
-        if (!Title.isTitle(o)) {
-            const msg = "The object is not a Title!";
-            throw new Error(msg);
-        }
-        Object.assign(this, o || {}); 
+export class Title implements ITitle {
+    authors: TitleAuthor[];
+    extra: TitleExtra;
+    genres: string[]; // e.g. DRAMA
+    grade: string; // e.g. CHALLENGE
+    id: `${number}`;
+    recentEpisodeRegisteredAt: number;
+    representGenre: string; // e.g. DRAMA
+    shareThumbnailUrl: string;
+    subject: string;
+    thumbnailUrl: string;
+    titleRegisteredAt: number;
+    
+    constructor(title: ITitle) {
+        this.authors = title.authors;
+        this.extra = title.extra;
+        this.genres = title.genres;
+        this.grade = title.grade;
+        this.id = title.id;
+        this.recentEpisodeRegisteredAt = title.recentEpisodeRegisteredAt;
+        this.representGenre = title.representGenre;
+        this.shareThumbnailUrl = title.shareThumbnailUrl;
+        this.subject = title.subject;
+        this.thumbnailUrl = title.thumbnailUrl;
+        this.titleRegisteredAt = title.titleRegisteredAt;
     }
 
     equals(obj: Title) {
-        for (let k of Object.keys(this)) {
+        for (const k of Object.keys(this) as (keyof Title)[]) {
             if (this[k] !== obj[k]) return false;
         }
         return true;
     }
 
-    static isTitle(o: any) {
-        if (typeof o !== "object") return false;
+    static isTitle(o: unknown) {
+        if (o === undefined || o === null || typeof o !== "object") return false;
 
-        for (let key in Object.keys(this)) {
-            if (!o.hasOwnProperty(key) || o[key] === undefined) return false;
+        const obj = o as Record<string, unknown>;
+
+        for (const k in Object.keys(this) as (keyof Title)[]) {
+            if (!(k in obj) || obj[k] === undefined) return false;
         }
 
         return true;

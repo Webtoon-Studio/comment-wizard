@@ -1,4 +1,5 @@
 import type { PostIdType } from "@shared/post";
+import { TitleIdType } from "./webtoon";
 
 function generateRandomString(): string {
 	const dec2hex = (dec: number) => dec.toString(16).padStart(2, "0");
@@ -9,6 +10,7 @@ function generateRandomString(): string {
 
 
 const STORAGE_SETTING_NAME = "cs-settings";
+const STORAGE_STATUS_NAME = "cs-status";
 const STORAGE_TITLES_NAME = "cs-title-items";
 const STORAGE_NEWEST_NAME = "cs-newest-posts";
 const STROAGE_COUNT_NAME = "cs-post-counts";
@@ -34,6 +36,13 @@ const IS_DEV = (() => {
 	}
 })();
 
+export interface WizardStatus {
+	isTitlesFetched: boolean;
+	commentFetchStatus: {
+		title: TitleIdType;
+		status: "success" | "pending" | "fail";
+	}[];
+}
 
 export interface SeriesItem {
 	_type: "seriesItem"; // internal interface identity
@@ -152,6 +161,7 @@ export async function getApiToken(): Promise<string | undefined> {
 export {
 	IS_DEV,
 	STORAGE_SETTING_NAME,
+	STORAGE_STATUS_NAME,
 	STORAGE_TITLES_NAME,
 	STORAGE_NEWEST_NAME,
 	STROAGE_COUNT_NAME,

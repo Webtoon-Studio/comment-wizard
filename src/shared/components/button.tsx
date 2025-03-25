@@ -17,6 +17,7 @@ export default function Button(props: ButtonProps) {
 		children,
 		color: colorProp = "default",
 		round = true,
+		className,
 		...others
 	} = props;
 	const { mode } = useContext(ThemeContext);
@@ -36,20 +37,24 @@ export default function Button(props: ButtonProps) {
 
 	const roundClass = round
 		? round === "full"
-			? "rounded-full"
+			? "aspect-square rounded-full"
 			: "rounded"
 		: "";
 
 	return (
 		<div>
 			<button
-				{...others}
 				role="button"
 				title="button"
 				aria-label="button"
+
+				{...others}
+				
 				className={[
+					className,
 					roundClass,
-					"px-2 py-1 border-2 dark:border-600 font-medium",
+					round === "full" ? "p-1" : "px-2 py-1",
+					"border-2 dark:border-600 font-medium",
 				].join(" ")}
 				style={{
 					background: hover ? color.hover : color.default,
