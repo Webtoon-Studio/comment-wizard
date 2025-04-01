@@ -2,12 +2,14 @@ import { getApiToken, getSessionFromCookie } from "@shared/global";
 import { webtoonFetch, type TitleIdType } from "@shared/webtoon";
 
 export type EpisodeCountType = {
-	number: number, 
+	number: number,
+	isCompleted: boolean,
 	count: number, 
 	newCount: number
 };
 export type PostCountType = {
-	id: `${number}`,
+	titleId: `${number}`,
+	isCompleted: boolean,
 	totalCount: number,
 	totalNewCount: number,
 	episodes: EpisodeCountType[]
@@ -59,7 +61,7 @@ export type SectionType = {
 
 export type SectionGroupType = {
 	totalCount: number;
-	sections: any[]; // TODO: Specify type of the array?
+	sections: unknown[]; // TODO: Specify type of the array?
 }
 
 export type EmotionType = {
@@ -86,7 +88,7 @@ export type CreatedByType = {
 	maskedUserId: string; // e.g. "2f58****"
 	encUserId: string; // e.g. ""
 	profileImage: object; // TODO: Specify more. Currently, not sure of the shape of this object
-	extraList: any[]; // TODO: Specify type of the array?
+	extraList: unknown[]; // TODO: Specify type of the array?
 	restriction: {
 		isWritePostRestricted: boolean;
 		isBlindPostRestricted: boolean;
@@ -108,7 +110,7 @@ export interface IWebtoonPost {
 	settings: PostSettings;
 	sectionGroup: SectionGroupType;
 	reactions: ReactionType[];
-	extraList: any[]; // TODO: Specify type of the array?
+	extraList: unknown[]; // TODO: Specify type of the array?
 	createdBy: CreatedByType;
 	createdAt: number; // e.g. 1712368102285
 	updatedAt: number; // e.g. 1712368102285
@@ -159,17 +161,76 @@ interface PostFailResponse {
 
 export type PostResponse = PostSuccessResponse | PostFailResponse;
 
-export interface Post extends Object, IWebtoonPost, IWizardPost {}
-export class Post {
+export interface IPost extends IWebtoonPost, IWizardPost {}
+export class Post implements IPost {
+	id: `GW-epicom:${number}-w_${number}_${number}-${string}` | `GW-epicom:${number}-c_${number}_${number}-${string}`;
+	rootId: `GW-epicom:${number}-w_${number}_${number}-${string}` | `GW-epicom:${number}-c_${number}_${number}-${string}`;
+	titleId: `${number}`;
+	serviceTicketId: "epicom";
+	pageId: `w_${number}_${number}` | `c_${number}_${number}`;
+	pageUrl: `_w_${number}_${number}` | `_c_${number}_${number}`;
+	isOwner: boolean;
+	isPinned: boolean;
+	commentDepth: number;
+	depth: number;
+	creationType: string;
+	status: string;
+	body: string;
+	bodyFormat: BodyFormatType;
+	settings: PostSettings;
+	sectionGroup: SectionGroupType;
+	reactions: ReactionType[];
+	extraList: unknown[];
+	createdBy: CreatedByType;
+	createdAt: number;
+	updatedAt: number;
+	childPostCount: number;
+	activeChildPostCount: number;
+	pageOwnerChildPostCount: number;
+	activePageOwnerChildPostCount: number;
+	titleType: "w" | "c";
+	episode: number;
+	isNew: boolean;
+	isUpdated: boolean;
+	isGone: boolean;
+	likes: number;
+	dislikes: number;
+	hasLiked: boolean;
+	hasDisliked: boolean;
+
 	replies: Post[];
 
 	constructor(raw: Post | IWebtoonPost) {
+		this.id = raw.id;
+		this.rootId = raw.rootId;
+		this.serviceTicketId = raw.serviceTicketId;
+		this.pageId = raw.pageId;
+		this.pageUrl = raw.pageUrl;
+		this.isOwner = raw.isOwner;
+		this.isPinned = raw.isPinned;
+		this.commentDepth = raw.commentDepth;
+		this.depth = raw.depth;
+		this.creationType = raw.creationType;
+		this.status = raw.status;
+		this.body = raw.body;
+		this.bodyFormat = raw.bodyFormat;
+		this.settings = raw.settings;
+		this.sectionGroup = raw.sectionGroup;
+		this.reactions = raw.reactions;
+		this.extraList = raw.extraList;
+		this.createdBy = raw.createdBy;
+		this.createdAt = raw.createdAt;
+		this.updatedAt = raw.updatedAt;
+		this.childPostCount = raw.childPostCount;
+		this.activeChildPostCount = raw.activeChildPostCount;
+		this.pageOwnerChildPostCount = raw.pageOwnerChildPostCount;
+		this.activePageOwnerChildPostCount = raw.activePageOwnerChildPostCount;
+
+
 		this.isNew = true; // Initialize the Post as new
 		this.isUpdated = false;
 		this.isGone = false; // Initialize the Post as not gone
 		this.replies = [];
-
-		Object.assign(this, raw);
 
 		if (this.pageId === undefined) {
 			throw new TypeError("Invalid Property: The property pageId is undefined!");

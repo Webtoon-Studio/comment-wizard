@@ -82,7 +82,7 @@ export class Title implements ITitle {
 export async function fetchWebtoonTitles(creatorId: string, session: string | null = null): Promise<Title[] | null> {
     const url = `https://www.webtoons.com/p/community/api/v1/creator/${creatorId}/titles?language=ENGLISH&nextSize=50`;
     
-    var _session = session;
+    let _session = session;
 
     if (_session === null) {
         _session = await getSessionFromCookie();

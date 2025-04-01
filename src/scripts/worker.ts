@@ -19,7 +19,7 @@ const GETTING_NEW_POSTS_ALARM_NAME = "alarm-getting-new-posts";
 const GETTING_NEW_POSTS_PERIOD_MINS = 30;
 
 let IS_GETTING_NEW_POSTS = false;
-let IS_STORING_POSTS = false;
+// let IS_STORING_POSTS = false;
 // ================================================================================ //
 
 // ============================== TITLES LOAD / SAVE ============================== //
@@ -139,11 +139,34 @@ async function saveWebtoons(data: StoredWebtoonData[]) {
 }
 // ================================================================================ //
 
+async function updatePopupBadge() {
+	// Update the popup badge with the number of new posts
+	if (!chrome.action) {
+		return;
+	}
+	const postCounts = await loadPostCounts();
+	if (postCounts) {
+		const isCompleted = postCounts.every((p) => p.isCompleted);
+		if (isCompleted) {
+			const totalNewCount = postCounts.reduce((p, v) => p + v.totalNewCount, 0);
+			if (totalNewCount > 0) {
+				chrome.action.setBadgeText({ text: totalNewCount.toString() });
+			} else {
+				chrome.action.setBadgeText({ text: "" });
+			}
+		} else {
+			chrome.action.setBadgeText({ text: ".." });
+		}	
+	} else {
+		chrome.action.setBadgeText({ text: ".." });
+	}
+}
+
 // This is a wrapper for getSeriesFromMyPost
 // Always use this since this will check & create alarm for reducing spamming
-function getSeries(force = false) {
+function getTitles(force = false) {
 	// Refactor this out due to 'force' param
-	const executeGetSeries = () => {
+	const executeScrapeTitles = () => {
 		console.log("Process Start: getSeriesFromMyPost");
 		scrapeTitlesFromProfile().then((ret) => {
 			console.log("Process Done: getSeriesFromMyPost");
@@ -160,15 +183,15 @@ function getSeries(force = false) {
 	};
 
 	if (force) {
-		executeGetSeries();
+		executeScrapeTitles();
 	} else {
 		chrome.alarms.get(GETTING_SERIES_ALARM_NAME).then((alarm) => {
 			if (!alarm) {
-				executeGetSeries();
+				executeScrapeTitles();
 			}
 		});
 	}
-};
+}
 
 async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 	// Returns:
@@ -238,15 +261,16 @@ async function getNewPosts(): Promise<boolean> {
 	const titleList = await loadTitles();
 
 	if (!titleList || titleList.length === 0) {
-		getSeries(true);
+		getTitles(true);
 		return false;
 	}
 
 	let result: boolean = true;
 	const stored = await loadWebtoons();
 	const saveData: StoredWebtoonData[] = [];
+	const postCounts: PostCountType[] = [];
 
-	for (let title of titleList) {
+	for (const title of titleList) {
 		const wt = new Webtoon(title);
 
 		const found = stored.find(d => d.titleId === title.id);
@@ -256,8 +280,8 @@ async function getNewPosts(): Promise<boolean> {
 
 		await wt.getAllPosts();
 
-		for (var posts of wt.posts.values()) {
-			for (var post of posts) {
+		for (const posts of wt.posts.values()) {
+			for (const post of posts) {
 				await post.getReplies();
 			}
 		}
@@ -267,25 +291,34 @@ async function getNewPosts(): Promise<boolean> {
 		}
 
 		saveData.push(wt.getSaveData())
+		postCounts.push(wt.getPostCounts());
 	}
 
 	await saveWebtoons(saveData);
+	await savePostCounts(postCounts);
 	return result;
 }
 
 // ================================ EVENT LISTENERS =============================== //
 chrome.windows.onCreated.addListener(() => {
 	console.log("windows.onCreated");
-	getSeries();
+	getTitles();
 });
 
 chrome.tabs.onActivated.addListener(() => {
 	console.log("tabs.onActivated");
-	getSeries();
+	getTitles();
 });
 chrome.tabs.onUpdated.addListener(() => {
 	console.log("tabs.onUpdated");
-	getSeries();
+	getTitles();
+});
+
+chrome.storage.sync.onChanged.addListener((changes: { [key: string]: chrome.storage.StorageChange}) => {
+	console.log("storage.sync.onChanged", changes);
+	if (STROAGE_COUNT_NAME in changes) {
+		updatePopupBadge();
+	}
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -327,9 +360,9 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener(
 	(
-		message: any,
+		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number },
 		sender: chrome.runtime.MessageSender,
-		sendReponse: (resopnse?: any) => void,
+		sendReponse: (resopnse?: unknown) => void,
 	) => {
 		if (message.greeting === POSTS_REQUEST_EVENT_NAME) {
 			// Incoming Comments Component is mounted and is requesting data
@@ -393,7 +426,7 @@ chrome.runtime.onMessage.addListener(
 chrome.runtime.onInstalled.addListener(async (installDetails) => {
 	switch (installDetails.reason) {
 		case "install":
-		case "update":
+		case "update": {
 			console.log(
 				`Extension on${
 					installDetails.reason.charAt(0).toUpperCase() +
@@ -402,15 +435,19 @@ chrome.runtime.onInstalled.addListener(async (installDetails) => {
 			);
 			await cleanTitles();
 			// Force getSeries in case of new changes and/or existing alarm in the way
-			getSeries(true);
+			getTitles(true);
 
+			const stored = await loadWebtoons();
 			// Create alarm for getting new posts
 			// Overwrite existing alarm if there is one
 			chrome.alarms.create(GETTING_NEW_POSTS_ALARM_NAME, {
-				delayInMinutes: 0, // <- test 1, // to give time for getting Webtoons
+				delayInMinutes: stored.length === 0 ? 0 : GETTING_NEW_POSTS_PERIOD_MINS, // <- test 1, // to give time for getting Webtoons
 				periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
 			});
+
+			await updatePopupBadge();
 			break;
+		}
 	}
 });
 // ================================================================================ //

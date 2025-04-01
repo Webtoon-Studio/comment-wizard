@@ -552,7 +552,7 @@ function modifySubCount(round: boolean) {
 			// flag is true && original text attribute not found
 			if (round && !origText) {
 				origText = subCounterElement.innerText;
-				var regExpLetters = /[a-zA-Z]/g;
+				const regExpLetters = /[a-zA-Z]/g;
 				if (!regExpLetters.test(subCounterElement.innerText)) {
 					const subCounter = Number.parseInt(
 						subCounterElement.innerText.replace(/,/g, ""),
@@ -576,13 +576,13 @@ function modifySubCount(round: boolean) {
 async function main() {
 	const url = document.location.href;
 
-	const reWebtoons = new RegExp(/^https\:\/\/www\.webtoons\.com/, "i");
+	const reWebtoons = new RegExp(/^https:\/\/www\.webtoons\.com/, "i");
 	const reComments = new RegExp(
-		/^https\:\/\/www\.webtoons\.com\/.*\/mycomment/,
+		/^https:\/\/www\.webtoons\.com\/.*\/mycomment/,
 		"i",
 	);
 	const reDashboard = new RegExp(
-		/^https\:\/\/www\.webtoons\.com\/.*\/challenge\/dashboard/,
+		/^https:\/\/www\.webtoons\.com\/.*\/challenge\/dashboard/,
 		"i",
 	);
 

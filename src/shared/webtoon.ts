@@ -552,13 +552,18 @@ export class Webtoon {
 		} satisfies StoredWebtoonData;
 	}
 
-	getCounts() {
+	getPostCounts() {
 		let totalCount = 0;
 		let totalNewCount = 0;
+		let isCompleted = true;
 		const episodes: EpisodeCountType[] = [];
 		this.posts.forEach((episodePosts, n) => {
 			let cnt = episodePosts.length;
 			let newCnt = episodePosts.filter(v => v.isNew).length;
+			const isEpisodeCompleted = !this.errors.has(n)
+			if (!isEpisodeCompleted && isCompleted) {
+				isCompleted = false;
+			}
 
 			for (const post of episodePosts) {
 				cnt += post.replies.length;
@@ -570,14 +575,14 @@ export class Webtoon {
 
 			episodes.push({
 				number: n,
-				isCounted: true,
+				isCompleted: isEpisodeCompleted,
 				count: cnt,
 				newCount: newCnt
 			} satisfies EpisodeCountType);
 		});
 		return {
 			titleId: this.titleId,
-			isCounted: true,
+			isCompleted,
 			totalCount,
 			totalNewCount,
 			episodes
