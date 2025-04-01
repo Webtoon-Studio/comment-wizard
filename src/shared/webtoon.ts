@@ -24,6 +24,11 @@ type GetPostsRepsonse = {
 	newestPost?: PostIdType;
 };
 
+type GetPostErrorType = {
+	timestamp: number;
+	lastPostId?: PostIdType;
+}
+
 export interface StoredWebtoonData {
 	titleId: string;
 	posts: Post[];
@@ -36,9 +41,9 @@ export class Webtoon {
 	readonly titleId: TitleIdType; // webtoon title id
 
 	status: "idle" | "fetching" | "error";
-	lastError?: { timestamp: number; episode: number };
 	episodeCount: number = -1;
 	posts: Map<number, Post[]>;
+	errors: Map<number, GetPostErrorType>;
 
 	constructor(
 		title: Title,
@@ -49,6 +54,7 @@ export class Webtoon {
 
 		this.status = "idle";
 		this.posts = new Map<number, Post[]>();
+		this.errors = new Map<number, GetPostErrorType>();
 
 		this.getEpisodeCount();
 	}
@@ -100,8 +106,8 @@ export class Webtoon {
 
 	async getPosts(
 		episodeNum: number,
-		prevNewestPost?: PostIdType,
 		cursor?: PostIdType,
+		prevNewestPost?: PostIdType
 	): Promise<GetPostsRepsonse> {
 		// Return:
 		//     - 'true': Got posts and saved
@@ -198,7 +204,7 @@ export class Webtoon {
 	
 			const next = json.result.pagination.next as PostIdType;
 			if (next) {
-				return this.getPosts(episodeNum, newNewestPost ? undefined : prevNewestPost, next);
+				return this.getPosts(episodeNum, next, newNewestPost ? undefined : prevNewestPost);
 			}
 			return {
 				status: "success",
@@ -220,18 +226,20 @@ export class Webtoon {
 		}
 
 		if (this.status === 'error') {
-			const lastAttempt = this.lastError;
-			this.lastError = undefined;
-			if (lastAttempt) {
-				await this.getAllPosts(lastAttempt.episode);
+			await this.resolveErrors();
+			if (this.status === 'error') {
+				console.warn("Resolving errors failed: 'getAllPosts' aborted");
+				return;
 			}
 		}
-		
+
 		this.status = 'fetching';
 
 		// service worker terminates when a single request takes >5m
 		const startTime = new Date().getTime();
 		let endTime = new Date().getTime();
+		const maxTotalAllowedTime = 30 * 60 * 1000; // 30 minutes
+		const maxSingleRequestAllowedTime = 4 * 60 * 1000; // 4 minutes
 
 		if (this.episodeCount > 0) {
 			for (let episodeNum = start; episodeNum <= this.episodeCount; episodeNum++) {
@@ -239,35 +247,34 @@ export class Webtoon {
 
 				if (result.status === "fail") {
 					this.status = 'error';
-					this.lastError = {
+					this.errors.set(episodeNum, {
 						timestamp: new Date().getTime(),
-						episode: episodeNum
-					};
+						lastPostId: result.newestPost,
+					} satisfies GetPostErrorType);
 					continue;
 				}
 	
 				endTime = new Date().getTime();
-				if (endTime - startTime > (4 * 60 * 1000)) {
+				if (endTime - startTime > maxSingleRequestAllowedTime) {
 					this.status = 'error';
-					this.lastError = {
-						timestamp: new Date().getTime(),
-						episode: episodeNum
-					};
+					this.errors.set(episodeNum,{
+						timestamp: new Date().getTime()
+					} satisfies GetPostErrorType);
 					break;
 				}
 			}
 		} else {
 			let episodeNum = start;
-			main: while (endTime - startTime < (30 * 60 * 1000)) {
+			main: while (endTime - startTime < maxTotalAllowedTime) {
 				const result = await this.getPosts(episodeNum);
 				
 				switch (result.status) {
 					case 'fail':
 						this.status = 'error';
-						this.lastError = {
+						this.errors.set(episodeNum, {
 							timestamp: new Date().getTime(),
-							episode: episodeNum
-						};
+							lastPostId: result.newestPost,
+						} satisfies GetPostErrorType);
 						break main;
 					case 'done':
 						this.episodeCount = episodeNum;
@@ -275,16 +282,39 @@ export class Webtoon {
 				}
 	
 				episodeNum++;
-	
+
+				// Elapsed time check
+				// Placed after episodeNum++ since we want to resolve from the next episode
 				endTime = new Date().getTime();
-				if (endTime - startTime > (4 * 60 * 1000)) {
+				if (endTime - startTime > maxSingleRequestAllowedTime) {
 					this.status = 'error';
-					this.lastError = {
-						timestamp: new Date().getTime(),
-						episode: episodeNum
-					};
+					this.errors.set(episodeNum,{
+						timestamp: new Date().getTime()
+					} satisfies GetPostErrorType);
 					break;
 				}
+			}
+		}
+	}
+
+	async resolveErrors() {
+		if (this.status === 'fetching') {
+			console.warn("Busy: 'resolveErrors' aborted");
+			return;
+		}
+
+		for (const [episodeNum, error] of this.errors.entries()) {
+			const result = await this.getPosts(episodeNum, error.lastPostId);
+			if (result.status === "fail") {
+				this.status = 'error';
+				this.errors.set(episodeNum, {
+					timestamp: new Date().getTime(),
+					lastPostId: result.newestPost,
+				} satisfies GetPostErrorType);
+				continue;
+			}
+			if (result.status === "done") {
+				this.errors.delete(episodeNum);
 			}
 		}
 	}
@@ -540,12 +570,14 @@ export class Webtoon {
 
 			episodes.push({
 				number: n,
+				isCounted: true,
 				count: cnt,
 				newCount: newCnt
 			} satisfies EpisodeCountType);
 		});
 		return {
-			id: this.titleId,
+			titleId: this.titleId,
+			isCounted: true,
 			totalCount,
 			totalNewCount,
 			episodes
