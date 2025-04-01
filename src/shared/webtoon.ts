@@ -1,87 +1,3 @@
-/*
-As of 2024-4-5 this is the shape of the posts api:
-{
-  "status": "success",
-  "result": {
-    "isPageOwner": false,
-    "rootPostCount": 518,
-    "activeRootPostCount": 511,
-    "postCount": 893,
-    "activePostCount": 880,
-    "posts": [
-      {
-        "serviceTicketId": "epicom",
-        "pageId": "w_1320_276",
-        "pageUrl": "_w_1320_276",
-        "isOwner": false,
-        "isPinned": false,
-        "commentDepth": 1,
-        "depth": 1,
-        "creationType": "BY_USER",
-        "status": "SERVICE",
-        "body": "It took me over 100 episodes but I’m finally caught up again",
-        "bodyFormat": {
-          "type": "PLAIN",
-          "version": ""
-        },
-        "settings": {
-          "reply": "ON",
-          "reaction": "ON",
-          "spoilerFilter": "OFF"
-        },
-        "sectionGroup": {
-          "totalCount": 0,
-          "sections": []
-        },
-       "emotions": [
-            {
-                "emotionId": "like",
-                "count": 1,
-                "reacted": false
-            },
-            {
-                "emotionId": "dislike",
-                "count": 1,
-                "reacted": true
-            }
-        ],
-        "extraList": [],
-        "createdBy": {
-          "publisherType": "PAGE",
-          "id": "wbi2v3",
-          "status": "SERVICE",
-          "cuid": "2f586b40-5a1c-11eb-9de0-246e96398d40",
-          "name": "Gr33nEclipse",
-          "profileUrl": "_wbi2v3",
-          "isCreator": false,
-          "isPageOwner": false,
-          "maskedUserId": "2f58****",
-          "encUserId": "",
-          "profileImage": {},
-          "extraList": [],
-          "restriction": {
-            "isWritePostRestricted": false,
-            "isBlindPostRestricted": false
-          }
-        },
-        "createdAt": 1712368102285,
-        "updatedAt": 1712368102285,
-        "childPostCount": 0,
-        "activeChildPostCount": 0,
-        "pageOwnerChildPostCount": 0,
-        "activePageOwnerChildPostCount": 0,
-        "id": "GW-epicom:0-w_1320_276-ee",
-        "rootId": "GW-epicom:0-w_1320_276-ee"
-      }
-    ],
-    "pagination": {
-      "next": "GW-epicom:0-w_1320_276-ee"
-      "prev": "GW-epicom:0-w_1320_276-ed"
-    }
-  }
-}
-*/
-
 import { getCurrentUserSession, getSessionFromCookie, isPostIdNewer } from "@root/src/shared/global";
 import {
 	type PageIdType,
@@ -138,6 +54,8 @@ export class Webtoon {
 	}
 
 	async getEpisodeCount() {
+		// TODO: Use a better way to check if DOMParser is available
+		// eslint-disable-next-line no-prototype-builtins
 		const isDomAvail = globalThis.hasOwnProperty("DOMParser");
 		const response = await fetch(this.url, {
 			credentials: "include",
@@ -163,7 +81,7 @@ export class Webtoon {
 				throw new Error(`Failed to find episodes from page of ${this.url}`);
 			}
 		} else {
-			const re = /\<li class=\"_episodeItem\"[^\>]*data-episode-no=\"(?<episodeNo>\d+)\"/i
+			const re = /<li class="_episodeItem"[^>]*data-episode-no="(?<episodeNo>\d+)"/i
 			const match = re.exec(html);
 			if (match && match.groups) {
 				const episode = match.groups["episodeNo"];
@@ -302,7 +220,7 @@ export class Webtoon {
 		}
 
 		if (this.status === 'error') {
-			let lastAttempt = this.lastError;
+			const lastAttempt = this.lastError;
 			this.lastError = undefined;
 			if (lastAttempt) {
 				await this.getAllPosts(lastAttempt.episode);
@@ -372,6 +290,7 @@ export class Webtoon {
 	}
 
 	async _getTodaysOrNewestPosts() {
+		// TODO: Add a way to get the newest posts from the last time it was fetched.
 		const today = new Date();
 		today.setUTCHours(0, 0, 0, 0);
 
@@ -382,6 +301,7 @@ export class Webtoon {
 		// 1 episode at a time.
 		const episode_semaphore = new Semaphore(1);
 
+		// eslint-disable-next-line no-constant-condition
 		episodes: while (true) {
 			await episode_semaphore.acquire();
 
@@ -593,7 +513,7 @@ export class Webtoon {
 
 	getSaveData() {
 		const posts: Post[] = [];
-		for (let p of this.posts.values()) {
+		for (const p of this.posts.values()) {
 			posts.push(...p);
 		}
 		return {
@@ -606,9 +526,14 @@ export class Webtoon {
 		let totalCount = 0;
 		let totalNewCount = 0;
 		const episodes: EpisodeCountType[] = [];
-		this.posts.forEach((p, n) => {
-			const cnt = p.length;
-			const newCnt = p.filter(v => v.isNew).length;
+		this.posts.forEach((episodePosts, n) => {
+			let cnt = episodePosts.length;
+			let newCnt = episodePosts.filter(v => v.isNew).length;
+
+			for (const post of episodePosts) {
+				cnt += post.replies.length;
+				newCnt += post.replies.filter(v => v.isNew).length;
+			}
 			
 			totalCount += cnt;
 			totalNewCount += newCnt;
@@ -646,7 +571,7 @@ export async function webtoonFetch(url: string) {
 export function generatePostsQueryUrl(queryProp: PostsQueryProp) {
 	const { pageId, prevSize = 0, nextSize = 100, cursor = "" } = queryProp;
 	const baseUrl = "https://www.webtoons.com/p/api/community/v2";
-	const query: { [keyof: string]: any } = {
+	const query: { [keyof: string]: unknown } = {
 		pageId,
 		pinRepresentation: "none",
 		prevSize,
@@ -661,69 +586,3 @@ export function generatePostsQueryUrl(queryProp: PostsQueryProp) {
 	`pinRepresentation=none&prevSize=0&nextSize=100`;
 	return `${baseUrl}/posts?${queryPath}`;
 }
-
-// {
-//   "serviceTicketId": "epicom",
-//   "pageId": "w_1320_276",
-//   "pageUrl": "_w_1320_276",
-//   "isOwner": false,
-//   "isPinned": false,
-//   "commentDepth": 1,
-//   "depth": 1,
-//   "creationType": "BY_USER",
-//   "status": "SERVICE",
-//   "body": "It took me over 100 episodes but I’m finally caught up again",
-//   "bodyFormat": {
-//     "type": "PLAIN",
-//     "version": ""
-//   },
-//   "settings": {
-//     "reply": "ON",
-//     "reaction": "ON",
-//     "spoilerFilter": "OFF"
-//   },
-//   "sectionGroup": {
-//     "totalCount": 0,
-//     "sections": []
-//   },
-//   "reactions": [
-// 					{
-// 						"reactionId": "post_like",
-// 						"contentId": "GW-epicom:0-w_1320_276-ee",
-// 						"emotions": [
-// 							{
-// 								"emotionId": "like",
-// 								"count": 6,
-// 								"reacted": false
-// 							}
-// 						]
-// 					}
-// 		],
-//   "extraList": [],
-//   "createdBy": {
-//     "publisherType": "PAGE",
-//     "id": "wbi2v3",
-//     "status": "SERVICE",
-//     "cuid": "2f586b40-5a1c-11eb-9de0-246e96398d40",
-//     "name": "Gr33nEclipse",
-//     "profileUrl": "_wbi2v3",
-//     "isCreator": false,
-//     "isPageOwner": false,
-//     "maskedUserId": "2f58****",
-//     "encUserId": "",
-//     "profileImage": {},
-//     "extraList": [],
-//     "restriction": {
-//       "isWritePostRestricted": false,
-//       "isBlindPostRestricted": false
-//     }
-//   },
-//   "createdAt": 1712368102285,
-//   "updatedAt": 1712368102285,
-//   "childPostCount": 0,
-//   "activeChildPostCount": 0,
-//   "pageOwnerChildPostCount": 0,
-//   "activePageOwnerChildPostCount": 0,
-//   "id": "GW-epicom:0-w_1320_276-ee",
-//   "rootId": "GW-epicom:0-w_1320_276-ee"
-// }
