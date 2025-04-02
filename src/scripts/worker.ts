@@ -7,10 +7,12 @@ import {
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
 	STROAGE_COUNT_NAME,
+	INCOM_REQUEST_COUNTS_EVENT,
 } from "@shared/global";
 import type { PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";
+import { cleanTitles, loadPostCounts, loadTitles, loadWebtoons, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -20,123 +22,6 @@ const GETTING_NEW_POSTS_PERIOD_MINS = 30;
 
 let IS_GETTING_NEW_POSTS = false;
 // let IS_STORING_POSTS = false;
-// ================================================================================ //
-
-// ============================== TITLES LOAD / SAVE ============================== //
-async function loadTitles(): Promise<Title[] | null> {
-	if (chrome.storage) {
-		return chrome.storage.sync.get(STORAGE_TITLES_NAME).then((items) => {
-			if (STORAGE_TITLES_NAME in items) {
-				const value = items[STORAGE_TITLES_NAME];
-				if (
-					Array.isArray(value) &&
-					value.every((v) => Title.isTitle(v))
-				) {
-					return value.map(v => new Title(v));
-				}
-			}
-			return null;
-		});
-	}
-	return null;
-}
-
-async function saveTitles(titles: Title[]) {
-	if (chrome.storage) {
-		return chrome.storage.sync.set({
-			[STORAGE_TITLES_NAME]: titles,
-		});
-	}
-}
-
-async function cleanTitles(): Promise<boolean> {
-	if (chrome.storage) {
-		chrome.storage.sync.get(STORAGE_TITLES_NAME).then((items) => {
-			if (STORAGE_TITLES_NAME in items) {
-				const value = items[STORAGE_TITLES_NAME];
-				if (Array.isArray(value)) {
-					if (value.every(v => Title.isTitle(v))) {
-						return false;
-					}
-					const cleaned = value.filter(v => Title.isTitle(v));
-					if (cleaned.length > 0) {
-						chrome.storage.sync.set({
-							[STORAGE_TITLES_NAME]: cleaned
-						});
-						return true;
-					}
-				}
-				chrome.storage.sync.remove(STORAGE_TITLES_NAME);
-				return true;
-			}
-		});
-	}
-	return false;
-}
-// ================================================================================ //
-
-// ============================ POSTCOUNTS LOAD / SAVE ============================ //
-async function loadPostCounts(): Promise<PostCountType[] | null> {
-	if (chrome.storage) {
-		return chrome.storage.sync.get(STROAGE_COUNT_NAME).then((items) => {
-			if (STROAGE_COUNT_NAME in items) {
-				const value = items[STROAGE_COUNT_NAME];
-				if (
-					Array.isArray(value) // Need a better validation
-				) {
-					return value as PostCountType[];
-				}
-			}
-			return null;
-		});
-	}
-	return null;
-}
-
-async function savePostCounts(postCounts: PostCountType[]) {
-	if (chrome.storage) {
-		return chrome.storage.sync.set({
-			[STROAGE_COUNT_NAME]: postCounts,
-		});
-	}
-}
-// ================================================================================ //
-
-// ================================================================================ //
-async function loadWebtoons(titleId?: TitleIdType): Promise<StoredWebtoonData[]> {
-	if (chrome.storage) {
-		return chrome.storage.local.get(STORAGE_WEBTOONS_NAME).then((items) => {
-			if (STORAGE_WEBTOONS_NAME in items) {
-				const value = items[STORAGE_WEBTOONS_NAME];
-				if (
-					Array.isArray(value) && 
-					value.every((v) => 
-						"titleId" in v && 
-						"posts" in v &&
-						Array.isArray(v.posts)
-					)
-				) {
-					if (titleId === undefined) {
-						return value as StoredWebtoonData[];
-					}
-					return value.filter(
-						v => v.titleId === titleId
-					) as StoredWebtoonData[];
-				}
-			}
-			return [];
-		});
-	}
-	return [];
-}
-
-async function saveWebtoons(data: StoredWebtoonData[]) {
-	if (chrome.storage) {
-		await chrome.storage.local.set({
-			[STORAGE_WEBTOONS_NAME]: data
-		});
-	}
-}
 // ================================================================================ //
 
 async function updatePopupBadge() {
@@ -415,6 +300,16 @@ chrome.runtime.onMessage.addListener(
 			loadWebtoons(titleId).then((data) => {
 				const posts = data.map(d => d.posts).reduce((p, v) => [...p.concat(v)], []);
 				sendReponse({ posts });
+			});
+			
+			return true;
+		}
+		if (message.greeting === INCOM_REQUEST_COUNTS_EVENT) {
+			console.log("runtime: Incom requests counts");
+
+			// Sending what's in the storage
+			loadPostCounts().then((counts) => {
+				sendReponse({ counts });
 			});
 			
 			return true;
