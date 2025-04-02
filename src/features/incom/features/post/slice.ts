@@ -24,7 +24,6 @@ export const postSlice = createAppSlice({
     initialState: initialState,
     reducers: {
         requestGetPosts: (state, action: PayloadAction<{ title: Title | null, episode: EpisodeItem | null }>) => {
-            console.log("requestGetPosts");
             if (state.status === 'loading') return;
 
             if (action.payload.title === null) {
@@ -59,8 +58,6 @@ export const postSlice = createAppSlice({
             }
         },
         loadPosts: (state, action: PayloadAction<IPost[]|null>) => {
-            console.log("incom >> loadPosts:", action.payload);
-
             if (action.payload === null) {
                 state.status = "failed";
             } else {
@@ -68,10 +65,6 @@ export const postSlice = createAppSlice({
                 if (IS_DEV) {
                     posts.forEach(p => {
                         p.replies = Array.from(new Array(p.replyCount)).map(_ => new Post(mockPostData(p.id)));
-                    })
-                } else {
-                    posts.forEach(p => {
-                        p.replies = p.replies.map(r => new Post(r));
                     })
                 }
                 state.items = posts;

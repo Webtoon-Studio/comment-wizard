@@ -84,11 +84,11 @@ export default function PostPanelItem(props: PostPanelItemProps) {
 
     const handleRepliesCollapse = function(event: MouseEvent) {
         setOpenReplies(false);
-        rootRef.current?.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-            inline: "nearest"
-        });
+        // rootRef.current?.scrollIntoView({
+        //     behavior: "smooth",
+        //     block: "start",
+        //     inline: "nearest"
+        // });
     }
 
     const handleMarkReadClick = function(event: MouseEvent) {
@@ -192,7 +192,7 @@ export default function PostPanelItem(props: PostPanelItemProps) {
             {item.replyCount > 0 ? (
                 <div 
                     className={[
-                        "w-full bg-gray-100 transition-[height] duration-300 overflow-clip",
+                        "w-full bg-gray-100 overflow-clip",
                         openReplies ? "h-auto" : "h-0"
                     ].join(" ")}
                 >

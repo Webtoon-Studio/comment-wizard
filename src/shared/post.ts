@@ -226,11 +226,11 @@ export class Post implements IPost {
 		this.pageOwnerChildPostCount = raw.pageOwnerChildPostCount;
 		this.activePageOwnerChildPostCount = raw.activePageOwnerChildPostCount;
 
-
-		this.isNew = true; // Initialize the Post as new
-		this.isUpdated = false;
-		this.isGone = false; // Initialize the Post as not gone
-		this.replies = [];
+		// Assign properties from IPost
+		this.isNew = "isNew" in raw ? raw.isNew : true;
+		this.isUpdated = "isUpdated" in raw ? raw.isUpdated : false;
+		this.isGone = "isGone" in raw ? raw.isGone : false;
+		this.replies = "replies" in raw ? raw.replies.map(r => new Post(r)) : [];
 
 		if (this.pageId === undefined) {
 			throw new TypeError("Invalid Property: The property pageId is undefined!");
