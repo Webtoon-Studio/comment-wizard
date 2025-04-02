@@ -1,7 +1,8 @@
 import { faker } from "@faker-js/faker";
 import type { EpisodeItem, SeriesItem } from "@shared/global";
-import { type IWebtoonPost, type PageIdType, Post, type PostIdType } from "@shared/post";
+import { type IWebtoonPost, type PageIdType, Post, PostCountType, type PostIdType } from "@shared/post";
 import {Title} from "@shared/title";
+import { TitleIdType } from "@shared/webtoon";
 
 export function mockTitles(): Title {
 	if (!faker) {

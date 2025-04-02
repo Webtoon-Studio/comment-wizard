@@ -96,7 +96,7 @@ export default function Main() {
 				?.map((p) => {
 					const compared = newest?.find(
 						(item) =>
-							item.episode === p.episode && item.titleId === p.webtoonId,
+							item.episode === p.episode && item.titleId === p.titleId,
 					);
 					p.isNew =
 						p.id && compared

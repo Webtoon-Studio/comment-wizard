@@ -39,7 +39,7 @@ const fetchEpisodesFromPage = async (link: string, titleId: `${number}`, page: n
     }
 
     const queriedItems = doc.querySelectorAll<HTMLLIElement>("li._episodeItem");
-    for (let item of queriedItems) {
+    for (const item of queriedItems) {
         const index = item.getAttribute("data-episode-no");
         const thumb = item.querySelector<HTMLImageElement>("span.thmb > img")?.src || null;
         const title = item.querySelector<HTMLSpanElement>("span.subj > span")?.textContent || null;
@@ -81,11 +81,11 @@ export const getPageEpisodes = createAsyncThunk<
 >(
     "episode/getPageEpisodes",
     async (titleId, thunkAPI) => {
-        const { episode: { paginations: pagination }, series: { items: seriesItems } } = thunkAPI.getState() as RootState;
+        const { episode: { paginations: pagination }, title: { items: titleItems } } = thunkAPI.getState() as RootState;
         const page = (pagination.find(p => p.titleId === titleId)?.page || 0) + 1; // incremented
         
-        const targetSeries = seriesItems.find(s => s.titleId === titleId);
-        const link = targetSeries ? targetSeries.link :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
+        const targetTitle = titleItems.find(t => t.id === titleId);
+        const link = targetTitle ? "https://www.webtoons.com/" + targetTitle.extra.episodeListPath :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
 
         if (IS_DEV) {
             const items = mockEpisodeItems(titleId, page);
@@ -128,11 +128,11 @@ export const getAllEpisodes = createAsyncThunk<
 >(
     "episode/getAllEpisodes",
     async (titleId, thunkAPI) => {
-        const { episode: { paginations: pagination }, series: { items: seriesItems } } = thunkAPI.getState() as RootState;
+        const { episode: { paginations: pagination }, title: { items: titleItems } } = thunkAPI.getState() as RootState;
         let page = (pagination.find(p => p.titleId === titleId)?.page || 0); 
         
-        const targetSeries = seriesItems.find(s => s.titleId === titleId);
-        const link = targetSeries ? targetSeries.link :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
+        const targetTitle = titleItems.find(t => t.id === titleId);
+        const link = targetTitle ? "https://www.webtoons.com/" + targetTitle.extra.episodeListPath :`https://www.webtoons.com/en/canvas/_/list?title_no=${titleId}`;
         
         const episodeItems: EpisodeItem[] = [];
         let isEnd = false;
@@ -292,7 +292,7 @@ export const {
     setFilter,
 } = episodeSlice.actions;
 
-export const {
-} = episodeSlice.selectors;
+// export const {
+// } = episodeSlice.selectors;
 
 export default episodeSlice.reducer;

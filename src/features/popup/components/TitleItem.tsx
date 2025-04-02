@@ -1,4 +1,6 @@
+import { CountContext } from "@popup/context/CountProvider";
 import { ITitle } from "@shared/title";
+import { useContext, useMemo } from "react";
 
 interface TitleItemProps {
     title: ITitle;
@@ -7,22 +9,27 @@ interface TitleItemProps {
 
 export default function TitleItem(props: TitleItemProps) {
     const { title, onClick } = props;
+    const { counts } = useContext(CountContext);
 
+    const count = useMemo(() => {
+        const count = counts.find(c => c.titleId === title.id);
+        return count?.totalNewCount ?? null;
+    }, [counts, title.id]);
 
     return (
         <div className="relative w-full select-none">
             <div className="absolute z-[2] right-2 top-2">
                 <div className="min-w-6 h-6 px-1 flex justify-center items-center rounded-full bg-red-500">
                     <span className="text-white text-xs">
-                        {Math.ceil(Math.random() * 2000)}
+                        {count === null ? ".." : count}
                     </span>
                 </div>
             </div>
             <div className="w-full flex rounded border-[1px]">
-                <div className="flex-shrink-0 w-24 h-24 rounded overflow-clip">
+                <div className="flex-shrink-0 w-16 h-16 rounded overflow-clip">
                     <img 
                         className="aspect-square object-cover"
-                        src={title.thumbnailUrl} 
+                        src={title.thumbnailUrl.replace("webtoon-phinf", "swebtoon-phinf")} 
                         alt={`${title.subject} thumbnail`} 
                     />
                 </div>

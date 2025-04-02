@@ -8,17 +8,15 @@ import { useEffect, useMemo, type ComponentProps } from "react";
 interface PostSidePanelProps extends ComponentProps<"div"> {}
 
 export default function PostSidePanel(props: PostSidePanelProps) {
-    const {
-
-    } = props;
+    // const { } = props;
     const dispatch = useAppDispatch();
-    const { current: currentSeries } = useAppSelector(state => state.series);
+    const { current: currentTitle } = useAppSelector(state => state.title);
     const { current: currentEpisode } = useAppSelector(state => state.episode);
     const { status, items: posts } = useAppSelector(state => state.post);
 
     useEffect(() => {
-        dispatch(requestGetPosts({ series: currentSeries, episode: currentEpisode }));
-    }, [currentSeries, currentEpisode]);
+        dispatch(requestGetPosts({ title: currentTitle, episode: currentEpisode }));
+    }, [currentTitle, currentEpisode]);
 
     // const handleSelect = function(item: Post) {
     //     if (item === current) {
@@ -29,7 +27,9 @@ export default function PostSidePanel(props: PostSidePanelProps) {
     // }
 
     const visiblePosts = useMemo(() => {
-        return posts.slice().sort((a, b) => b.createdAt - a.createdAt);
+        return posts.slice().filter(
+            p => p.titleId === currentTitle?.id && p.episode === currentEpisode?.index
+        ).sort((a, b) => b.createdAt - a.createdAt);
     }, [posts]);
 
     return (

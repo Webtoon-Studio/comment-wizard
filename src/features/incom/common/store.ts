@@ -2,12 +2,14 @@ import { combineReducers, configureStore, type Action, type ThunkAction } from "
 import titleReducer from "@incom/features/title/slice";
 import episodeReducer from "@incom/features/episode/slice";
 import postReducer from "@incom/features/post/slice";
+import countReducer from "@incom/features/count/slice";
 
 export const store = configureStore({
     reducer: combineReducers({
         title: titleReducer,
         episode: episodeReducer,
-        post: postReducer
+        post: postReducer,
+        count: countReducer
     }),
 });
 

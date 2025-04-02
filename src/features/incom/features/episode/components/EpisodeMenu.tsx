@@ -8,12 +8,10 @@ import { setFilter } from "@incom/features/episode/slice";
 interface EpisodeMenuProps {}
 
 export default function EpisodeMenu(props: EpisodeMenuProps) {
-    const {
-
-    } = props;
+    // const { } = props;
 
     const dispatch = useAppDispatch();
-    const { current } = useAppSelector(state => state.series);
+    const { current } = useAppSelector(state => state.title);
     
     const categories: SearchCategory<keyof EpisodeItem>[] = [
         {

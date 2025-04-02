@@ -1,15 +1,34 @@
-import { useState } from "react";
-import { IS_DEV } from "@shared/global";
+import { useContext, useEffect, useState } from "react";
+import { IS_DEV, STROAGE_COUNT_NAME } from "@shared/global";
 import ThemeSwitch from "@popup/components/ThemeSwitch";
 import SettingButton from "@popup/components/SettingButton";
 import SettingDialog from "@popup/components/SettingDialog";
 import { useTitle } from "@popup/services/title";
 import TitleItem from "@popup/components/TitleItem";
+import { CountContext } from "@popup/context/CountProvider";
 
 export default function App() {
 	// const { mode } = useContext(ThemeContext);
+	const { refresh: refreshCounts } = useContext(CountContext);
 	const [settingOpen, setSettingOpen] = useState(false);
 	const [titles, fetchTitles] = useTitle();
+
+	// Event listener
+	useEffect(() => {
+		if (chrome.storage) {
+			const handleStorageChange = (changes: {[key:string]:chrome.storage.StorageChange}) => {
+				if (STROAGE_COUNT_NAME in changes) {
+					refreshCounts();
+				}
+			}
+			chrome.storage.sync.onChanged.addListener(handleStorageChange);
+	
+			return () => {
+				chrome.storage.sync.onChanged.removeListener(handleStorageChange);
+			}
+		}
+		// TODO: DEV test for count changes
+	});
 
 	const handleSettingClick = () => {
 		setSettingOpen(true);

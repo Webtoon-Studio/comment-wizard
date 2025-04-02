@@ -9,8 +9,8 @@ import { Provider } from "react-redux";
 import { store } from "@incom/common/store";
 import EventProvider from "@incom/features/client/components/EventProvider";
 
-let rootElem = document.getElementById("root") as HTMLElement;
-let injectRootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
+const rootElem = document.getElementById("root") as HTMLElement;
+const injectRootElem = document.getElementById("cs-in-comment-root") as HTMLElement;
 
 if (rootElem || injectRootElem) {
 	const root = ReactDOM.createRoot(rootElem === null ? injectRootElem : rootElem);

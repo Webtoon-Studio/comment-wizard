@@ -1,5 +1,6 @@
+import { useAppSelector } from "@incom/common/hook";
 import type { EpisodeItem } from "@shared/global";
-import { useEffect, useRef, type ComponentProps, type MouseEvent } from "react";
+import { useContext, useEffect, useMemo, useRef, type ComponentProps, type MouseEvent } from "react";
 
 interface EpisodePanelItemProps extends ComponentProps<"div"> {
     item?: EpisodeItem;
@@ -15,10 +16,22 @@ export default function EpisodePanelItem(props: EpisodePanelItemProps) {
     } = props;
 
     const rootRef = useRef<HTMLDivElement>(null);
+    const { items:countItems } = useAppSelector(state => state.count);
 
     const handleClick = function(event: MouseEvent<HTMLDivElement>) {
         onClick?.(event);
     }
+    const count = useMemo(() => {
+        const thisCounts = countItems.find(c => c.titleId === item?.seriesId);
+        if (!thisCounts || !thisCounts.isCompleted) {
+            return null;
+        }
+        const thisEpisodeCounts = thisCounts.episodes.find(e => e.number === item?.index);
+        if (!thisEpisodeCounts || !thisEpisodeCounts.isCompleted) {
+            return null;
+        }
+        return thisEpisodeCounts.newCount;
+    }, [countItems, item]);
 
     return (
         <div 
@@ -55,6 +68,11 @@ export default function EpisodePanelItem(props: EpisodePanelItemProps) {
                     ) : (
                         <div className="inline-block w-full h-[1em] px-2 bg-gray-400 animate-pulse rounded-sm"/>
                     )}
+                </div>
+            </div>
+            <div>
+                <div className="flex items-center px-2 py-1 rounded-full text-xs bg-red-400 text-white">
+                    {count === null ? ".." : count}
                 </div>
             </div>
         </div>

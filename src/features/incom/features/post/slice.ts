@@ -2,9 +2,10 @@ import { createAppSlice } from "@incom/common/hook";
 import { createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "@incom/common/store";
 import { INCOM_PATCH_POST_EVENT, INCOM_REQUEST_POSTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, IS_DEV, type EpisodeItem, type SeriesItem } from "@shared/global";
-import { IPost, Post, type PostIdType } from "@shared/post";
+import { IPost, IWebtoonPost, Post, type PostIdType } from "@shared/post";
 import type { TitleIdType } from "@shared/webtoon";
 import { mockPostData } from "@src/mock";
+import { ITitle, Title } from "@shared/title";
 
 export interface PostState {
     status: 'idle' | 'loading' | 'hydrating' | 'failed';
@@ -22,11 +23,11 @@ export const postSlice = createAppSlice({
     name: 'post',
     initialState: initialState,
     reducers: {
-        requestGetPosts: (state, action: PayloadAction<{ series: SeriesItem | null, episode: EpisodeItem | null }>) => {
+        requestGetPosts: (state, action: PayloadAction<{ title: Title | null, episode: EpisodeItem | null }>) => {
             console.log("requestGetPosts");
             if (state.status === 'loading') return;
 
-            if (action.payload.series === null) {
+            if (action.payload.title === null) {
                 state.status = "idle";
                 state.items = [];
                 return;
@@ -34,9 +35,9 @@ export const postSlice = createAppSlice({
             state.status = "loading";
 
             if (IS_DEV) {
-				const mockPosts: IPost[] = Array.from(new Array(100)).map(_ => mockPostData());
+				const mockPosts: IWebtoonPost[] = Array.from(new Array(100)).map(_ => mockPostData());
                 setTimeout(() => {
-                    window.dispatchEvent(new CustomEvent<{ posts: IPost[] | null }>(
+                    window.dispatchEvent(new CustomEvent<{ posts: IWebtoonPost[] | null }>(
                         INCOM_RESPONSE_POSTS_EVENT,
                         {
                             detail: {
@@ -50,7 +51,7 @@ export const postSlice = createAppSlice({
                     INCOM_REQUEST_POSTS_EVENT,
                     {
                         detail: {
-                            titleId: action.payload.series.titleId || undefined,
+                            titleId: action.payload.title.id || undefined,
                             episodeNo: action.payload.episode?.index || undefined
                         }
                     }
@@ -58,7 +59,7 @@ export const postSlice = createAppSlice({
             }
         },
         loadPosts: (state, action: PayloadAction<IPost[]|null>) => {
-            console.log("loadPosts");
+            console.log("incom >> loadPosts:", action.payload);
 
             if (action.payload === null) {
                 state.status = "failed";
@@ -170,7 +171,7 @@ export const {
     setReplyRead, setReplyUnread
 } = postSlice.actions;
 
-export const {
-} = postSlice.selectors;
+// export const {
+// } = postSlice.selectors;
 
 export default postSlice.reducer;

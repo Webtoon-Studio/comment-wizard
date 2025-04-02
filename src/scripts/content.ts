@@ -3,8 +3,10 @@ import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
+	INCOM_RESPONSE_COUNTS_EVENT,
 	INCOM_RESPONSE_POSTS_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
 	POSTS_FETCHED_EVENT_NAME,
@@ -14,9 +16,11 @@ import {
 	STORAGE_POSTS_NAME,
 	STORAGE_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
+	STROAGE_COUNT_NAME,
 } from "../shared/global";
-import type { IWebtoonPost, Post } from "@shared/post";
+import type { IPost, IWebtoonPost, Post, PostCountType } from "@shared/post";
 import type { Title } from "@shared/title";
+import { loadPostCounts } from "@shared/storage";
 
 const contentCssPath = "content.css";
 const incomScriptPath = "incom/index.js";
@@ -171,69 +175,113 @@ interface ElementProp {
 	[index: string]: any;
 }
 
+const handleIncomTitlesRequest = () => {
+	console.log("Handling SeriesItems Request event");
+	chrome.runtime
+	.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
+	.then((resp) => {
+		console.log(resp);
+		if (resp && "titles" in resp) {
+			window.dispatchEvent(
+				new CustomEvent<{ titles: Title[] | null}>(
+					INCOM_RESPONSE_SERIES_ITEM_EVENT,
+					{
+						detail: {
+							titles: resp.titles
+						}
+					}
+				)
+			);
+		}
+	})
+};
+
+const handleIncomPostsRequest = (event: CustomEvent<{ titleId?: `${number}`, episodeNo?: number}>) => {
+	console.log("Handling Posts Request event");
+	chrome.runtime
+	.sendMessage({ 
+		greeting: INCOM_REQUEST_POSTS_EVENT,
+		titleId: event.detail.titleId,
+		episodeNo: event.detail.episodeNo
+	})
+	.then((resp) => {
+		console.log(resp);
+		if (resp && "posts" in resp) {
+			window.dispatchEvent(
+				new CustomEvent<{ posts: IPost[] | null}>(
+					INCOM_RESPONSE_POSTS_EVENT,
+					{
+						detail: {
+							posts: resp.posts
+						}
+					}
+				)
+			);
+		} else {
+			window.dispatchEvent(
+				new CustomEvent<{ posts: IPost[] | null}>(
+					INCOM_RESPONSE_POSTS_EVENT,
+					{
+						detail: {
+							posts: null
+						}
+					}
+				)
+			);
+		}
+	})
+};
+
+const handleIncomCountRequest = () => {
+	console.log("Handling Counts Request event");
+	chrome.runtime
+	.sendMessage({ 
+		greeting: INCOM_REQUEST_COUNTS_EVENT,
+	})
+	.then((resp) => {
+		console.log(resp);
+		if (resp && "counts" in resp) {
+			window.dispatchEvent(
+				new CustomEvent<{ counts: PostCountType[] | null}>(
+					INCOM_RESPONSE_COUNTS_EVENT,
+					{
+						detail: {
+							counts: resp.counts
+						}
+					}
+				)
+			);
+		} else {
+			window.dispatchEvent(
+				new CustomEvent<{ counts: IWebtoonPost[] | null}>(
+					INCOM_RESPONSE_COUNTS_EVENT,
+					{
+						detail: {
+							counts: null
+						}
+					}
+				)
+			);
+		}
+	})
+};
+
+
 function attachEventListners() {
 	// Setup event listener
 	window.addEventListener(
 		INCOM_REQUEST_SERIES_ITEM_EVENT, 
-		() => {
-			console.log("Handling SeriesItems Request event");
-			chrome.runtime
-			.sendMessage({ greeting: INCOM_REQUEST_SERIES_ITEM_EVENT })
-			.then((resp) => {
-				console.log(resp);
-				if (resp && "titles" in resp) {
-					window.dispatchEvent(
-						new CustomEvent<{ titles: Title[] | null}>(
-							INCOM_RESPONSE_SERIES_ITEM_EVENT,
-							{
-								detail: {
-									titles: resp.titles
-								}
-							}
-						)
-					);
-				}
-			})
-		}
+		handleIncomTitlesRequest as EventListener
 	);
 
 	window.addEventListener(
 		INCOM_REQUEST_POSTS_EVENT, 
-		((event: CustomEvent<{ titleId?: `${number}`, episodeNo?: number}>) => {
-			console.log("Handling Posts Request event");
-			chrome.runtime
-			.sendMessage({ 
-				greeting: INCOM_REQUEST_POSTS_EVENT,
-				titleId: event.detail.titleId,
-				episodeNo: event.detail.episodeNo
-			})
-			.then((resp) => {
-				console.log(resp);
-				if (resp && "posts" in resp) {
-					window.dispatchEvent(
-						new CustomEvent<{ posts: IWebtoonPost[] | null}>(
-							INCOM_RESPONSE_POSTS_EVENT,
-							{
-								detail: {
-									posts: resp.posts
-								}
-							}
-						)
-					);
-				} else {
-					window.dispatchEvent(
-						new CustomEvent<{ posts: IWebtoonPost[] | null}>(
-							INCOM_RESPONSE_POSTS_EVENT,
-							{
-								detail: {
-									posts: null
-								}
-							}
-						)
-					);
-				}
-			})
-		}) as EventListener
+		handleIncomPostsRequest as EventListener
+	);
+
+	window.addEventListener(
+		INCOM_REQUEST_COUNTS_EVENT, 
+		handleIncomCountRequest as EventListener
 	);
 
 	window.addEventListener(
@@ -641,8 +689,22 @@ if (chrome.storage) {
 				}
 			});
 	});
-	chrome.storage.sync.onChanged.addListener(async () => {
+	chrome.storage.sync.onChanged.addListener(async (changes) => {
 		// TODO: Revert "injected" changes without doing reload()
+		if (STROAGE_COUNT_NAME in changes) {
+			loadPostCounts().then(counts => {
+				window.dispatchEvent(
+					new CustomEvent<{ counts: PostCountType[] | null}>(
+						INCOM_RESPONSE_COUNTS_EVENT,
+						{
+							detail: {
+								counts: counts
+							}
+						}
+					)
+				);
+			});
+		}
 		await getSetting();
 		main();
 	});

@@ -1,9 +1,10 @@
 import { useAppDispatch, useAppSelector } from "@incom/common/hook";
 import { loadPosts, requestGetPosts } from "@incom/features/post/slice";
 import { fetchTitles, hydrateTitles } from "@incom/features/title/slice";
+import { fetchCounts, loadCounts } from "@incom/features/count/slice";
 import Loading from "@shared/components/Loading";
-import { INCOM_RESPONSE_POSTS_EVENT, INCOM_RESPONSE_SERIES_ITEM_EVENT, IS_DEV, type SeriesItem } from "@shared/global";
-import type { Post } from "@shared/post";
+import { INCOM_RESPONSE_COUNTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, INCOM_RESPONSE_SERIES_ITEM_EVENT, IS_DEV, type SeriesItem } from "@shared/global";
+import type { Post, PostCountType } from "@shared/post";
 import { Title } from "@shared/title";
 import { useEffect, useState, type ComponentProps } from "react";
 
@@ -15,7 +16,10 @@ export default function EventProvider(props: EventProviderProps) {
         children
     } = props;
     const dispatch = useAppDispatch();
-	const { title: {status: seriesStatus}, post: {status: postStatus}} = useAppSelector(state => state);
+	const { 
+		title: {status: seriesStatus}, 
+		post: {status: postStatus}
+	} = useAppSelector(state => state);
 	const [isTitlesLoading, setIsTitlesLoading] = useState(true);
 
 	// OnMount
@@ -32,6 +36,10 @@ export default function EventProvider(props: EventProviderProps) {
 			dispatch(loadPosts(evt.detail.posts));
 		}
 
+		const handleCountsItemsResponse = (evt: CustomEvent<{ counts: PostCountType[] | null }>) => {
+			dispatch(loadCounts(evt.detail.counts));
+		}
+
 		window.addEventListener(
 			INCOM_RESPONSE_SERIES_ITEM_EVENT, 
 			handleTitleItemResponse as EventListener
@@ -42,6 +50,11 @@ export default function EventProvider(props: EventProviderProps) {
 			handlePostItemsResponse as EventListener
 		);
 
+		window.addEventListener(
+			INCOM_RESPONSE_COUNTS_EVENT,
+			handleCountsItemsResponse as EventListener
+		);
+
 		return () => {
 			window.removeEventListener(
 				INCOM_RESPONSE_SERIES_ITEM_EVENT, 
@@ -49,15 +62,20 @@ export default function EventProvider(props: EventProviderProps) {
 			);
 			window.removeEventListener(
 				INCOM_RESPONSE_POSTS_EVENT, 
-				handleTitleItemResponse as EventListener
+				handlePostItemsResponse as EventListener
+			);
+			window.removeEventListener(
+				INCOM_RESPONSE_COUNTS_EVENT,
+				handleCountsItemsResponse as EventListener
 			);
 		}
-	}, []);
+	});
 
 	useEffect(() => {
 		if (isTitlesLoading) {
 			(async () => new Promise(resolve => setTimeout(resolve, 300)))().then(() => {
 				dispatch(fetchTitles());
+				dispatch(fetchCounts());
 			});
 		}
 	}, [isTitlesLoading]);

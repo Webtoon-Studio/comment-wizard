@@ -3,18 +3,16 @@ import { setCurrentEpisode } from "@incom/features/episode/slice";
 import TitleMenu from "@incom/features/title/components/TitleMenu";
 import TitlePanelItem from "@incom/features/title/components/TitlePanelItem";
 import { fetchTitles, setCurrentTitle } from "@incom/features/title/slice";
-import type { SeriesItem } from "@shared/global";
 import type { Title } from "@shared/title";
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, type ComponentProps } from "react";
 
 interface TitleSidePanelProps extends ComponentProps<"div"> {}
 
 export default function TitleSidePanel(props: TitleSidePanelProps) {
-    const {
-
-    } = props;
+    // const { } = props;
     const dispatch = useAppDispatch();
     const { status, items: titles, current } = useAppSelector(state => state.title);
+
 
     useEffect(() => {
         dispatch(fetchTitles());

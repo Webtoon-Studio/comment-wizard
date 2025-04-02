@@ -9,9 +9,9 @@ interface EpisodeSidePanelProps extends ComponentProps<"div"> {}
 
 export default function EpisodeSidePanel(props: EpisodeSidePanelProps) {
     const dispatch = useAppDispatch();
-    const {current: currSeries} = useAppSelector(state => state.series);
+    const {current: currTitle} = useAppSelector(state => state.title);
     const {status, current: currEpisode, paginations, filter} = useAppSelector(state => state.episode);
-    const currentItems = useAppSelector((state) => selectSeriesEpisodes(currSeries?.titleId)(state));
+    const currentItems = useAppSelector((state) => selectSeriesEpisodes(currTitle?.id)(state));
     
     const listRef = useRef<HTMLUListElement>(null);
 
@@ -19,34 +19,34 @@ export default function EpisodeSidePanel(props: EpisodeSidePanelProps) {
     useEffect(() => {
         console.log("Current titleId Changed");
         listRef.current?.scrollTo({top: 0});
-        if (currSeries != null) {
-            dispatch(getPageEpisodes(currSeries.titleId));
+        if (currTitle != null) {
+            dispatch(getPageEpisodes(currTitle.id));
         }
-    }, [currSeries]);
+    }, [currTitle]);
     
     // Effect: Fetch until the current scroll view is full
     useEffect(() => {
         if (
             status === 'idle' &&
             listRef.current && 
-            currSeries !== null && 
-            paginations.find(p => p.titleId === currSeries.titleId)?.isEnd !== true &&
+            currTitle !== null && 
+            paginations.find(p => p.titleId === currTitle.id)?.isEnd !== true &&
             filter === null
         ) {
             const el = listRef.current;
             if (el.clientHeight >= el.scrollHeight) {
-                dispatch(getPageEpisodes(currSeries.titleId));
+                dispatch(getPageEpisodes(currTitle.id));
             }
         }
     }, [currentItems, listRef.current?.clientHeight, listRef.current?.scrollHeight, filter]);
 
     // Effect: When filter is on, fetch all
     useEffect(() => {
-        if (currSeries !== null && filter !== null && paginations.find(p => p.titleId === currSeries?.titleId)?.isEnd !== true) {
+        if (currTitle !== null && filter !== null && paginations.find(p => p.titleId === currTitle?.id)?.isEnd !== true) {
             console.log("Dispatching getAllEpisodes");
-            dispatch(getAllEpisodes(currSeries.titleId));
+            dispatch(getAllEpisodes(currTitle.id));
         }
-    }, [currSeries, filter]);
+    }, [currTitle, filter]);
 
     const handleScroll = useCallback(function(event: UIEvent<HTMLUListElement>) {
         if (filter !== null) return;
@@ -56,12 +56,12 @@ export default function EpisodeSidePanel(props: EpisodeSidePanelProps) {
         // const isBottom = Math.abs(el.scrollHeight - (el.scrollTop + el.clientHeight)) <= 1;
         if (
             isNearBottom && 
-            currSeries !== null && 
-            paginations.find(p => p.titleId === currSeries.titleId)?.isEnd !== true
+            currTitle !== null && 
+            paginations.find(p => p.titleId === currTitle.id)?.isEnd !== true
         ) {
-            dispatch(getPageEpisodes(currSeries.titleId));
+            dispatch(getPageEpisodes(currTitle.id));
         }
-    }, [currSeries, paginations, filter]);
+    }, [currTitle, paginations, filter]);
     
     const handleItemClick = function(item: EpisodeItem) {
         if (item === currEpisode) {

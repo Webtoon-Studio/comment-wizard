@@ -1,6 +1,7 @@
+import { useAppSelector } from "@incom/common/hook";
 import RefreshIcon from "@incom/features/components/RefreshIcon";
 import type { Title } from "@shared/title";
-import type { ComponentProps, MouseEvent } from "react";
+import { useMemo, type ComponentProps, type MouseEvent } from "react";
 
 interface TitlePanelItemProps extends ComponentProps<"div"> {
     item?: Title;
@@ -14,11 +15,16 @@ export default function TitlePanelItem(props: TitlePanelItemProps) {
         selected = false,
         onClick
     } = props;
-
+    const { items: countItems } = useAppSelector(state => state.count);
 
     const handleClick = function(event: MouseEvent<HTMLDivElement>) {
         onClick?.(event);
     }
+
+    const count = useMemo(() => {
+        const thisCounts = countItems.find(c => c.titleId === item?.id);
+        return thisCounts && thisCounts.isCompleted ? thisCounts.totalNewCount : null;
+    }, [countItems]);
 
     return (
         <div 
@@ -40,15 +46,20 @@ export default function TitlePanelItem(props: TitlePanelItemProps) {
                     ].join(" ")}
                 >
                     {item ? (
-                        <span>
-                            {item.subject}
-                        </span>
+                        <div className="space-x-2">
+                            <span>
+                                {item.subject}
+                            </span>
+                            <span className="text-xs text-gray-400">
+                                {item.id}
+                            </span>
+                        </div>
                     ) : (
                         <div className="inline-block h-4 w-[16ch] bg-gray-400 animate-pulse"/>
                     )}
                 </div>
-                <div className="text-xs text-gray-400">
-                    {item?.id}
+                <div className="flex items-center px-2 py-1 rounded-full text-xs bg-red-400 text-white">
+                    {count === null ? ".." : count}
                 </div>
             </div>
         </div>
