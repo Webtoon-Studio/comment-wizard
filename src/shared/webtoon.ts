@@ -6,6 +6,7 @@ import {
 	type IWebtoonPost,
 	type PostCountType,
 	type EpisodeCountType,
+	IPost,
 } from "@root/src/shared/post";
 import { Semaphore } from "./semaphore";
 import type { Title } from "@shared/title";
@@ -551,7 +552,7 @@ export class Webtoon {
 			posts
 		} satisfies StoredWebtoonData;
 	}
-
+	
 	getPostCounts() {
 		let totalCount = 0;
 		let totalNewCount = 0;

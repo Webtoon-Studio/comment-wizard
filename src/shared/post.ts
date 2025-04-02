@@ -15,6 +15,54 @@ export type PostCountType = {
 	episodes: EpisodeCountType[]
 };
 
+export function countPosts(posts: IPost[]): PostCountType {
+	let titleId: TitleIdType | undefined = undefined;
+	let totalCount = 0;
+	let totalNewCount = 0;
+	const episodeMap = new Map<number, EpisodeCountType>();
+	for (const p of posts) {
+		if (titleId === undefined) titleId = p.titleId;
+		
+		const episodeCount = episodeMap.get(p.episode) ?? {
+			number: p.episode,
+			isCompleted: true,
+			count: 0,
+			newCount: 0
+		} satisfies EpisodeCountType;
+
+		totalCount += 1;
+		episodeCount.count += 1;
+		if (p.isNew) {
+			totalNewCount += 1;
+			episodeCount.newCount += 1;
+		}
+
+		for (const reply of p.replies) {
+			totalCount += 1;
+			episodeCount.count += 1;
+
+			if (reply.isNew) {
+				totalNewCount += 1;
+				episodeCount.newCount += 1;
+			}
+		}
+
+		episodeMap.set(p.episode, episodeCount);
+	}
+
+	if (titleId === undefined) {
+		throw new Error("Could not parse titleId from posts!");
+	}
+
+	return {
+		titleId,
+		isCompleted: true,
+		totalCount,
+		totalNewCount,
+		episodes: Array.from(episodeMap.values()).sort((a,b) => b.number - a.number)
+	} satisfies PostCountType
+}
+
 export type PageIdType = `${"w" | "c"}_${number}_${number}`;
 export type PostIdType = `GW-epicom:${number}-${PageIdType}-${string}`;
 export type PageUrlType = `_${PageIdType}`;
@@ -134,6 +182,7 @@ export interface IWizardPost {
 	dislikes: number;
 	hasLiked: boolean;
 	hasDisliked: boolean;
+	replies: IPost[];
 }
 
 

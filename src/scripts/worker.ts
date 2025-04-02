@@ -8,11 +8,12 @@ import {
 	INCOM_REQUEST_POSTS_EVENT,
 	STROAGE_COUNT_NAME,
 	INCOM_REQUEST_COUNTS_EVENT,
+	INCOM_PATCH_POST_EVENT,
 } from "@shared/global";
-import type { PostCountType } from "@shared/post";
+import { countPosts, Post, type IPost, type PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";
-import { cleanTitles, loadPostCounts, loadTitles, loadWebtoons, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
+import { cleanTitles, loadPostCounts, loadTitles, loadWebtoons, patchWebtoon, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -245,7 +246,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener(
 	(
-		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number },
+		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number; post?: IPost},
 		sender: chrome.runtime.MessageSender,
 		sendReponse: (resopnse?: unknown) => void,
 	) => {
@@ -303,6 +304,30 @@ chrome.runtime.onMessage.addListener(
 			});
 			
 			return true;
+		}
+		if (message.greeting === INCOM_PATCH_POST_EVENT) {
+			console.log("runtime: Incom patches post");
+			const post: IPost | undefined = message.post;
+
+			if (post === undefined) return false;
+
+			const titleId = post.titleId;
+			return loadWebtoons().then((wts) => {
+				if (wts.find(wt => wt.titleId === titleId) === undefined) {
+					return null;
+				}
+				return wts.map((wt) => {
+					wt.posts = wt.posts.map(p => p.id === post.id ? new Post(post) : p);
+					return wt;
+				});
+			}).then((updated) => {
+				if (updated !== null) {
+					saveWebtoons(updated);
+					savePostCounts(updated.map(data => countPosts(data.posts)));
+					return true;
+				}
+				return false;
+			});
 		}
 		if (message.greeting === INCOM_REQUEST_COUNTS_EVENT) {
 			console.log("runtime: Incom requests counts");

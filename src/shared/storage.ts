@@ -118,4 +118,14 @@ export async function saveWebtoons(data: StoredWebtoonData[]) {
         });
     }
 }
+
+export async function patchWebtoon(wt: StoredWebtoonData) {
+    if (chrome.storage) {
+        const stored = await loadWebtoons();
+        if (stored.length === 0) return;
+        await saveWebtoons(
+            stored.map((swt) => swt.titleId === wt.titleId ? wt : swt)
+        );
+    }
+}
 // ================================================================================ //

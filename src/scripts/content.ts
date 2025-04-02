@@ -1,8 +1,9 @@
-import { Webtoon } from "@shared/webtoon";
+import { TitleIdType, Webtoon } from "@shared/webtoon";
 import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
+	INCOM_PATCH_POST_EVENT,
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
@@ -232,6 +233,15 @@ const handleIncomPostsRequest = (event: CustomEvent<{ titleId?: `${number}`, epi
 	})
 };
 
+const handleIncomPostPatch = (event: CustomEvent<{ post: IPost }>) => {
+	console.log("Handling Post Patch event");
+	chrome.runtime
+	.sendMessage({
+		greeting: INCOM_PATCH_POST_EVENT,
+		post: event.detail.post
+	});
+}
+
 const handleIncomCountRequest = () => {
 	console.log("Handling Counts Request event");
 	chrome.runtime
@@ -278,6 +288,11 @@ function attachEventListners() {
 		INCOM_REQUEST_POSTS_EVENT, 
 		handleIncomPostsRequest as EventListener
 	);
+
+	window.addEventListener(
+		INCOM_PATCH_POST_EVENT,
+		handleIncomPostPatch as EventListener
+	)
 
 	window.addEventListener(
 		INCOM_REQUEST_COUNTS_EVENT, 
