@@ -25,9 +25,9 @@ const INCOM_REQUEST_SERIES_ITEM_EVENT = "incomSeriesRequest";
 const INCOM_RESPONSE_SERIES_ITEM_EVENT = "incomSeriesResponse";
 const INCOM_REQUEST_POSTS_EVENT = "incomPostsRequest";
 const INCOM_RESPONSE_POSTS_EVENT = "incomePostsResponse";
+const INCOM_PATCH_POSTS_EVENT = "incomPostsPatch";
 const INCOM_REQUEST_COUNTS_EVENT = "incomCountsRequest";
 const INCOM_RESPONSE_COUNTS_EVENT = "incomCountsResponse";
-const INCOM_PATCH_POST_EVENT = "incomPostPatch";
 
 
 const IS_DEV = (() => {
@@ -178,5 +178,5 @@ export {
 	INCOM_RESPONSE_POSTS_EVENT,
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_RESPONSE_COUNTS_EVENT,
-	INCOM_PATCH_POST_EVENT
+	INCOM_PATCH_POSTS_EVENT
 };

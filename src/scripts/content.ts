@@ -3,7 +3,7 @@ import "@incom/index.css";
 import {
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
-	INCOM_PATCH_POST_EVENT,
+	INCOM_PATCH_POSTS_EVENT,
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
@@ -233,12 +233,12 @@ const handleIncomPostsRequest = (event: CustomEvent<{ titleId?: `${number}`, epi
 	})
 };
 
-const handleIncomPostPatch = (event: CustomEvent<{ post: IPost }>) => {
-	console.log("Handling Post Patch event");
+const handleIncomPostPatch = (event: CustomEvent<{ posts: IPost[] }>) => {
+	console.log("Handling Posts Patch event");
 	chrome.runtime
 	.sendMessage({
-		greeting: INCOM_PATCH_POST_EVENT,
-		post: event.detail.post
+		greeting: INCOM_PATCH_POSTS_EVENT,
+		posts: event.detail.posts
 	});
 }
 
@@ -290,7 +290,7 @@ function attachEventListners() {
 	);
 
 	window.addEventListener(
-		INCOM_PATCH_POST_EVENT,
+		INCOM_PATCH_POSTS_EVENT,
 		handleIncomPostPatch as EventListener
 	)
 
