@@ -1,5 +1,6 @@
 import { useAppSelector } from "@incom/common/hook";
 import RefreshIcon from "@incom/features/components/RefreshIcon";
+import CountBubble from "@incom/features/count/components/CountBubble";
 import type { Title } from "@shared/title";
 import { useMemo, type ComponentProps, type MouseEvent } from "react";
 
@@ -24,7 +25,7 @@ export default function TitlePanelItem(props: TitlePanelItemProps) {
     const count = useMemo(() => {
         const thisCounts = countItems.find(c => c.titleId === item?.id);
         return thisCounts && thisCounts.isCompleted ? thisCounts.totalNewCount : null;
-    }, [countItems]);
+    }, [countItems, item]);
 
     return (
         <div 
@@ -58,8 +59,8 @@ export default function TitlePanelItem(props: TitlePanelItemProps) {
                         <div className="inline-block h-4 w-[16ch] bg-gray-400 animate-pulse"/>
                     )}
                 </div>
-                <div className="flex items-center px-2 py-1 rounded-full text-xs bg-red-400 text-white">
-                    {count === null ? ".." : count}
+                <div>
+                    <CountBubble count={count} />
                 </div>
             </div>
         </div>

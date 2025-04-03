@@ -1,4 +1,5 @@
 import { useAppSelector } from "@incom/common/hook";
+import CountBubble from "@incom/features/count/components/CountBubble";
 import type { EpisodeItem } from "@shared/global";
 import { useContext, useEffect, useMemo, useRef, type ComponentProps, type MouseEvent } from "react";
 
@@ -16,7 +17,7 @@ export default function EpisodePanelItem(props: EpisodePanelItemProps) {
     } = props;
 
     const rootRef = useRef<HTMLDivElement>(null);
-    const { items:countItems } = useAppSelector(state => state.count);
+    const { items: countItems } = useAppSelector(state => state.count);
 
     const handleClick = function(event: MouseEvent<HTMLDivElement>) {
         onClick?.(event);
@@ -71,9 +72,7 @@ export default function EpisodePanelItem(props: EpisodePanelItemProps) {
                 </div>
             </div>
             <div>
-                <div className="flex items-center px-2 py-1 rounded-full text-xs bg-red-400 text-white">
-                    {count === null ? ".." : count}
-                </div>
+                <CountBubble count={count} />
             </div>
         </div>
     )
