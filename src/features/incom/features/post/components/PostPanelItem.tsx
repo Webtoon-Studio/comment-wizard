@@ -159,7 +159,10 @@ export default function PostPanelItem(props: PostPanelItemProps) {
             <div className="w-full px-4 flex justify-end items-center gap-2">
                 {item.replyCount > 0 ? (
                     <div 
-                        className="px-2 py-1 flex justify-center items-center border-[1px] cursor-pointer"
+                        className={[
+                            "px-2 py-1 flex justify-center items-center gap-2 border-[1px] cursor-pointer",
+                            !item.replies.every(r => !r.isNew) ? "shadow-[0_0_2px_rgb(0,220,100)]" : ""
+                        ].join(" ")}
                         onClick={handleRepliesClick}
                     >
                         <span>{item.replyCount > 1 ? "Replies" : "Reply"} {item.replyCount}</span>
