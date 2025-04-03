@@ -368,11 +368,13 @@ export class Post implements IPost {
 	async getReplies(): Promise<Post[]> {
 		const appendReply = (reply: Post) => {
 			const exIndex = this.replies.findIndex(r => r.id === reply.id);
-			if (exIndex > -1) {
-				// Update existing reply
-				const combined = new Post(Object.assign(this.replies[exIndex], reply));
-				combined.isUpdated = true;
-				this.replies[exIndex] = combined;
+
+			if (exIndex !== -1) {
+				// Update existing reply if updated
+				const ex = this.replies[exIndex];
+				if (ex.updatedAt > reply.updatedAt) {
+					this.replies[exIndex] = reply;
+				}
 			} else {
 				this.replies.push(reply);
 			}

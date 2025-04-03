@@ -152,17 +152,10 @@ async function getNewPosts(): Promise<boolean> {
 	}
 
 	let result: boolean = true;
-	const stored = await loadWebtoons();
-	const saveData: StoredWebtoonData[] = [];
-	const postCounts: PostCountType[] = [];
+	const wts: Webtoon[] = [];
 
 	for (const title of titleList) {
 		const wt = new Webtoon(title);
-
-		const found = stored.find(d => d.titleId === title.id);
-		if (found) {
-			wt.assignPosts(found.posts);
-		}
 
 		await wt.getAllPosts();
 
@@ -176,12 +169,29 @@ async function getNewPosts(): Promise<boolean> {
 			result = false;
 		}
 
-		saveData.push(wt.getSaveData())
+		wts.push(wt);
+
+	}
+
+	// Load previous posts data after all posts are fetched 
+	// to avoid overwriting posts updated during fetching
+	const saveData: StoredWebtoonData[] = [];
+	const postCounts: PostCountType[] = [];
+	const stored = await loadWebtoons();
+
+	for (const wt of wts) {
+		const found = stored.find(d => d.titleId === wt.titleId);
+		if (found) {
+			wt.loadSavedPosts(found.posts.map(p => new Post(p)));
+		}
+	
+		saveData.push(wt.getSaveData());
 		postCounts.push(wt.getPostCounts());
 	}
 
 	await saveWebtoons(saveData);
 	await savePostCounts(postCounts);
+
 	return result;
 }
 
@@ -317,7 +327,7 @@ chrome.runtime.onMessage.addListener(
 					return null;
 				}
 				return wts.map((wt) => {
-					wt.posts = wt.posts.map(p => p.id === post.id ? new Post(post) : p);
+					wt.posts = wt.posts.map(p => p.id === post.id ? post : p);
 					return wt;
 				});
 			}).then((updated) => {

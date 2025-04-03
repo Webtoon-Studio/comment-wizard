@@ -32,7 +32,7 @@ type GetPostErrorType = {
 
 export interface StoredWebtoonData {
 	titleId: string;
-	posts: Post[];
+	posts: IPost[];
 }
 
 export class Webtoon {
@@ -534,12 +534,60 @@ export class Webtoon {
 		const curr = this.posts.get(episodeNum);
 
 		// if there is an existing post & has not been modified, leave as-is
+		// TODO: Fix replies written over by new posts
 		const posts: Post[] = newPosts.map(p => {
-			const ex = curr?.find(item => item.id === p.id && item.updatedAt < p.updatedAt);
+			const ex = curr?.find(item => item.id === p.id && item.updatedAt <= p.updatedAt);
 			return ex ? ex : p;
 		});
 
 		this.posts.set(episodeNum, posts);
+	}
+
+	loadSavedPosts(sposts: Post[]) {
+		const start = new Date().getTime();
+		console.log("loadSavedPosts process start:", start);
+		const grouped = sposts.reduce((p, c) => {
+			const ex = p.get(c.episode) || [];
+			p.set(c.episode, [...ex, c]);
+			return p;
+		}, new Map<number, Post[]>());
+
+
+		grouped.forEach((loadedPosts, episode) => {
+			const posts = this.posts.get(episode);
+			if (posts) {
+				const loadedNewPosts = loadedPosts.filter(lp => !posts.find(p => p.id === lp.id));
+				const combined = posts.map(p => {
+					let finalPost = p;
+					const lp = loadedPosts.find(_lp => _lp.id === p.id);
+					if (lp) {
+						if (p.updatedAt <= lp.updatedAt) {
+							finalPost = lp;
+						}
+						const loadedNewRplies = lp?.replies.filter(lr => !p.replies.find(r => lr.id === r.id)) ?? [];
+						finalPost.replies = [
+							...p.replies.map(r => {
+								const lr = lp.replies.find(_lr => _lr.id === r.id);
+								if (lr && r.updatedAt <= lr.updatedAt) {
+									return lr;
+								}
+								return r;
+							}), 
+							...loadedNewRplies
+						];
+					}
+					
+					return finalPost;
+				});
+				this.posts.set(episode, [...combined, ...loadedNewPosts]);
+			} else {
+				this.posts.set(episode, loadedPosts);
+			}
+		});
+
+		const end = new Date().getTime();
+		console.log("loadSavedPosts process end:", end);
+		console.log("elapsed time:", end - start);
 	}
 
 	getSaveData() {

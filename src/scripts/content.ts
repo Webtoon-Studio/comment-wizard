@@ -705,7 +705,6 @@ if (chrome.storage) {
 			});
 	});
 	chrome.storage.sync.onChanged.addListener(async (changes) => {
-		// TODO: Revert "injected" changes without doing reload()
 		if (STROAGE_COUNT_NAME in changes) {
 			loadPostCounts().then(counts => {
 				window.dispatchEvent(
@@ -719,8 +718,9 @@ if (chrome.storage) {
 					)
 				);
 			});
+		} else {
+			await getSetting();
+			main();
 		}
-		await getSetting();
-		main();
 	});
 }
