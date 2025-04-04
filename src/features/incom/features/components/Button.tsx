@@ -1,5 +1,5 @@
 import type { ComponentRoundedType, ComponentSizeType } from "@shared/interface/componentInterface";
-import { useMemo, type ComponentProps, type HTMLAttributes } from "react";
+import { forwardRef, useMemo, type ComponentProps, type HTMLAttributes } from "react";
 
 interface ButtonProps extends ComponentProps<"button"> {
 	variant?: "text" | "contained" | "outlined";
@@ -7,15 +7,17 @@ interface ButtonProps extends ComponentProps<"button"> {
 	rounded?: ComponentRoundedType;
 }
 
-export default function Button(props: ButtonProps) {
+const Button = forwardRef<HTMLButtonElement, ButtonProps>((props, ref) => {
 	const { 
 		type = "button",
 		variant = "text",
 		size = "md",
 		rounded = "md",
 
+		disabled,
 		className, 
-		children, 
+		children,
+		onClick,
 		...others 
 	} = props;
 
@@ -58,8 +60,10 @@ export default function Button(props: ButtonProps) {
 
 	return (
 		<button
+			ref={ref}
 			type={type}
 			className={[
+				disabled ? "text-gray-500" : "",
 				className,
 				"flex items-center shrink-0 cursor-pointer ",
 				hoverClassName,
@@ -67,9 +71,12 @@ export default function Button(props: ButtonProps) {
 				sizeClassName,
 				roundedClassName,
 			].join(" ")}
+			onClick={disabled ? undefined : onClick}
 			{...others}
 		>
 			{children}
 		</button>
 	);
-}
+});
+
+export default Button;
