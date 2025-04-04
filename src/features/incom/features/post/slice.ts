@@ -1,7 +1,7 @@
 import { createAppSlice } from "@incom/common/hook";
 import { createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit";
 import type { RootState } from "@incom/common/store";
-import { INCOM_PATCH_POSTS_EVENT, INCOM_REQUEST_POSTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, IS_DEV, type EpisodeItem, type SeriesItem } from "@shared/global";
+import { INCOM_PATCH_MULTI_POSTS_EVENT, INCOM_PATCH_POST_EVENT, INCOM_REQUEST_POSTS_EVENT, INCOM_RESPONSE_POSTS_EVENT, IS_DEV, type EpisodeItem, type SeriesItem } from "@shared/global";
 import { IPost, IWebtoonPost, Post, type PostIdType } from "@shared/post";
 import type { TitleIdType } from "@shared/webtoon";
 import { mockPostData } from "@src/mock";
@@ -78,11 +78,11 @@ export const postSlice = createAppSlice({
             const post = state.items.find(p => p.id === action.payload.postId);
             if (post) {
                 post.markAsRead()
-                window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                    INCOM_PATCH_POSTS_EVENT,
+                window.dispatchEvent(new CustomEvent<{post: IPost}>(
+                    INCOM_PATCH_POST_EVENT,
                     {
                         detail: {
-                            posts: [post]
+                            post
                         }
                     }
                 ));
@@ -96,11 +96,11 @@ export const postSlice = createAppSlice({
             const post = state.items.find(p => p.id === action.payload.postId);
             if (post) {
                 post.markAsNew()
-                window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                    INCOM_PATCH_POSTS_EVENT,
+                window.dispatchEvent(new CustomEvent<{post: IPost}>(
+                    INCOM_PATCH_POST_EVENT,
                     {
                         detail: {
-                            posts: [post]
+                            post
                         }
                     }
                 ));
@@ -121,16 +121,22 @@ export const postSlice = createAppSlice({
                     p.replies.forEach(r => r.markAsRead());
                 });
 
-                window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                    INCOM_PATCH_POSTS_EVENT,
-                    { detail: { posts } }
-                ));
+                
 
                 state.items = [
-                    ...state.items.filter(p => posts.find(_p => _p.id === p.id)),
+                    ...state.items.filter(p => !posts.find(_p => _p.id === p.id)),
                     ...posts
                 ];
             }
+
+            window.dispatchEvent(new CustomEvent<{ changes: Partial<IPost>, titleId: TitleIdType, episodeNo?: number }>(
+                INCOM_PATCH_MULTI_POSTS_EVENT,
+                { detail: { 
+                    changes: { isNew: false },
+                    titleId: action.payload.titleId,
+                    episodeNo: action.payload.episode,
+                 } }
+            ));
         },
         setAllUnread: (state, action: PayloadAction<{titleId: TitleIdType, episode?: number}>) => {
             const posts = state.items.filter(p => p.titleId === action.payload.titleId && (
@@ -143,16 +149,20 @@ export const postSlice = createAppSlice({
                     p.replies.forEach(r => r.markAsNew());
                 });
 
-                window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                    INCOM_PATCH_POSTS_EVENT,
-                    { detail: { posts } }
-                ));
-
                 state.items = [
-                    ...state.items.filter(p => posts.find(_p => _p.id === p.id)),
+                    ...state.items.filter(p => !posts.find(_p => _p.id === p.id)),
                     ...posts
                 ];
             }
+
+            window.dispatchEvent(new CustomEvent<{ changes: Partial<IPost>, titleId: TitleIdType, episodeNo?: number }>(
+                INCOM_PATCH_MULTI_POSTS_EVENT,
+                { detail: { 
+                    changes: { isNew: true },
+                    titleId: action.payload.titleId,
+                    episodeNo: action.payload.episode,
+                    } }
+            ));
         },
         setReplyRead: (state, action: PayloadAction<{postId: PostIdType, replyId: PostIdType}>) => {
             const post = state.items.find(p => p.id === action.payload.postId);
@@ -160,11 +170,11 @@ export const postSlice = createAppSlice({
                 const reply = post.replies.find(r => r.id === action.payload.replyId);
                 if (reply) {
                     reply.markAsRead();
-                    window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                        INCOM_PATCH_POSTS_EVENT,
+                    window.dispatchEvent(new CustomEvent<{post: IPost}>(
+                        INCOM_PATCH_POST_EVENT,
                         {
                             detail: {
-                                posts: [post]
+                                post
                             }
                         }
                     ));
@@ -181,11 +191,11 @@ export const postSlice = createAppSlice({
                 const reply = post.replies.find(r => r.id === action.payload.replyId);
                 if (reply) {
                     reply.markAsNew();
-                    window.dispatchEvent(new CustomEvent<{posts: IPost[]}>(
-                        INCOM_PATCH_POSTS_EVENT,
+                    window.dispatchEvent(new CustomEvent<{post: IPost}>(
+                        INCOM_PATCH_POST_EVENT,
                         {
                             detail: {
-                                posts: [post]
+                                post
                             }
                         }
                     ));
@@ -205,7 +215,8 @@ export const postSlice = createAppSlice({
 export const { 
     requestGetPosts, loadPosts, setCurrentPost, 
     setPostRead, setPostUnread,
-    setReplyRead, setReplyUnread
+    setAllRead, setAllUnread,
+    setReplyRead, setReplyUnread,
 } = postSlice.actions;
 
 // export const {

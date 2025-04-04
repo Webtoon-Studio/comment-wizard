@@ -8,7 +8,8 @@ import {
 	INCOM_REQUEST_POSTS_EVENT,
 	STROAGE_COUNT_NAME,
 	INCOM_REQUEST_COUNTS_EVENT,
-	INCOM_PATCH_POSTS_EVENT,
+	INCOM_PATCH_POST_EVENT,
+	INCOM_PATCH_MULTI_POSTS_EVENT,
 } from "@shared/global";
 import { countPosts, Post, type IPost, type PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
@@ -207,11 +208,12 @@ async function patchPosts(patch: IPost[]) {
 	const webtoons = await loadWebtoons();
 
 	for (const [titleId, patchPosts] of grouped.entries()) {
+		console.log("patching posts", titleId, patchPosts);
 		const wt = webtoons.find(w => w.titleId === titleId)
 		if (wt === undefined) continue;
 
 		wt.posts = [
-			...wt.posts.filter(p => !patchPosts.map(pp => pp.id).includes(p.id)),
+			...wt.posts.filter(p => !patchPosts.find(pp => pp.id === p.id)),
 			...patchPosts
 		];
 	}
@@ -283,7 +285,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener(
 	(
-		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number; posts?: IPost[]},
+		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number; post?: IPost; changes?: Partial<IPost> },
 		sender: chrome.runtime.MessageSender,
 		sendReponse: (resopnse?: unknown) => void,
 	) => {
@@ -304,6 +306,8 @@ chrome.runtime.onMessage.addListener(
 					webtoons: wts
 				})
 			});
+
+			// Return `true` to indicate that the message is being handled asynchronously
 			return true;
 		}
 		if (message.greeting === INCOM_REQUEST_SERIES_ITEM_EVENT) {
@@ -342,15 +346,40 @@ chrome.runtime.onMessage.addListener(
 			
 			return true;
 		}
-		if (message.greeting === INCOM_PATCH_POSTS_EVENT) {
-			console.log("runtime: Incom patches posts");
-			const posts: IPost[] | undefined = message.posts;
+		if (message.greeting === INCOM_PATCH_POST_EVENT) {
+			console.log("runtime: Incom patches post");
+			const post: IPost | undefined = message.post;
 
-			if (posts === undefined) return false;
+			if (post === undefined) return false;
 
-			patchPosts(posts);
+			patchPosts([post]);
 
-			return true;
+			return false;
+		}
+		if (message.greeting === INCOM_PATCH_MULTI_POSTS_EVENT) {
+			console.log("runtime: Incom patches multiple posts");
+			const changes = message.changes;
+			const titleId: TitleIdType | undefined = message.titleId;
+			const episodeNo: number | undefined = message.episodeNo;
+
+			if (changes === undefined || titleId === undefined) return false;
+
+			loadWebtoons().then((wts) => {
+				const wt = wts.find(w => w.titleId === titleId);
+				if (wt) {
+					const posts = episodeNo === undefined ? wt.posts : wt.posts.filter(p => p.episode === episodeNo);
+					posts.forEach(p => {
+						const cp = Object.assign(p, changes) as IPost;
+						cp.replies.forEach(r => {
+							r = Object.assign(r, changes) as IPost;
+						});
+						p = cp;
+					});
+					patchPosts(posts);
+				}
+			});
+
+			return false;
 		}
 		if (message.greeting === INCOM_REQUEST_COUNTS_EVENT) {
 			console.log("runtime: Incom requests counts");
