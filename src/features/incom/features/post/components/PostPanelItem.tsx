@@ -61,8 +61,8 @@ export default function PostPanelItem(props: PostPanelItemProps) {
     const createdDateString = new Date(item.createdAt).toLocaleDateString(locale, {month: "short", day: "numeric", year:"numeric"});
 
     const handleDoubleClick = useCallback(function(event: MouseEvent) {
+        event.stopPropagation();
         if (isReply) {
-            event.stopPropagation();
             if (item.isNew) {
                 dispatch(setReplyRead({postId: item.rootId, replyId: item.id}));
             } else {
@@ -77,12 +77,18 @@ export default function PostPanelItem(props: PostPanelItemProps) {
         }
     }, [item.isNew]);
 
+    const stopPropagation = function(event: MouseEvent) {
+        event.stopPropagation();
+    }
+
     const handleRepliesClick = function(event: MouseEvent) {
+        event.stopPropagation();
         if (openReplies) setOpenReplies(false);
         else setOpenReplies(true);
     }
 
     const handleRepliesCollapse = function(event: MouseEvent) {
+        event.stopPropagation();
         setOpenReplies(false);
         // rootRef.current?.scrollIntoView({
         //     behavior: "smooth",
@@ -164,6 +170,7 @@ export default function PostPanelItem(props: PostPanelItemProps) {
                             !item.replies.every(r => !r.isNew) ? "shadow-[0_0_2px_rgb(0,220,100)]" : ""
                         ].join(" ")}
                         onClick={handleRepliesClick}
+                        onDoubleClick={stopPropagation}
                     >
                         <span>{item.replyCount > 1 ? "Replies" : "Reply"} {item.replyCount}</span>
                     </div>
@@ -179,13 +186,19 @@ export default function PostPanelItem(props: PostPanelItemProps) {
                         </Button>
                     )}
                 </PostPanelItemMenu>
-                <div className="px-2 py-1 flex justify-center items-center border-[1px]">
+                <div 
+                    className="px-2 py-1 flex justify-center items-center border-[1px]"
+                    onDoubleClick={stopPropagation}
+                >
                     <LikeIcon />
                     <span className="text-sm">
                         {item.likes}
                     </span>
                 </div>
-                <div className="px-2 py-1 flex justify-center items-center border-[1px]">
+                <div 
+                    className="px-2 py-1 flex justify-center items-center border-[1px]"
+                    onDoubleClick={stopPropagation}
+                >
                     <DislikeIcon />
                     <span className="text-sm">
                         {item.dislikes}

@@ -38,6 +38,10 @@ export default function ClientContainer(props: ClientContainerProps) {
         }
     }, []);
 
+    const handleContextMenu = function(event: MouseEvent) {
+        event.preventDefault();
+    }
+
     const handleZoomOut = function(event: MouseEvent) {
         setFullScreen(true);
     }
@@ -54,6 +58,7 @@ export default function ClientContainer(props: ClientContainerProps) {
                     ? "fixed inset-0 z-[999] w-screen h-screen px-[40px] bg-black/50 backdrop-blur-md" 
                     : "relative w-full h-fit"
             ].join(" ")}
+            onContextMenu={handleContextMenu}
         >
             <div 
                 className="relative max-w-[1340px] w-full flex flex-col justify-stretch bg-white border-2 rounded-md"

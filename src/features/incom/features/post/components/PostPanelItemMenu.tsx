@@ -13,14 +13,17 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
     const {
         children
     } = props;
-
+    const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
         const handleClickOutsideDropdown: EventListener = function(event) {
-            if (dropdownRef.current) {
-                if (!dropdownRef.current.contains(event.target as Node)) {
+            if (dropdownRef.current && buttonRef.current) {
+                if (
+                    !dropdownRef.current.contains(event.target as Node) &&
+                    !buttonRef.current.contains(event.target as Node)
+                ) {
                     setOpen(false);
                 }
             }
@@ -31,11 +34,10 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
         return () => {
             document.removeEventListener("click", handleClickOutsideDropdown, true);
         }
-    }, [dropdownRef.current])
+    }, [dropdownRef, buttonRef]);
 
     const handleButtonClick = function(event: MouseEvent) {
-        if (open) setOpen(false);
-        else setOpen(true);
+        setOpen((open) => !open);
     }
 
     const handleListClick = function(event: MouseEvent) {
@@ -44,7 +46,12 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
 
     return (
         <div className="relative">
-            <Button className="hover:text-gray-500" onClick={handleButtonClick}>
+            <Button 
+                ref={buttonRef}
+                className="hover:text-gray-500" 
+                onClick={handleButtonClick}
+                onDoubleClick={(e) => e.stopPropagation()}
+            >
                 <MenuIcon />
             </Button>
             <div 
@@ -53,6 +60,7 @@ export default function PostPanelItemMenu(props: PostPanelItemMenuProps) {
                     "absolute z-30 bg-white border-[1px] rounded shadow-lg",
                     open ? "h-auto visible" : "h-0 invisible"
                 ].join(" ")}
+                onDoubleClick={(e) => e.stopPropagation()}
             >
                 <ul onClick={handleListClick}>
                     {Children.map(children, (child) => (
