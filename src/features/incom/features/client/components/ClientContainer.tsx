@@ -27,7 +27,8 @@ export default function ClientContainer(props: ClientContainerProps) {
             setThisHeight(window.innerHeight - 120);
         }
 
-        document.documentElement.style.scrollSnapType = "y proximity";
+        // Removed due to snapping when interacting off center
+        // document.documentElement.style.scrollSnapType = "y proximity";
 
         window.addEventListener("resize", handleWindowResize);
         handleWindowResize();
