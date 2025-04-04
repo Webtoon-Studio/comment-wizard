@@ -56,7 +56,7 @@ export default function ClientContainer(props: ClientContainerProps) {
             ].join(" ")}
         >
             <div 
-                className="relative w-full flex flex-col justify-stretch bg-white border-2 rounded-md"
+                className="relative max-w-[1340px] w-full flex flex-col justify-stretch bg-white border-2 rounded-md"
                 style={{
                     height: thisHeight
                 }}
