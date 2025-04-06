@@ -1,13 +1,21 @@
-export interface ISetting {
-	iType: "setting";
-	key: string;
-	desc: string;
-	value: boolean;
-	toolTip?: string;
+export type SettingItemType = {
+	_type: "settingItem",
+	key: string,
+	desc: string,
+	value: boolean,
+	toolTip?: string
+}
+
+export type SettingType = {
+	_type: "setting",
+	key: string,
+	text: string,
+	value: SettingItemType[],
+	toolTip?: string,
 }
 
 export interface IComponentColor {
-	iType: "componentColor";
+	_type: "componentColor";
 	default: string;
 	hover: string;
 	text: string;

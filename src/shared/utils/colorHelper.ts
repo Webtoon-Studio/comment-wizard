@@ -90,8 +90,8 @@ export function getComponentColor(
 ): IComponentColor {
 	if (
 		typeof colorPreset === "object" &&
-		"iType" in colorPreset &&
-		colorPreset.iType === "componentColor"
+		"_type" in colorPreset &&
+		colorPreset._type === "componentColor"
 	) {
 		return colorPreset as IComponentColor;
 	}
@@ -99,21 +99,21 @@ export function getComponentColor(
 	switch (colorPreset) {
 		case "none":
 			return {
-				iType: "componentColor",
+				_type: "componentColor",
 				default: twColor.transparent,
 				hover: twColor.transparent,
 				text: twColor.black,
 			};
 		case "gray":
 			return {
-				iType: "componentColor",
+				_type: "componentColor",
 				default: twColor.gray.DEFAULT,
 				hover: twColor.gray.dark,
 				text: twColor.black,
 			};
 		case "disabled":
 			return {
-				iType: "componentColor",
+				_type: "componentColor",
 				default: twColor.gray.DEFAULT,
 				hover: twColor.gray.dark,
 				text: twColor.gray.darker,
@@ -121,7 +121,7 @@ export function getComponentColor(
 		case "default":
 		default:
 			return {
-				iType: "componentColor",
+				_type: "componentColor",
 				default: twColor.webtoon.DEFAULT,
 				hover: twColor.webtoon.dark,
 				text: twColor.gray[100],

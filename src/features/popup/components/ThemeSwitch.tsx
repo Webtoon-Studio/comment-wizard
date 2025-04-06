@@ -18,14 +18,14 @@ export default function ThemeSwitch(props: ThemeSwitchProps) {
 		Rgb.fromHex(twColor.gray[100]) || new Rgb(255, 255, 255);
 
 	const lightColor: IComponentColor = {
-		iType: "componentColor",
+		_type: "componentColor",
 		default: mainLightColor.toHex(),
 		hover: mainLightColor.dark().toHex(),
 		text: twColor.amber[400],
 	};
 
 	const darkColor: IComponentColor = {
-		iType: "componentColor",
+		_type: "componentColor",
 		default: mainDarkColor.toHex(),
 		hover: mainDarkColor.light().toHex(),
 		text: twColor.gray[100],
