@@ -10,11 +10,13 @@ import {
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_PATCH_POST_EVENT,
 	INCOM_PATCH_MULTI_POSTS_EVENT,
+	STORAGE_WORKER_SETTING_NAME,
 } from "@shared/global";
 import { countPosts, Post, type IPost, type PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";
 import { cleanTitles, loadPostCounts, loadTitles, loadWebtoons, patchWebtoon, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
+import { notification } from "@shared/notification";
 
 // =============================== GLOBAL VARIABLES =============================== //
 const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
@@ -23,6 +25,7 @@ const GETTING_NEW_POSTS_ALARM_NAME = "alarm-getting-new-posts";
 const GETTING_NEW_POSTS_PERIOD_MINS = 30;
 
 let IS_GETTING_NEW_POSTS = false;
+let IS_GETTING_TITLES = false;
 // let IS_STORING_POSTS = false;
 // ================================================================================ //
 
@@ -31,6 +34,10 @@ async function updatePopupBadge() {
 	if (!chrome.action) {
 		return;
 	}
+	
+	chrome.action.setBadgeBackgroundColor({ color: [255, 80, 80, 255] });
+	chrome.action.setBadgeTextColor({ color: [255, 255, 255, 255] });
+	
 	const postCounts = await loadPostCounts();
 	if (postCounts) {
 		const isCompleted = postCounts.every((p) => p.isCompleted);
@@ -53,21 +60,7 @@ async function updatePopupBadge() {
 // Always use this since this will check & create alarm for reducing spamming
 function getTitles(force = false) {
 	// Refactor this out due to 'force' param
-	const executeScrapeTitles = () => {
-		console.log("Process Start: getSeriesFromMyPost");
-		scrapeTitlesFromProfile().then((ret) => {
-			console.log("Process Done: getSeriesFromMyPost");
-			console.log(
-				`Process Result: ${
-					ret === null ? "Fail" : ret ? "Webtooons saved!" : "No new webtoons"
-				}`,
-			);
-			// Delay next callback (no spamming!)
-			chrome.alarms.create(GETTING_SERIES_ALARM_NAME, {
-				delayInMinutes: GETTING_SERIES_DELAY_MINS,
-			});
-		});
-	};
+	if (IS_GETTING_TITLES) return;
 
 	if (force) {
 		executeScrapeTitles();
@@ -79,6 +72,24 @@ function getTitles(force = false) {
 		});
 	}
 }
+function executeScrapeTitles() {
+	console.log("Process Start: getSeriesFromMyPost");
+	IS_GETTING_TITLES = true;
+	scrapeTitlesFromProfile().then((ret) => {
+		console.log("Process Done: getSeriesFromMyPost");
+		console.log(
+			`Process Result: ${
+				ret === null ? "Fail" : ret ? "Webtooons saved!" : "No new webtoons"
+			}`,
+		);
+		// Delay next callback (no spamming!)
+		chrome.alarms.create(GETTING_SERIES_ALARM_NAME, {
+			delayInMinutes: GETTING_SERIES_DELAY_MINS,
+		});
+	}).finally(() => {
+		IS_GETTING_TITLES = false;
+	});
+}
 
 async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 	// Returns:
@@ -87,24 +98,28 @@ async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 	//     - `null` : webtoons are not parsed
 	const session = await getSessionFromCookie();
 	if (!session) {
+		notification.error("Error", "Unabled to get session from cookie!");
 		console.error("Unable to get session from cookie");
 		return null;
 	}
 	const profileUrl = await fetchProfileUrlFromUserInfo(session);
 
 	if (profileUrl === null) {
+		notification.error("Error", "Unable to get profile information!");
 		console.error("Failed to get profile page URL");
 		return null;
 	}
 	const cid = await parseAuthorIdFromProfilePage(profileUrl, session);
 
 	if (cid === null) {
+		notification.error("Error", "Unabled to get the author ID");
 		console.error("Failed to get Author ID");
 		return null;
 	}
 
 	const fetchedTitles = await fetchWebtoonTitles(cid, session);
 	if (fetchedTitles === null) {
+		notification.error("Error", "Unabled to get the webtoon titles");
 		console.error("Failed to fetch titles");
 		return null;
 	}
@@ -145,6 +160,7 @@ async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 }
 
 async function getNewPosts(): Promise<boolean> {
+	const startTime = new Date().getTime();
 	const titleList = await loadTitles();
 
 	if (!titleList || titleList.length === 0) {
@@ -162,7 +178,9 @@ async function getNewPosts(): Promise<boolean> {
 
 		for (const posts of wt.posts.values()) {
 			for (const post of posts) {
-				await post.getReplies();
+				if (post.activeChildPostCount > 0) {
+					await post.getReplies();
+				}
 			}
 		}
 
@@ -174,6 +192,13 @@ async function getNewPosts(): Promise<boolean> {
 
 	}
 
+	const endTime = new Date().getTime();
+	notification.inform(
+		"Comments parsing completed!",
+		`Parsed comments for ${wts.length} webtoon${wts.length > 1 ? "s" : ""}\n` + 
+		`Total time elapsed: ${endTime - startTime} ms`
+	);
+
 	// Load previous posts data after all posts are fetched 
 	// to avoid overwriting posts updated during fetching
 	const saveData: StoredWebtoonData[] = [];
@@ -181,17 +206,29 @@ async function getNewPosts(): Promise<boolean> {
 	const stored = await loadWebtoons();
 
 	for (const wt of wts) {
+		let freshCount = 0;
 		const found = stored.find(d => d.titleId === wt.titleId);
 		if (found) {
+			freshCount = Math.max(0, wt.getPostCounts().totalCount - found.posts.length - found.posts.reduce((p,c) => p + c.replies.length, 0));
 			wt.loadSavedPosts(found.posts.map(p => new Post(p)));
+		} else {
+			freshCount = wt.getPostCounts().totalNewCount;
 		}
-	
+
 		saveData.push(wt.getSaveData());
 		postCounts.push(wt.getPostCounts());
+
+		notification.inform(
+			`${wt.title.toUpperCase()}: Comments parsed!`,
+			`Total ${wt.getPostCounts().totalNewCount} unread comments` + (
+				freshCount > 0 ? `, and\n${freshCount} new comments found!` : ""),
+			{ iconUrl: wt.thumbnailLink }
+		);
 	}
 
 	await saveWebtoons(saveData);
 	await savePostCounts(postCounts);
+	await updatePopupBadge();
 
 	return result;
 }
@@ -243,6 +280,9 @@ chrome.storage.sync.onChanged.addListener((changes: { [key: string]: chrome.stor
 	console.log("storage.sync.onChanged", changes);
 	if (STROAGE_COUNT_NAME in changes) {
 		updatePopupBadge();
+	}
+	if (STORAGE_WORKER_SETTING_NAME in changes) {
+		// do nothing
 	}
 });
 

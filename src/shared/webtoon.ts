@@ -40,6 +40,8 @@ export class Webtoon {
 
 	readonly type: "c" | "w";
 	readonly titleId: TitleIdType; // webtoon title id
+	readonly title: string;
+	readonly thumbnailLink: string;
 
 	status: "idle" | "fetching" | "error";
 	episodeCount: number = -1;
@@ -51,6 +53,8 @@ export class Webtoon {
 	) {
 		this.url = "https://www.webtoons.com/" + title.extra.episodeListPath;
 		this.titleId = title.id;
+		this.title = title.subject;
+		this.thumbnailLink = title.thumbnailUrl.replace(/(?!s)webtoon-phinf/, "swebtoon-phinf");
 		this.type = title.grade === "CHALLENGE" ? "c" : "w";
 
 		this.status = "idle";
