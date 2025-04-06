@@ -8,8 +8,8 @@ function generateRandomString(): string {
 	return Array.from(arr, dec2hex).join('');
 }
 
-
-const STORAGE_SETTING_NAME = "cs-settings";
+const STORAGE_CONTENT_SETTING_NAME = "cs-content-settings";
+const STORAGE_WORKER_SETTING_NAME = "cs-worker-settings";
 const STORAGE_STATUS_NAME = "cs-status";
 const STORAGE_TITLES_NAME = "cs-title-items";
 const STORAGE_NEWEST_NAME = "cs-newest-posts";
@@ -163,7 +163,8 @@ export async function getApiToken(): Promise<string | undefined> {
 
 export {
 	IS_DEV,
-	STORAGE_SETTING_NAME,
+	STORAGE_CONTENT_SETTING_NAME,
+	STORAGE_WORKER_SETTING_NAME,
 	STORAGE_STATUS_NAME,
 	STORAGE_TITLES_NAME,
 	STORAGE_NEWEST_NAME,

@@ -75,30 +75,50 @@ export default function SettingDialog(props: SettingDialogProps) {
                     </div>
                     <ul
                         role="list"
-                        className={["rounded border-2", "dark:border-gray-600"].join(" ")}
                     >
                         {setting
                             ? setting.map((el, i) => (
                                     <li
                                         key={i}
                                         className={[
-                                            "border-b-2 last:border-b-0 border-inherit",
-                                            "hover:bg-gray-100 dark:hover:bg-gray-800",
-                                            "",
+                                            "mb-2 last:mb-0",
                                         ].join(" ")}
                                     >
-                                        <ToolTip width={"280px"} text={el.toolTip}>
-                                            <div className="flex justify-between px-2 py-1">
-                                                <span className="text-sm">{el.desc}</span>
-                                                <Switch
-                                                    size="small"
-                                                    checked={el.value}
-                                                    onChange={(newValue: boolean) =>
-                                                        handleSwitchChange(el.key, newValue)
-                                                    }
-                                                />
-                                            </div>
-                                        </ToolTip>
+                                        {el.text !== "" ? (
+                                            <ToolTip width={"280px"} text={el.toolTip}>
+                                                <div>
+                                                    <h3>{el.text}</h3>
+                                                </div>
+                                            </ToolTip>
+                                        ) : null}
+                                        <ul
+                                            role="list"
+                                            className={["rounded border-[1px]", "dark:border-gray-600"].join(" ")}
+                                        >
+                                            {el.value.map((settingItem, j) => (
+                                                <li
+                                                    key={j}
+                                                    className={[
+                                                        "border-b-[1px] last:border-b-0 border-inherit",
+                                                        "hover:bg-gray-100 dark:hover:bg-gray-800",
+                                                        "",
+                                                    ].join(" ")}
+                                                >
+                                                    <ToolTip width={"280px"} text={settingItem.toolTip}>
+                                                        <div className="flex justify-between px-2 py-1">
+                                                            <span className="text-sm">{settingItem.desc}</span>
+                                                            <Switch
+                                                                size="small"
+                                                                checked={settingItem.value}
+                                                                onChange={(newValue: boolean) =>
+                                                                    handleSwitchChange(settingItem.key, newValue)
+                                                                }
+                                                            />
+                                                        </div>
+                                                    </ToolTip>
+                                                </li>
+                                            ))}
+                                        </ul>
                                     </li>
                                 ))
                             : null}

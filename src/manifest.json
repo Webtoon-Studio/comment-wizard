@@ -16,6 +16,7 @@
 		"default_title": "Comment Wizard"
 	},
 	"permissions": ["storage", "cookies", "alarms", "unlimitedStorage"],
+	"optional_permissions": ["notifications"],
 	"host_permissions": ["https://www.webtoons.com/"],
 	"content_scripts": [
 		{

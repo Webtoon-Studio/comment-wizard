@@ -16,7 +16,7 @@ import {
 	type SeriesItem,
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
-	STORAGE_SETTING_NAME,
+	STORAGE_CONTENT_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
 	STROAGE_COUNT_NAME,
 } from "../shared/global";
@@ -50,15 +50,15 @@ async function getSetting() {
 
 	if (chrome.storage) {
 		console.log("Getting setting from chrome");
-		await chrome.storage.sync.get(STORAGE_SETTING_NAME).then((items) => {
-			if (STORAGE_SETTING_NAME in items) {
-				items[STORAGE_SETTING_NAME].forEach(parseItem);
+		await chrome.storage.sync.get(STORAGE_CONTENT_SETTING_NAME).then((items) => {
+			if (STORAGE_CONTENT_SETTING_NAME in items) {
+				items[STORAGE_CONTENT_SETTING_NAME].forEach(parseItem);
 			}
 		});
 	} else {
 		// perhaps check localStorage
 		console.log("Getting setting from localStorage");
-		const stored = localStorage.getItem(STORAGE_SETTING_NAME);
+		const stored = localStorage.getItem(STORAGE_CONTENT_SETTING_NAME);
 		if (stored) {
 			const storedJson = JSON.parse(stored);
 			if (Array.isArray(storedJson)) {
