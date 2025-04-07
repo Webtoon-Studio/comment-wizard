@@ -57,16 +57,32 @@ export async function cleanTitles(): Promise<boolean> {
 // ================================================================================ //
 
 // ============================ POSTCOUNTS LOAD / SAVE ============================ //
-export async function loadPostCounts(): Promise<PostCountType[] | null> {
+export async function loadPostCounts(): Promise<PostCountType[]> {
     if (chrome.storage) {
-        return chrome.storage.sync.get(STROAGE_COUNT_NAME).then((items) => {
-            if (STROAGE_COUNT_NAME in items) {
-                const value = items[STROAGE_COUNT_NAME];
-                if (
-                    Array.isArray(value) // Need a better validation
-                ) {
-                    return value as PostCountType[];
+        return chrome.storage.local.get().then((items) => {
+            const ret: PostCountType[] = [];
+            Object.keys(items).forEach((item) => {
+                if (items.startsWith(STROAGE_COUNT_NAME)) {
+                    const counts = items[item];
+                    if (
+                        Array.isArray(counts) // Need a better validation
+                    ) {
+                        return counts as PostCountType[];
+                    }
                 }
+            });
+            return ret;
+        });
+    }
+    return [];
+}
+
+export async function loadPostCountsById(titleId: TitleIdType): Promise<PostCountType|null> {
+    if (chrome.storage) {
+        const key = STROAGE_COUNT_NAME + "-" + titleId;
+        return chrome.storage.local.get(key).then((items) => {
+            if (key in items) {
+                return items[key];
             }
             return null;
         });
@@ -76,9 +92,11 @@ export async function loadPostCounts(): Promise<PostCountType[] | null> {
 
 export async function savePostCounts(postCounts: PostCountType[]) {
     if (chrome.storage) {
-        return chrome.storage.sync.set({
-            [STROAGE_COUNT_NAME]: postCounts,
-        });
+        const prepped = postCounts.reduce<{[key:string]:PostCountType}>((p,c) => {
+            p[STROAGE_COUNT_NAME + "-" + c.titleId] = c
+            return p;
+        }, {})
+        await chrome.storage.local.set(prepped);
     }
 }
 // ================================================================================ //
