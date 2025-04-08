@@ -61,14 +61,10 @@ export async function loadPostCounts(): Promise<PostCountType[]> {
     if (chrome.storage) {
         return chrome.storage.local.get().then((items) => {
             const ret: PostCountType[] = [];
-            Object.keys(items).forEach((item) => {
-                if (items.startsWith(STROAGE_COUNT_NAME)) {
-                    const counts = items[item];
-                    if (
-                        Array.isArray(counts) // Need a better validation
-                    ) {
-                        return counts as PostCountType[];
-                    }
+            Object.keys(items).forEach((key) => {
+                if (key.startsWith(STROAGE_COUNT_NAME)) {
+                    const counts = items[key];
+                    ret.push(counts as PostCountType)
                 }
             });
             return ret;
@@ -106,10 +102,10 @@ export async function loadWebtoons(): Promise<StoredWebtoonData[]> {
     if (chrome.storage) {
         return chrome.storage.local.get().then((items) => {
             const ret: StoredWebtoonData[] = []
-            Object.keys(items).forEach((item) => {
-                if (item.startsWith(STORAGE_WEBTOONS_NAME)) {
-                    const titleId = item.substring(STORAGE_WEBTOONS_NAME.length) as TitleIdType;
-                    const posts = items[item];
+            Object.keys(items).forEach((key) => {
+                if (key.startsWith(STORAGE_WEBTOONS_NAME)) {
+                    const titleId = key.substring(STORAGE_WEBTOONS_NAME.length) as TitleIdType;
+                    const posts = items[key];
                     if (Array.isArray(posts)) {
                         ret.push({
                             titleId,
@@ -139,8 +135,8 @@ export async function loadWebtoonById(titleId: TitleIdType): Promise<StoredWebto
 
 export async function saveWebtoons(data: StoredWebtoonData[]) {
     if (chrome.storage) {
-        const prepped = data.reduce<{[key:string]:IPost[]}>((p,c) => {
-            p[STORAGE_WEBTOONS_NAME + "-" + c.titleId] = c.posts
+        const prepped = data.reduce<{[key:string]: StoredWebtoonData}>((p,c) => {
+            p[STORAGE_WEBTOONS_NAME + "-" + c.titleId] = c
             return p;
         }, {})
         await chrome.storage.local.set(prepped);
