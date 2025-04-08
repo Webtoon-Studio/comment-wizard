@@ -1,6 +1,7 @@
 import { TitleIdType, Webtoon } from "@shared/webtoon";
 import "@incom/index.css";
 import {
+	AppState,
 	type EpisodeNewestPost,
 	INCOM_ONMOUNTED_EVENT_NAME,
 	INCOM_PATCH_MULTI_POSTS_EVENT,
@@ -8,9 +9,11 @@ import {
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
+	INCOM_REQUEST_STATE_EVENT,
 	INCOM_RESPONSE_COUNTS_EVENT,
 	INCOM_RESPONSE_POSTS_EVENT,
 	INCOM_RESPONSE_SERIES_ITEM_EVENT,
+	INCOM_RESPONSE_STATE_EVENT,
 	POSTS_FETCHED_EVENT_NAME,
 	POSTS_REQUEST_EVENT_NAME,
 	type SeriesItem,
@@ -181,6 +184,22 @@ interface ElementProp {
 	[index: string]: any;
 }
 
+const handleIncomStateRequest = () => {
+	console.log("Handling state request event");
+	chrome.runtime
+	.sendMessage({ greeting: INCOM_REQUEST_STATE_EVENT })
+	.then((resp) => {
+		if (resp && "state" in resp) {
+			window.dispatchEvent(new CustomEvent<{ state: AppState }>(
+				INCOM_RESPONSE_STATE_EVENT,
+				{
+					detail: { state: resp.state}
+				}
+			));
+		}
+	});
+}
+
 const handleIncomTitlesRequest = () => {
 	console.log("Handling SeriesItems Request event");
 	chrome.runtime
@@ -295,6 +314,11 @@ const handleIncomCountRequest = () => {
 
 function attachEventListners() {
 	// Setup event listener
+	window.addEventListener(
+		INCOM_REQUEST_STATE_EVENT,
+		handleIncomStateRequest as EventListener
+	);
+
 	window.addEventListener(
 		INCOM_REQUEST_SERIES_ITEM_EVENT, 
 		handleIncomTitlesRequest as EventListener
@@ -706,8 +730,9 @@ try {
 }
 
 if (chrome.storage) {
-	chrome.storage.local.onChanged.addListener(() => {
-		chrome.storage.local
+	chrome.storage.local.onChanged.addListener((changes) => {
+		if (STORAGE_WEBTOONS_NAME in changes) {
+			chrome.storage.local
 			.get(STORAGE_WEBTOONS_NAME)
 			.then((items) => {
 				if (STORAGE_WEBTOONS_NAME in items) {
@@ -724,10 +749,9 @@ if (chrome.storage) {
 					);
 				}
 			});
-	});
-	chrome.storage.sync.onChanged.addListener(async (changes) => {
+		}
 		if (STROAGE_COUNT_NAME in changes) {
-			loadPostCounts().then(counts => {
+			loadPostCounts().then((counts) => {
 				window.dispatchEvent(
 					new CustomEvent<{ counts: PostCountType[] | null}>(
 						INCOM_RESPONSE_COUNTS_EVENT,
@@ -739,9 +763,26 @@ if (chrome.storage) {
 					)
 				);
 			});
-		} else {
+		}
+	});
+	chrome.storage.sync.onChanged.addListener(async (changes) => {
+		if (STORAGE_CONTENT_SETTING_NAME in changes) {
 			await getSetting();
 			main();
+		}
+		if (STORAGE_APP_STATE_NAME in changes) {
+			loadState().then((state) => {
+				window.dispatchEvent(
+					new CustomEvent<{ state: AppState }>(
+						INCOM_RESPONSE_STATE_EVENT,
+						{
+							detail: {
+								state
+							}
+						}
+					)
+				);
+			});
 		}
 	});
 }

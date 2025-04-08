@@ -1,15 +1,13 @@
 import { Webtoon, type StoredWebtoonData, type TitleIdType } from "@shared/webtoon";
 import {
 	POSTS_REQUEST_EVENT_NAME,
-	STORAGE_TITLES_NAME,
 	getSessionFromCookie,
-	STORAGE_WEBTOONS_NAME,
 	INCOM_REQUEST_SERIES_ITEM_EVENT,
 	INCOM_REQUEST_POSTS_EVENT,
-	STROAGE_COUNT_NAME,
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_PATCH_POST_EVENT,
 	INCOM_PATCH_MULTI_POSTS_EVENT,
+	INCOM_REQUEST_STATE_EVENT,
 } from "@shared/global";
 import {
 	STORAGE_TITLES_NAME,
@@ -22,12 +20,12 @@ import {
 import { countPosts, Post, type IPost, type PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";
-import { cleanTitles, loadPostCounts, loadTitles, loadWebtoons, patchWebtoon, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
+import { cleanTitles, loadPostCounts, loadTitles, loadWebtoonById, loadWebtoons, savePostCounts, saveTitles, saveWebtoons } from "@shared/storage";
 import { notification } from "@shared/notification";
 
 // =============================== GLOBAL VARIABLES =============================== //
-const GETTING_SERIES_ALARM_NAME = "alarm-getting-series-delay";
-const GETTING_SERIES_DELAY_MINS = 60;
+const GETTING_TITLES_ALARM_NAME = "alarm-getting-title-delay";
+const GETTING_TITLES_DELAY_MINS = 60;
 const GETTING_NEW_POSTS_ALARM_NAME = "alarm-getting-new-posts";
 const GETTING_NEW_POSTS_PERIOD_MINS = 30;
 
@@ -72,7 +70,7 @@ function getTitles(force = false) {
 	if (force) {
 		executeScrapeTitles();
 	} else {
-		chrome.alarms.get(GETTING_SERIES_ALARM_NAME).then((alarm) => {
+		chrome.alarms.get(GETTING_TITLES_ALARM_NAME).then((alarm) => {
 			if (!alarm) {
 				executeScrapeTitles();
 			}
@@ -90,8 +88,8 @@ function executeScrapeTitles() {
 			}`,
 		);
 		// Delay next callback (no spamming!)
-		chrome.alarms.create(GETTING_SERIES_ALARM_NAME, {
-			delayInMinutes: GETTING_SERIES_DELAY_MINS,
+		chrome.alarms.create(GETTING_TITLES_ALARM_NAME, {
+			delayInMinutes: GETTING_TITLES_DELAY_MINS,
 		});
 	}).finally(() => {
 		IS_GETTING_TITLES = false;
@@ -166,7 +164,7 @@ async function scrapeTitlesFromProfile(): Promise<boolean | null> {
 	return false;
 }
 
-async function getNewPosts(): Promise<boolean> {
+async function getAllWebtoonsPosts(): Promise<boolean> {
 	const startTime = new Date().getTime();
 	const titleList = await loadTitles();
 
@@ -179,24 +177,11 @@ async function getNewPosts(): Promise<boolean> {
 	const wts: Webtoon[] = [];
 
 	for (const title of titleList) {
-		const wt = new Webtoon(title);
+		const res = await getWebtoonPosts(title);
 
-		await wt.getAllPosts();
-
-		for (const posts of wt.posts.values()) {
-			for (const post of posts) {
-				if (post.activeChildPostCount > 0) {
-					await post.getReplies();
-				}
-			}
-		}
-
-		if (result && wt.status === 'error') {
+		if (result && !res) {
 			result = false;
 		}
-
-		wts.push(wt);
-
 	}
 
 	const endTime = new Date().getTime();
@@ -206,38 +191,47 @@ async function getNewPosts(): Promise<boolean> {
 		`Total time elapsed: ${endTime - startTime} ms`
 	);
 
-	// Load previous posts data after all posts are fetched 
-	// to avoid overwriting posts updated during fetching
-	const saveData: StoredWebtoonData[] = [];
-	const postCounts: PostCountType[] = [];
-	const stored = await loadWebtoons();
+	return result;
+}
 
-	for (const wt of wts) {
-		let freshCount = 0;
-		const found = stored.find(d => d.titleId === wt.titleId);
-		if (found) {
-			freshCount = Math.max(0, wt.getPostCounts().totalCount - found.posts.length - found.posts.reduce((p,c) => p + c.replies.length, 0));
-			wt.loadSavedPosts(found.posts.map(p => new Post(p)));
-		} else {
-			freshCount = wt.getPostCounts().totalNewCount;
+async function getWebtoonPosts(title: Title) {
+	const startTime = new Date().getTime();
+	const wt = new Webtoon(title);
+
+	// Fetch posts & replies
+	await wt.getAllPosts();
+	for (const posts of wt.posts.values()) {
+		for (const post of posts) {
+			if (post.activeChildPostCount > 0) {
+				await post.getReplies();
+			}
 		}
-
-		saveData.push(wt.getSaveData());
-		postCounts.push(wt.getPostCounts());
-
-		notification.inform(
-			`${wt.title.toUpperCase()}: Comments parsed!`,
-			`Total ${wt.getPostCounts().totalNewCount} unread comments` + (
-				freshCount > 0 ? `, and\n${freshCount} new comments found!` : ""),
-			{ iconUrl: wt.thumbnailLink }
-		);
 	}
 
-	await saveWebtoons(saveData);
-	await savePostCounts(postCounts);
+	let freshCount = 0;
+	const stored = await loadWebtoonById(wt.titleId);
+
+	if (stored) {
+		freshCount = Math.max(0, wt.getPostCounts().totalCount - stored.posts.length - stored.posts.reduce((p,c) => p + c.replies.length, 0));
+		wt.loadSavedPosts(stored.posts.map(p => new Post(p)));
+	} else {
+		freshCount = wt.getPostCounts().totalNewCount;
+	}
+	
+	const endTime = new Date().getTime();
+	notification.inform(
+		`${wt.title.toUpperCase()}: Comments parsed! (Elapsed: ${((endTime - startTime) / 1000).toFixed(1)} seconds)`,
+		`Total ${wt.getPostCounts().totalNewCount} unread comments` + (
+			freshCount > 0 ? `, and\n${freshCount} new comments found!` : ""),
+		{ iconUrl: wt.thumbnailLink }
+	);
+
+	await saveLastFetched(wt.titleId, endTime);
+	await saveWebtoons([wt.getSaveData()]);
+	await savePostCounts([wt.getPostCounts()]);
 	await updatePopupBadge();
 
-	return result;
+	return wt.status === "error" ? false : true;
 }
 
 async function patchPosts(patch: IPost[]) {
@@ -249,21 +243,20 @@ async function patchPosts(patch: IPost[]) {
 		return p;
 	}, new Map<TitleIdType, IPost[]>());
 
-	const webtoons = await loadWebtoons();
-
 	for (const [titleId, patchPosts] of grouped.entries()) {
 		console.log("patching posts", titleId, patchPosts);
-		const wt = webtoons.find(w => w.titleId === titleId)
-		if (wt === undefined) continue;
+
+		const wt = await loadWebtoonById(titleId);
+		if (wt === null) continue;
 
 		wt.posts = [
 			...wt.posts.filter(p => !patchPosts.find(pp => pp.id === p.id)),
 			...patchPosts
 		];
-	}
 
-	await saveWebtoons(webtoons);
-	await savePostCounts(webtoons.map(wt => countPosts(wt.posts)));
+		await saveWebtoons([wt]);
+		await savePostCounts([countPosts(wt.posts)]);
+	}
 
 	return true;
 }
@@ -294,7 +287,7 @@ chrome.storage.sync.onChanged.addListener((changes: { [key: string]: chrome.stor
 });
 
 chrome.alarms.onAlarm.addListener((alarm) => {
-	if (alarm.name === GETTING_SERIES_ALARM_NAME) {
+	if (alarm.name === GETTING_TITLES_ALARM_NAME) {
 		chrome.alarms.clear(alarm.name);
 	}
 	if (alarm.name === GETTING_NEW_POSTS_ALARM_NAME) {
@@ -305,7 +298,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 			// get new posts
 			IS_GETTING_NEW_POSTS = true;
 			const startTime = new Date().getTime();
-			getNewPosts().then((ret) => {
+			getAllWebtoonsPosts().then((ret) => {
 				IS_GETTING_NEW_POSTS = false;
 				console.log(
 					`Process End: getNewPosts (${new Date().getTime() - startTime} ms)`,
@@ -334,7 +327,7 @@ chrome.runtime.onMessage.addListener(
 	(
 		message: { greeting: string; titleId?: TitleIdType; episodeNo?: number; post?: IPost; changes?: Partial<IPost> },
 		sender: chrome.runtime.MessageSender,
-		sendReponse: (resopnse?: unknown) => void,
+		sendResponse: (resopnse?: unknown) => void,
 	) => {
 		if (message.greeting === POSTS_REQUEST_EVENT_NAME) {
 			// Incoming Comments Component is mounted and is requesting data
@@ -349,7 +342,7 @@ chrome.runtime.onMessage.addListener(
 
 			// Sending what's in the storage
 			loadWebtoons().then((wts) => {
-				sendReponse({
+				sendResponse({
 					webtoons: wts
 				})
 			});
@@ -357,22 +350,38 @@ chrome.runtime.onMessage.addListener(
 			// Return `true` to indicate that the message is being handled asynchronously
 			return true;
 		}
-		if (message.greeting === INCOM_REQUEST_SERIES_ITEM_EVENT) {
-			console.log("runtime: Incom requests series items");
-			scrapeTitlesFromProfile().then(result => {
-				if (result !== null) {
-					loadTitles().then((loaded) => {
-						console.log("runtime: Send response to Series Items Request");
-						sendReponse({
-							titles: loaded
-						});
-					});
-				} else {
-					sendReponse({
-						titles: null
-					});
+		if (message.greeting === INCOM_REQUEST_STATE_EVENT) {
+			console.log("runtime: Incom requests state");
+			loadState().then((loaded) => {
+				if (loaded) {
+					sendResponse({ state: loaded });
 				}
 			});
+
+			return true;
+		}
+		if (message.greeting === INCOM_REQUEST_SERIES_ITEM_EVENT) {
+			console.log("runtime: Incom requests series items");
+			loadTitles().then((loaded) => {
+				if (loaded) {
+					sendResponse({ titles: loaded });
+				} else {
+					if (!IS_GETTING_TITLES) {
+						scrapeTitlesFromProfile().then((res) => {
+							if (res !== null) {
+								loadTitles().then((loadedAgain) => {
+									sendResponse({ titles: loadedAgain});
+								});
+							} else {
+								sendResponse({ titles: null })
+							}
+						});
+					} else {
+						sendResponse({ titles: null});
+					}
+				}
+			});
+
 			return true;
 		}
 		if (message.greeting === INCOM_REQUEST_POSTS_EVENT) {
@@ -380,15 +389,16 @@ chrome.runtime.onMessage.addListener(
 			const titleId: `${number}` | undefined = message.titleId;
 			const episodeNo: number | undefined = message.episodeNo;
 
+			if (titleId === undefined) return false;
+
 			chrome.alarms.create(GETTING_NEW_POSTS_ALARM_NAME, {
 				delayInMinutes: 0,
 				periodInMinutes: GETTING_NEW_POSTS_PERIOD_MINS,
 			});
 
 			// Sending what's in the storage
-			loadWebtoons(titleId).then((data) => {
-				const posts = data.map(d => d.posts).reduce((p, v) => [...p.concat(v)], []);
-				sendReponse({ posts });
+			loadWebtoonById(titleId).then((wt) => {
+				sendResponse({ posts: wt?.posts ?? undefined });
 			});
 			
 			return true;
@@ -411,8 +421,7 @@ chrome.runtime.onMessage.addListener(
 
 			if (changes === undefined || titleId === undefined) return false;
 
-			loadWebtoons().then((wts) => {
-				const wt = wts.find(w => w.titleId === titleId);
+			loadWebtoonById(titleId).then((wt) => {
 				if (wt) {
 					const posts = episodeNo === undefined ? wt.posts : wt.posts.filter(p => p.episode === episodeNo);
 					posts.forEach(p => {
@@ -433,7 +442,7 @@ chrome.runtime.onMessage.addListener(
 
 			// Sending what's in the storage
 			loadPostCounts().then((counts) => {
-				sendReponse({ counts });
+				sendResponse({ counts });
 			});
 			
 			return true;

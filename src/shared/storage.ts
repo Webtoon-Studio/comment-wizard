@@ -1,4 +1,4 @@
-import { STORAGE_TITLES_NAME, STROAGE_COUNT_NAME, STORAGE_WEBTOONS_NAME } from "@shared/global";
+import { AppState } from "@shared/global";
 import { IPost, Post, PostCountType } from "@shared/post";
 import { Title } from "@shared/title";
 import { TitleIdType, StoredWebtoonData } from "@shared/webtoon";
@@ -13,6 +13,54 @@ const STORAGE_NEWEST_NAME = "cs-newest-posts";
 const STROAGE_COUNT_NAME = "cs-post-counts";
 const STORAGE_POSTS_NAME = "cs-all-posts";
 const STORAGE_WEBTOONS_NAME = "cs-webtoons";
+// ================================================================================ //
+// =============================== STATE LOAD / SAVE ============================== //
+export async function loadState(): Promise<AppState> {
+    if (chrome.storage) {
+        const stored = await chrome.storage.sync.get(STORAGE_APP_STATE_NAME).then((items) => {
+            if (STORAGE_APP_STATE_NAME in items) {
+                return items[STORAGE_APP_STATE_NAME];
+            }
+        });
+        if (stored) return stored;
+        const newState = {
+            state: "idle",
+            lastScraped: []
+        } satisfies AppState;
+
+        chrome.storage.sync.set({ [STORAGE_APP_STATE_NAME]: newState });
+
+        return newState;
+    }
+    
+    return {
+        state: "idle",
+        lastScraped: []
+    } satisfies AppState;
+}
+
+
+export async function saveState(state: AppState) {
+    if (chrome.storage) {
+        chrome.storage.sync.set({
+            [STORAGE_APP_STATE_NAME]: state
+        });
+    }
+}
+
+export async function loadLastFetched(titleId: TitleIdType): Promise<number|null> {
+    const state = await loadState();
+    return state.lastScraped.find(v => v.titleId === titleId)?.timestamp ?? null;
+}
+
+export async function saveLastFetched(titleId: TitleIdType, timestamp: number) {
+    const state = await loadState();
+    state.lastScraped = [
+        ...state.lastScraped.filter(v => v.titleId !== titleId),
+        { titleId, timestamp }
+    ];
+    await saveState(state);
+}
 // ================================================================================ //
 // ============================== TITLES LOAD / SAVE ============================== //
 export async function loadTitles(): Promise<Title[] | null> {
