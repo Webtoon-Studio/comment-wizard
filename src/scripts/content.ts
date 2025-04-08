@@ -14,12 +14,16 @@ import {
 	POSTS_FETCHED_EVENT_NAME,
 	POSTS_REQUEST_EVENT_NAME,
 	type SeriesItem,
+} from "@shared/global";
+import {
 	STORAGE_NEWEST_NAME,
 	STORAGE_POSTS_NAME,
 	STORAGE_CONTENT_SETTING_NAME,
 	STORAGE_WEBTOONS_NAME,
 	STROAGE_COUNT_NAME,
-} from "../shared/global";
+	STORAGE_APP_STATE_NAME,
+	loadState,
+} from "@shared/storage";
 import type { IPost, IWebtoonPost, Post, PostCountType } from "@shared/post";
 import type { Title } from "@shared/title";
 import { loadPostCounts } from "@shared/storage";

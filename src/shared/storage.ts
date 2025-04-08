@@ -3,6 +3,17 @@ import { IPost, Post, PostCountType } from "@shared/post";
 import { Title } from "@shared/title";
 import { TitleIdType, StoredWebtoonData } from "@shared/webtoon";
 
+// ================================= GLOBAL VARS ================================= //
+const STORAGE_APP_STATE_NAME = "cs-app-state";
+const STORAGE_CONTENT_SETTING_NAME = "cs-content-settings";
+const STORAGE_WORKER_SETTING_NAME = "cs-worker-settings";
+const STORAGE_STATUS_NAME = "cs-status";
+const STORAGE_TITLES_NAME = "cs-title-items";
+const STORAGE_NEWEST_NAME = "cs-newest-posts";
+const STROAGE_COUNT_NAME = "cs-post-counts";
+const STORAGE_POSTS_NAME = "cs-all-posts";
+const STORAGE_WEBTOONS_NAME = "cs-webtoons";
+// ================================================================================ //
 // ============================== TITLES LOAD / SAVE ============================== //
 export async function loadTitles(): Promise<Title[] | null> {
     if (chrome.storage) {
@@ -143,3 +154,15 @@ export async function saveWebtoons(data: StoredWebtoonData[]) {
     }
 }
 // ================================================================================ //
+
+export {
+	STORAGE_APP_STATE_NAME,
+	STORAGE_CONTENT_SETTING_NAME,
+	STORAGE_WORKER_SETTING_NAME,
+	STORAGE_STATUS_NAME,
+	STORAGE_TITLES_NAME,
+	STORAGE_NEWEST_NAME,
+	STROAGE_COUNT_NAME,
+	STORAGE_POSTS_NAME,
+	STORAGE_WEBTOONS_NAME,
+};

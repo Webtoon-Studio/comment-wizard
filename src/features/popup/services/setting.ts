@@ -1,5 +1,5 @@
 import type { SettingItemType, SettingType } from "@popup/interface";
-import { STORAGE_CONTENT_SETTING_NAME, STORAGE_WORKER_SETTING_NAME } from "@root/src/shared/global";
+import { STORAGE_CONTENT_SETTING_NAME, STORAGE_WORKER_SETTING_NAME } from "@shared/storage";
 import { IS_DEV } from "@shared/global";
 import { useEffect, useMemo, useState } from "react";
 

@@ -1,4 +1,5 @@
-import { IS_DEV, STORAGE_TITLES_NAME } from "@shared/global";
+import { IS_DEV } from "@shared/global";
+import { STORAGE_TITLES_NAME, loadTitles } from "@shared/storage";
 import { ITitle, Title } from "@shared/title";
 import { useEffect, useState } from "react";
 
@@ -18,11 +19,7 @@ async function loadTitle(): Promise<ITitle[]> {
         const { mockTitles }  = await import("@src/mock");
         return Array.from(new Array(10 + Math.ceil(Math.random() * 10))).map(() => mockTitles());
     } else {
-        return await chrome.storage.sync.get(STORAGE_TITLES_NAME).then((items) => {
-            if (STORAGE_TITLES_NAME in items) {
-                return items[STORAGE_TITLES_NAME] as ITitle[];
-            }
-        }) || [];
+        return await loadTitles() ?? [];
     }
 }
 

@@ -8,19 +8,13 @@ function generateRandomString(): string {
 	return Array.from(arr, dec2hex).join('');
 }
 
-const STORAGE_CONTENT_SETTING_NAME = "cs-content-settings";
-const STORAGE_WORKER_SETTING_NAME = "cs-worker-settings";
-const STORAGE_STATUS_NAME = "cs-status";
-const STORAGE_TITLES_NAME = "cs-title-items";
-const STORAGE_NEWEST_NAME = "cs-newest-posts";
-const STROAGE_COUNT_NAME = "cs-post-counts";
-const STORAGE_POSTS_NAME = "cs-all-posts";
-const STORAGE_WEBTOONS_NAME = "cs-webtoons";
 
 const POSTS_REQUEST_EVENT_NAME = "postsRequest";
 const POSTS_FETCHED_EVENT_NAME = "postsFetched";
 
 const INCOM_ONMOUNTED_EVENT_NAME = "incomMounted";
+const INCOM_REQUEST_STATE_EVENT = "incomStateRequest";
+const INCOM_RESPONSE_STATE_EVENT = "incomStateResponse";
 const INCOM_REQUEST_SERIES_ITEM_EVENT = "incomSeriesRequest";
 const INCOM_RESPONSE_SERIES_ITEM_EVENT = "incomSeriesResponse";
 const INCOM_REQUEST_POSTS_EVENT = "incomPostsRequest";
@@ -39,11 +33,11 @@ const IS_DEV = (() => {
 	}
 })();
 
-export interface WizardStatus {
-	isTitlesFetched: boolean;
-	commentFetchStatus: {
-		title: TitleIdType;
-		status: "success" | "pending" | "fail";
+export interface AppState {
+	state: "idle" | "processing" | "error";
+	lastScraped: {
+		titleId: TitleIdType;
+		timestamp: number;
 	}[];
 }
 
@@ -163,14 +157,9 @@ export async function getApiToken(): Promise<string | undefined> {
 
 export {
 	IS_DEV,
-	STORAGE_CONTENT_SETTING_NAME,
-	STORAGE_WORKER_SETTING_NAME,
-	STORAGE_STATUS_NAME,
-	STORAGE_TITLES_NAME,
-	STORAGE_NEWEST_NAME,
-	STROAGE_COUNT_NAME,
-	STORAGE_POSTS_NAME,
-	STORAGE_WEBTOONS_NAME,
+	INCOM_REQUEST_STATE_EVENT,
+	INCOM_RESPONSE_STATE_EVENT,
+	
 	POSTS_REQUEST_EVENT_NAME,
 	POSTS_FETCHED_EVENT_NAME,
 	INCOM_ONMOUNTED_EVENT_NAME,

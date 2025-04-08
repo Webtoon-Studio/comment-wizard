@@ -10,8 +10,15 @@ import {
 	INCOM_REQUEST_COUNTS_EVENT,
 	INCOM_PATCH_POST_EVENT,
 	INCOM_PATCH_MULTI_POSTS_EVENT,
-	STORAGE_WORKER_SETTING_NAME,
 } from "@shared/global";
+import {
+	STORAGE_TITLES_NAME,
+	STORAGE_WEBTOONS_NAME,
+	STROAGE_COUNT_NAME,
+	STORAGE_WORKER_SETTING_NAME,
+	saveLastFetched,
+	loadState,
+} from "@shared/storage";
 import { countPosts, Post, type IPost, type PostCountType } from "@shared/post";
 import { fetchProfileUrlFromUserInfo, parseAuthorIdFromProfilePage } from "@shared/author";
 import { fetchWebtoonTitles, Title } from "@shared/title";

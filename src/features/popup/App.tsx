@@ -1,5 +1,6 @@
 import { useContext, useEffect, useState } from "react";
-import { IS_DEV, STROAGE_COUNT_NAME } from "@shared/global";
+import { IS_DEV } from "@shared/global";
+import { STROAGE_COUNT_NAME } from "@shared/storage";
 import ThemeSwitch from "@popup/components/ThemeSwitch";
 import SettingButton from "@popup/components/SettingButton";
 import SettingDialog from "@popup/components/SettingDialog";
